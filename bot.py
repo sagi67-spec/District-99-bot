@@ -832,8 +832,8 @@ async def confirmar_pago(interaction: discord.Interaction):
     total_adeudado = sum(multa['precio'] for _, multa in multas_pendientes)
     
     # ========== VERIFICAR SALDO CON UNBELIEVABOAT ==========
-    # Intentar obtener el saldo del usuario
-    await canal.send(f"!bal {interaction.user.display_name}")
+    # Intentar obtener el saldo del usuario usando la mención
+    await canal.send(f"!bal {interaction.user.mention}")
     
     # Esperar respuesta de UnbelievaBoat (máximo 5 segundos)
     def check(m):
@@ -1050,4 +1050,3 @@ except Exception as e:
     print(f"❌ ERROR FATAL: {e}")
     import traceback
     traceback.print_exc()
-    
