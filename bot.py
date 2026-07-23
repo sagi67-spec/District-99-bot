@@ -32,7 +32,6 @@ NOMBRE_SERVIDOR = "DISTRICT 99"
 
 # ==================== CONFIGURACIÓN ====================
 CANAL_PAGOS_ID = 1529957306198917200  # ID del canal para pagar multas
-PAGOS_PENDIENTES = {}  # {user_id: {"monto": int, "timestamp": datetime}}
 
 # ==================== ROLES ====================
 ROL_HOST_NOMBRE = "Host│🎮"
@@ -625,12 +624,10 @@ async def registrar_multa(
     
     await interaction.response.send_message(
         content=f"{infractor.mention} ¡Has recibido una multa!\n"
-                f"**Para pagar:**\n"
-                f"1. Escribe en <#{CANAL_PAGOS_ID}>: `!pay <@{bot.user.id}> {precio}`\n"
-                f"2. Luego usa `/confirmar_pago` en <#{CANAL_PAGOS_ID}>",
+                f"📢 **Para pagar:** Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District99Bot {precio}`",
         embed=embed
     )
-
+    # ==================== HISTORIAL MULTAS (SOLO POLICIA) ====================
 @bot.tree.command(name="historial_multas", description="📋 Ver historial de multas - SOLO POLICIA")
 @app_commands.describe(usuario="Usuario (opcional)")
 async def historial_multas(interaction: discord.Interaction, usuario: discord.Member = None):
@@ -674,6 +671,7 @@ async def historial_multas(interaction: discord.Interaction, usuario: discord.Me
     embed.set_footer(text="Mostrando ultimas 10 multas")
     await interaction.response.send_message(embed=embed)
 
+# ==================== MIS MULTAS (CIUDADANOS) ====================
 @bot.tree.command(name="mis_multas", description="📋 Ver tu historial de multas")
 async def mis_multas(interaction: discord.Interaction):
     """Ciudadanos pueden ver sus propias multas"""
@@ -713,130 +711,41 @@ async def mis_multas(interaction: discord.Interaction):
     embed.set_footer(text="Mostrando ultimas 10 multas")
     
     await interaction.response.send_message(embed=embed)
-    # ==================== PAGAR MULTAS ====================
-@bot.tree.command(name="pagar_multa", description="💰 Ver tus multas pendientes para pagar")
-async def pagar_multa(interaction: discord.Interaction):
-    """Muestra las multas pendientes del usuario (solo él puede verlo)"""
+
+# ==================== CONFIRMAR PAGO (SOLO POLICIA) ====================
+@bot.tree.command(name="confirmar_pago", description="👮 Confirmar pago de un ciudadano - SOLO POLICIA")
+@app_commands.describe(
+    usuario="Usuario que pagó",
+    monto="Monto que pagó"
+)
+async def confirmar_pago(
+    interaction: discord.Interaction,
+    usuario: discord.Member,
+    monto: int
+):
+    """Solo policías pueden confirmar que un usuario pagó"""
+    
+    if not es_policia(interaction.user):
+        await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
+        return
     
     multas = cargar(MULTAS_FILE)
     historial = multas.get("historial", [])
-    user_id = str(interaction.user.id)
-    
-    # Buscar multas no pagadas del usuario
-    mis_multas = []
-    for multa in historial:
-        if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
-            mis_multas.append(multa)
-    
-    if not mis_multas:
-        await interaction.response.send_message(
-            "✅ No tienes multas pendientes. ¡Estás al día!",
-            ephemeral=True
-        )
-        return
-    
-    total = sum(multa['precio'] for multa in mis_multas)
-    
-    embed = discord.Embed(
-        title="🚨 TUS MULTAS PENDIENTES",
-        description=f"Tienes {len(mis_multas)} multas sin pagar.",
-        color=discord.Color.orange()
-    )
-    
-    for i, multa in enumerate(mis_multas, 1):
-        embed.add_field(
-            name=f"📌 Multa #{i}",
-            value=(
-                f"👮 **Oficial:** {multa['oficial']}\n"
-                f"⚖️ **Infracción:** {multa['infraccion']}\n"
-                f"💰 **Monto:** ${multa['precio']}\n"
-                f"📅 **Fecha:** {multa['fecha']}"
-            ),
-            inline=False
-        )
-    
-    embed.add_field(
-        name="💸 TOTAL ADEUDADO",
-        value=f"**${total}**",
-        inline=False
-    )
-    embed.add_field(
-        name="📢 ¿CÓMO PAGAR?",
-        value=(
-            f"1. Escribe en <#{CANAL_PAGOS_ID}>:\n"
-            f"   `!pay <@{bot.user.id}> {total}` (para pagar todo)\n"
-            f"   O `!pay <@{bot.user.id}> [monto]` (para pagar una multa específica)\n"
-            f"2. Luego usa `/confirmar_pago` en <#{CANAL_PAGOS_ID}>"
-        ),
-        inline=False
-    )
-    embed.set_footer(text="Este mensaje es solo visible para ti.")
-    
-    await interaction.response.send_message(embed=embed, ephemeral=True)
-
-# ==================== CONFIRMAR PAGO ====================
-@bot.tree.command(name="confirmar_pago", description="💰 Confirmar el pago de una multa")
-async def confirmar_pago(interaction: discord.Interaction):
-    """Confirma el pago de una multa (solo si UnbelievaBoat lo aceptó)"""
-    
-    user_id = str(interaction.user.id)
-    canal = interaction.channel
-    
-    # Verificar que el comando se use en el canal de pagos
-    if canal.id != CANAL_PAGOS_ID:
-        await interaction.response.send_message(
-            f"⚠️ Este comando solo se puede usar en <#{CANAL_PAGOS_ID}>",
-            ephemeral=True
-        )
-        return
-    
-    # Verificar si el usuario tiene un pago pendiente
-    if user_id not in PAGOS_PENDIENTES:
-        await interaction.response.send_message(
-            "❌ **NO PUEDES CONFIRMAR ESTE PAGO**\n"
-            "El pago fue rechazado por UnbelievaBoat porque no tenías suficiente dinero.\n"
-            "💰 **Alternativas:**\n"
-            "1. Retira dinero del banco con `!withdraw [cantidad]`\n"
-            "2. Vuelve a intentar con `!pay <@District99Bot> [monto]`",
-            ephemeral=True
-        )
-        return
-    
-    pago_data = PAGOS_PENDIENTES[user_id]
-    monto = pago_data["monto"]
-    
-    # Verificar que el pago no haya expirado (10 minutos)
-    tiempo_transcurrido = (datetime.now(timezone.utc) - pago_data["timestamp"]).total_seconds()
-    if tiempo_transcurrido > 600:
-        del PAGOS_PENDIENTES[user_id]
-        await interaction.response.send_message(
-            "⏰ El tiempo para confirmar el pago ha expirado (10 minutos).\n"
-            "Usa `!pay` nuevamente.",
-            ephemeral=True
-        )
-        return
+    user_id = str(usuario.id)
     
     # Buscar multas pendientes del usuario
-    multas = cargar(MULTAS_FILE)
-    historial = multas.get("historial", [])
-    
     multas_pendientes = []
     for i, multa in enumerate(historial):
         if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
             multas_pendientes.append((i, multa))
     
     if not multas_pendientes:
-        del PAGOS_PENDIENTES[user_id]
-        await interaction.response.send_message(
-            "✅ No tienes multas pendientes. ¡Estás al día!",
-            ephemeral=True
-        )
+        await interaction.response.send_message(f"✅ {usuario.mention} no tiene multas pendientes.", ephemeral=True)
         return
     
     total_adeudado = sum(multa['precio'] for _, multa in multas_pendientes)
     
-    # ========== PROCESAR PAGO ==========
-    # Caso 1: Pagó el total exacto (todas las multas)
+    # Verificar si el monto coincide con el total
     if monto == total_adeudado:
         oficiales_notificados = set()
         for idx, multa in multas_pendientes:
@@ -846,55 +755,44 @@ async def confirmar_pago(interaction: discord.Interaction):
                 oficiales_notificados.add(multa['oficial_id'])
         
         guardar(MULTAS_FILE, multas)
-        del PAGOS_PENDIENTES[user_id]
         
         embed = discord.Embed(
             title="💰 ¡PAGO CONFIRMADO!",
-            description=f"{interaction.user.mention} ha pagado **TODAS** sus multas.",
+            description=f"{usuario.mention} ha pagado **TODAS** sus multas.",
             color=discord.Color.green()
         )
+        embed.add_field(name="👮 Confirmado por", value=interaction.user.mention, inline=False)
         embed.add_field(name="💸 Total pagado", value=f"**${monto}**", inline=True)
         embed.add_field(name="📌 Multas pagadas", value=f"{len(multas_pendientes)} multas", inline=True)
         embed.set_footer(text=f"Pago confirmado el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
         
         await interaction.response.send_message(embed=embed)
-        
-        for oficial_id in oficiales_notificados:
-            await canal.send(f"<@{oficial_id}> ✅ El ciudadano {interaction.user.mention} ha pagado todas sus multas.")
+        await interaction.channel.send(f"✅ {usuario.mention} ¡Tus multas han sido pagadas! 👮 Confirmado por {interaction.user.mention}")
         return
     
-    # Caso 2: Pagó una multa específica
+    # Buscar multa específica
     for idx, multa in multas_pendientes:
         if multa['precio'] == monto:
             historial[idx]['pagada'] = True
             historial[idx]['fecha_pago'] = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
             guardar(MULTAS_FILE, multas)
             
-            oficial_id = multa.get('oficial_id')
-            del PAGOS_PENDIENTES[user_id]
-            
             embed = discord.Embed(
                 title="💰 ¡PAGO CONFIRMADO!",
-                description=f"{interaction.user.mention} ha pagado su multa.",
+                description=f"{usuario.mention} ha pagado su multa.",
                 color=discord.Color.green()
             )
-            embed.add_field(name="👮 Oficial", value=f"<@{oficial_id}>" if oficial_id else "Desconocido", inline=False)
+            embed.add_field(name="👮 Confirmado por", value=interaction.user.mention, inline=False)
             embed.add_field(name="⚖️ Infracción", value=multa['infraccion'], inline=False)
             embed.add_field(name="💰 Monto pagado", value=f"**${monto}**", inline=True)
             embed.set_footer(text=f"Pago confirmado el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
             
             await interaction.response.send_message(embed=embed)
-            
-            if oficial_id:
-                await canal.send(f"<@{oficial_id}> ✅ El ciudadano {interaction.user.mention} ha pagado su multa.")
+            await interaction.channel.send(f"✅ {usuario.mention} ¡Tu multa ha sido pagada! 👮 Confirmado por {interaction.user.mention}")
             return
     
-    # Caso 3: El monto no coincide con ninguna multa
     await interaction.response.send_message(
-        f"⚠️ Pagaste **${monto}** pero tus multas pendientes son:\n" +
-        "\n".join(f"• ${multa['precio']} - {multa['infraccion']}" for _, multa in multas_pendientes) +
-        f"\n\nTotal adeudado: **${total_adeudado}**\n"
-        f"Si pagaste el total, escribe `!pay <@{bot.user.id}> {total_adeudado}` y luego `/confirmar_pago` nuevamente.",
+        f"⚠️ {usuario.mention} debe ${total_adeudado} en total, no ${monto}.",
         ephemeral=True
     )
 
@@ -988,95 +886,36 @@ async def on_message(message):
     if message.content.lower().startswith("!pay"):
         partes = message.content.split()
         if len(partes) >= 3:
-            mencion = partes[1]
+            nombre_bot = partes[1].lower()
             monto_str = partes[2]
             
-            if monto_str.isdigit() and (mencion == f"<@{bot.user.id}>" or mencion == f"<@!{bot.user.id}>"):
+            if monto_str.isdigit() and ("district99bot" in nombre_bot or "district" in nombre_bot):
                 monto = int(monto_str)
-                user_id = str(message.author.id)
                 user_mention = message.author.mention
+                user_name = message.author.name
+                user_id = str(message.author.id)
                 
-                # Guardar el pago pendiente temporalmente
-                PAGOS_PENDIENTES[user_id] = {
-                    "monto": monto,
-                    "timestamp": datetime.now(timezone.utc),
-                    "mensaje_id": message.id
-                }
+                # Verificar si el usuario tiene multas pendientes
+                multas = cargar(MULTAS_FILE)
+                historial = multas.get("historial", [])
+                tiene_multas = False
+                for multa in historial:
+                    if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
+                        tiene_multas = True
+                        break
                 
-                # Esperar respuesta de UnbelievaBoat (5 segundos)
-                def check(m):
-                    return (m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)) and user_mention in m.content
-                
-                try:
-                    respuesta = await bot.wait_for('message', timeout=5.0, check=check)
-                    contenido = respuesta.content.lower()
-                    print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
-                    
-                    # ========== PALABRAS CLAVE DE RECHAZO ==========
-                    rechazo = [
-                        "don't have that much money",
-                        "insufficient",
-                        "not enough",
-                        "you don't have",
-                        "you have insufficient",
-                        "you currently have",
-                        "you only have",
-                        "don't have enough",
-                        "you do not have"
-                    ]
-                    
-                    # ========== PALABRAS CLAVE DE ÉXITO ==========
-                    exito = [
-                        "sent",
-                        "paid",
-                        "success",
-                        "transferred",
-                        "gave",
-                        "✅",
-                        "successfully",
-                        "completed"
-                    ]
-                    
-                    # Verificar si fue rechazado
-                    if any(word in contenido for word in rechazo):
-                        await message.channel.send(
-                            f"{user_mention} ❌ **PAGO RECHAZADO POR UNBELIEVABOAT**\n"
-                            f"No tienes suficiente dinero en mano para pagar **${monto}**.\n"
-                            f"💰 Tu saldo actual es de **$0** en mano.\n"
-                            f"🏦 **Alternativas:** Retira dinero del banco con `!withdraw [cantidad]`"
-                        )
-                        # ELIMINAR el pago pendiente
-                        if user_id in PAGOS_PENDIENTES:
-                            del PAGOS_PENDIENTES[user_id]
-                            print(f"❌ Pago rechazado y eliminado para {user_id}")
-                        return
-                    
-                    # Verificar si fue exitoso
-                    elif any(word in contenido for word in exito):
-                        await message.channel.send(
-                            f"{user_mention} ✅ **PAGO EXITOSO**\n"
-                            f"Ahora usa `/confirmar_pago` para registrar el pago en el sistema."
-                        )
-                        return
-                    
-                    else:
-                        await message.channel.send(
-                            f"{user_mention} ⚠️ No pude verificar el estado de tu pago automáticamente.\n"
-                            f"Si el pago fue exitoso, usa `/confirmar_pago` para registrarlo."
-                        )
-                        return
-                        
-                except TimeoutError:
-                    print("⏰ No se recibió respuesta de UnbelievaBoat.")
+                if not tiene_multas:
                     await message.channel.send(
-                        f"{user_mention} ⚠️ No pude verificar tu pago automáticamente.\n"
-                        f"Si el pago fue exitoso, usa `/confirmar_pago` para registrarlo.\n"
-                        f"Si no tienes suficiente dinero, el pago fue rechazado."
+                        f"{user_mention} ✅ No tienes multas pendientes. ¡Estás al día!"
                     )
                     return
-                except Exception as e:
-                    print(f"❌ Error al procesar pago: {e}")
-                    return
+                
+                await message.channel.send(
+                    f"📢 **PAGO DETECTADO**\n"
+                    f"{user_mention} dice que pagó **${monto}** a District99Bot.\n"
+                    f"👮 **Oficiales:** Verifiquen en UnbelievaBoat y usen:\n"
+                    f"`/confirmar_pago usuario:@{user_name} monto:{monto}`"
+                )
     
     await bot.process_commands(message)
 
