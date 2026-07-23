@@ -775,6 +775,7 @@ async def pagar_multa(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+# ==================== CONFIRMAR PAGO CON VERIFICACIÓN DE SALDO ====================
 @bot.tree.command(name="confirmar_pago", description="💰 Confirmar el pago de una multa")
 async def confirmar_pago(interaction: discord.Interaction):
     """Confirma que el usuario realizó el pago y marca la multa como pagada"""
@@ -803,7 +804,7 @@ async def confirmar_pago(interaction: discord.Interaction):
     
     # Verificar que el pago no haya expirado (10 minutos)
     tiempo_transcurrido = (datetime.now(timezone.utc) - pago_data["timestamp"]).total_seconds()
-    if tiempo_transcurrido > 600:  # 10 minutos
+    if tiempo_transcurrido > 600:
         del PAGOS_PENDIENTES[user_id]
         await interaction.response.send_message(
             "⏰ El tiempo para confirmar el pago ha expirado (10 minutos). Usa `!pay` nuevamente.",
@@ -815,7 +816,6 @@ async def confirmar_pago(interaction: discord.Interaction):
     multas = cargar(MULTAS_FILE)
     historial = multas.get("historial", [])
     
-    # Buscar multas no pagadas del usuario
     multas_pendientes = []
     for i, multa in enumerate(historial):
         if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
@@ -829,9 +829,56 @@ async def confirmar_pago(interaction: discord.Interaction):
         )
         return
     
-    # Calcular total adeudado
     total_adeudado = sum(multa['precio'] for _, multa in multas_pendientes)
     
+    # ========== VERIFICAR SALDO CON UNBELIEVABOAT ==========
+    # Intentar obtener el saldo del usuario
+    await canal.send(f"!bal {interaction.user.display_name}")
+    
+    # Esperar respuesta de UnbelievaBoat (máximo 5 segundos)
+    def check(m):
+        return (m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)) and interaction.user.mention in m.content
+    
+    try:
+        respuesta = await bot.wait_for('message', timeout=5.0, check=check)
+        contenido = respuesta.content
+        print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
+        
+        # Buscar el saldo en el mensaje (formato: Cash: $XXXX)
+        import re
+        match = re.search(r'Cash:\s*\$\s*([0-9,]+)', contenido)
+        if match:
+            saldo_str = match.group(1).replace(',', '')
+            saldo = int(saldo_str)
+            print(f"💰 Saldo de {interaction.user.name}: ${saldo}")
+            
+            if saldo < monto:
+                await interaction.response.send_message(
+                    f"❌ **PAGO CANCELADO**\n"
+                    f"No tienes suficiente dinero en mano para pagar **${monto}**.\n"
+                    f"💰 Tu saldo actual: **${saldo}**\n"
+                    f"📌 Total adeudado: **${total_adeudado}**\n\n"
+                    f"**Alternativas:**\n"
+                    f"1. Retira dinero del banco con `!withdraw [cantidad]`\n"
+                    f"2. Usa `!bal` para ver tu saldo completo\n"
+                    f"3. Vuelve a intentar con `!pay <@{bot.user.id}> [monto]`",
+                    ephemeral=True
+                )
+                return
+        else:
+            print("⚠️ No se pudo detectar el saldo en el mensaje de UnbelievaBoat.")
+    except TimeoutError:
+        print("⏰ Tiempo de espera agotado. No se recibió respuesta de UnbelievaBoat.")
+        await interaction.response.send_message(
+            "⚠️ No se pudo verificar tu saldo automáticamente.\n"
+            "Por favor, usa `!bal` primero para verificar tu saldo y luego intenta nuevamente.",
+            ephemeral=True
+        )
+        return
+    except Exception as e:
+        print(f"❌ Error al verificar saldo: {e}")
+    
+    # ========== PROCESAR PAGO ==========
     # Caso 1: Pagó el total exacto (todas las multas)
     if monto == total_adeudado:
         oficiales_notificados = set()
@@ -1003,3 +1050,4 @@ except Exception as e:
     print(f"❌ ERROR FATAL: {e}")
     import traceback
     traceback.print_exc()
+    
