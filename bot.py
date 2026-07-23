@@ -214,8 +214,7 @@ async def eliminar_dni(interaction: discord.Interaction):
         pass
     
     await interaction.response.send_message("🗑️ Tu DNI ha sido eliminado", ephemeral=True)
-
-# ==================== ESCENAS ====================
+    # ==================== ESCENAS ====================
 @bot.tree.command(name="abrir_escena", description="🎬 Abrir sesion - SOLO HOSTS")
 @app_commands.describe(
     vias="1 o 2",
@@ -355,7 +354,8 @@ async def cerrar_escena(interaction: discord.Interaction):
     embed.add_field(name="⭐", value="No olvides evaluar al staff con `/evaluar_staff`", inline=False)
     
     await interaction.response.send_message(embed=embed)
-    # ==================== VOTACIONES ====================
+
+# ==================== VOTACIONES ====================
 class VotoView(discord.ui.View):
     def __init__(self, channel_id: str):
         super().__init__(timeout=None)
@@ -457,8 +457,7 @@ async def cerrar_votacion(interaction: discord.Interaction):
     guardar(VOTACIONES_FILE, votaciones)
     
     await interaction.response.send_message("🔒 Votacion cerrada")
-
-# ==================== AUTOS ====================
+    # ==================== AUTOS ====================
 @bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehiculo con foto")
 @app_commands.describe(
     usuario_roblox="Tu usuario de Roblox",
@@ -578,7 +577,8 @@ async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
     embed.set_footer(text=f"Auto eliminado el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
-    # ==================== MULTAS ====================
+
+# ==================== MULTAS ====================
 @bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
 @app_commands.describe(
     infractor="Usuario infractor",
@@ -713,8 +713,7 @@ async def mis_multas(interaction: discord.Interaction):
     embed.set_footer(text="Mostrando ultimas 10 multas")
     
     await interaction.response.send_message(embed=embed)
-
-# ==================== PAGAR MULTAS ====================
+    # ==================== PAGAR MULTAS ====================
 @bot.tree.command(name="pagar_multa", description="💰 Ver tus multas pendientes para pagar")
 async def pagar_multa(interaction: discord.Interaction):
     """Muestra las multas pendientes del usuario (solo él puede verlo)"""
@@ -775,10 +774,10 @@ async def pagar_multa(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# ==================== CONFIRMAR PAGO CON VERIFICACIÓN DE SALDO ====================
+# ==================== CONFIRMAR PAGO ====================
 @bot.tree.command(name="confirmar_pago", description="💰 Confirmar el pago de una multa")
 async def confirmar_pago(interaction: discord.Interaction):
-    """Confirma que el usuario realizó el pago y marca la multa como pagada"""
+    """Confirma el pago de una multa (solo si UnbelievaBoat lo aceptó)"""
     
     user_id = str(interaction.user.id)
     canal = interaction.channel
@@ -794,7 +793,9 @@ async def confirmar_pago(interaction: discord.Interaction):
     # Verificar si el usuario tiene un pago pendiente
     if user_id not in PAGOS_PENDIENTES:
         await interaction.response.send_message(
-            "❌ No tienes un pago pendiente. Primero escribe `!pay <@District99Bot> [monto]` en este canal.",
+            "❌ No tienes un pago pendiente.\n"
+            "Primero escribe `!pay <@District99Bot> [monto]` en este canal.\n"
+            "**Asegúrate de tener suficiente dinero en mano.**",
             ephemeral=True
         )
         return
@@ -807,7 +808,8 @@ async def confirmar_pago(interaction: discord.Interaction):
     if tiempo_transcurrido > 600:
         del PAGOS_PENDIENTES[user_id]
         await interaction.response.send_message(
-            "⏰ El tiempo para confirmar el pago ha expirado (10 minutos). Usa `!pay` nuevamente.",
+            "⏰ El tiempo para confirmar el pago ha expirado (10 minutos).\n"
+            "Usa `!pay` nuevamente.",
             ephemeral=True
         )
         return
@@ -830,53 +832,6 @@ async def confirmar_pago(interaction: discord.Interaction):
         return
     
     total_adeudado = sum(multa['precio'] for _, multa in multas_pendientes)
-    
-    # ========== VERIFICAR SALDO CON UNBELIEVABOAT ==========
-    # Intentar obtener el saldo del usuario usando la mención
-    await canal.send(f"!bal {interaction.user.mention}")
-    
-    # Esperar respuesta de UnbelievaBoat (máximo 5 segundos)
-    def check(m):
-        return (m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)) and interaction.user.mention in m.content
-    
-    try:
-        respuesta = await bot.wait_for('message', timeout=5.0, check=check)
-        contenido = respuesta.content
-        print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
-        
-        # Buscar el saldo en el mensaje (formato: Cash: $XXXX)
-        import re
-        match = re.search(r'Cash:\s*\$\s*([0-9,]+)', contenido)
-        if match:
-            saldo_str = match.group(1).replace(',', '')
-            saldo = int(saldo_str)
-            print(f"💰 Saldo de {interaction.user.name}: ${saldo}")
-            
-            if saldo < monto:
-                await interaction.response.send_message(
-                    f"❌ **PAGO CANCELADO**\n"
-                    f"No tienes suficiente dinero en mano para pagar **${monto}**.\n"
-                    f"💰 Tu saldo actual: **${saldo}**\n"
-                    f"📌 Total adeudado: **${total_adeudado}**\n\n"
-                    f"**Alternativas:**\n"
-                    f"1. Retira dinero del banco con `!withdraw [cantidad]`\n"
-                    f"2. Usa `!bal` para ver tu saldo completo\n"
-                    f"3. Vuelve a intentar con `!pay <@{bot.user.id}> [monto]`",
-                    ephemeral=True
-                )
-                return
-        else:
-            print("⚠️ No se pudo detectar el saldo en el mensaje de UnbelievaBoat.")
-    except TimeoutError:
-        print("⏰ Tiempo de espera agotado. No se recibió respuesta de UnbelievaBoat.")
-        await interaction.response.send_message(
-            "⚠️ No se pudo verificar tu saldo automáticamente.\n"
-            "Por favor, usa `!bal` primero para verificar tu saldo y luego intenta nuevamente.",
-            ephemeral=True
-        )
-        return
-    except Exception as e:
-        print(f"❌ Error al verificar saldo: {e}")
     
     # ========== PROCESAR PAGO ==========
     # Caso 1: Pagó el total exacto (todas las multas)
@@ -1016,29 +971,103 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
 
-# ==================== EVENTO ON_MESSAGE (DETECTAR !pay) ====================
+# ==================== EVENTO ON_MESSAGE ====================
 @bot.event
 async def on_message(message):
     if message.author.id == bot.user.id:
         return
     
-    if message.channel.id == CANAL_PAGOS_ID:
-        if message.content.lower().startswith("!pay"):
-            partes = message.content.split()
-            if len(partes) >= 3:
-                mencion = partes[1]
-                monto_str = partes[2]
-                if monto_str.isdigit() and (mencion == f"<@{bot.user.id}>" or mencion == f"<@!{bot.user.id}>"):
-                    monto = int(monto_str)
-                    user_id = str(message.author.id)
-                    PAGOS_PENDIENTES[user_id] = {
-                        "monto": monto,
-                        "timestamp": datetime.now(timezone.utc)
-                    }
+    # Solo procesar en el canal de pagos
+    if message.channel.id != CANAL_PAGOS_ID:
+        await bot.process_commands(message)
+        return
+    
+    # Detectar comando !pay
+    if message.content.lower().startswith("!pay"):
+        partes = message.content.split()
+        if len(partes) >= 3:
+            mencion = partes[1]
+            monto_str = partes[2]
+            
+            if monto_str.isdigit() and (mencion == f"<@{bot.user.id}>" or mencion == f"<@!{bot.user.id}>"):
+                monto = int(monto_str)
+                user_id = str(message.author.id)
+                user_mention = message.author.mention
+                
+                # Guardar el pago pendiente temporalmente
+                PAGOS_PENDIENTES[user_id] = {
+                    "monto": monto,
+                    "timestamp": datetime.now(timezone.utc),
+                    "mensaje_id": message.id
+                }
+                
+                # Esperar respuesta de UnbelievaBoat (5 segundos)
+                def check(m):
+                    return (m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)) and user_mention in m.content
+                
+                try:
+                    respuesta = await bot.wait_for('message', timeout=5.0, check=check)
+                    contenido = respuesta.content.lower()
+                    print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
+                    
+                    # Palabras clave de rechazo
+                    rechazo = [
+                        "don't have that much money",
+                        "insufficient",
+                        "not enough",
+                        "you don't have",
+                        "you have insufficient",
+                        "you currently have"
+                    ]
+                    
+                    # Palabras clave de éxito
+                    exito = [
+                        "sent",
+                        "paid",
+                        "success",
+                        "transferred",
+                        "gave",
+                        "✅"
+                    ]
+                    
+                    # Verificar si fue rechazado
+                    if any(word in contenido for word in rechazo):
+                        await message.channel.send(
+                            f"{user_mention} ❌ **PAGO RECHAZADO POR UNBELIEVABOAT**\n"
+                            f"No tienes suficiente dinero en mano para pagar **${monto}**.\n"
+                            f"💰 Tu saldo actual es de **$0** en mano.\n"
+                            f"🏦 **Alternativas:** Retira dinero del banco con `!withdraw [cantidad]`"
+                        )
+                        if user_id in PAGOS_PENDIENTES:
+                            del PAGOS_PENDIENTES[user_id]
+                        return
+                    
+                    # Verificar si fue exitoso
+                    elif any(word in contenido for word in exito):
+                        await message.channel.send(
+                            f"{user_mention} ✅ **PAGO EXITOSO**\n"
+                            f"Ahora usa `/confirmar_pago` para registrar el pago en el sistema."
+                        )
+                        return
+                    
+                    else:
+                        await message.channel.send(
+                            f"{user_mention} ⚠️ No pude verificar el estado de tu pago automáticamente.\n"
+                            f"Si el pago fue exitoso, usa `/confirmar_pago` para registrarlo."
+                        )
+                        return
+                        
+                except TimeoutError:
+                    print("⏰ No se recibió respuesta de UnbelievaBoat.")
                     await message.channel.send(
-                        f"{message.author.mention} ✅ He detectado tu pago de **${monto}**. "
-                        f"Ahora usa `/confirmar_pago` para confirmarlo."
+                        f"{user_mention} ⚠️ No pude verificar tu pago automáticamente.\n"
+                        f"Si el pago fue exitoso, usa `/confirmar_pago` para registrarlo.\n"
+                        f"Si no tienes suficiente dinero, el pago fue rechazado."
                     )
+                    return
+                except Exception as e:
+                    print(f"❌ Error al procesar pago: {e}")
+                    return
     
     await bot.process_commands(message)
 
