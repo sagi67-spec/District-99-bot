@@ -802,18 +802,13 @@ async def on_message(message):
     if message.content.lower().startswith("!pay"):
         partes = message.content.split()
         if len(partes) >= 3:
-            # El monto es la ÚLTIMA parte (siempre el número)
+            # El monto es la ÚLTIMA parte
             monto_str = partes[-1]
             
             # El nombre del bot es TODO lo que está entre !pay y el monto
-            # Ejemplo: "!pay @District 99 Bot 6767" → partes = ["!pay", "@District", "99", "Bot", "6767"]
-            # nombre_bot = "@District 99 Bot"
             nombre_bot = " ".join(partes[1:-1]).lower()
-            
-            # Limpiar el nombre: quitar @, espacios, para buscar "district"
             nombre_limpio = nombre_bot.replace("@", "").replace(" ", "")
             
-            # Verificar si contiene "district" (el nombre del bot es District 99 Bot)
             if monto_str.isdigit() and "district" in nombre_limpio:
                 monto = int(monto_str)
                 user_id = str(message.author.id)
@@ -822,11 +817,9 @@ async def on_message(message):
                 
                 print(f"🔍 Pago detectado: {user_name} pagó ${monto}")
                 
-                # Buscar multas pendientes del usuario
                 multas = cargar(MULTAS_FILE)
                 historial = multas.get("historial", [])
                 
-                # Verificar si el usuario tiene multas pendientes
                 tiene_pendientes = False
                 for multa in historial:
                     if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
@@ -839,7 +832,6 @@ async def on_message(message):
                     )
                     return
                 
-                # Buscar multa no pagada con ese monto exacto
                 multa_encontrada = False
                 oficial_id = None
                 infraccion = None
@@ -854,7 +846,6 @@ async def on_message(message):
                         print(f"✅ Multa encontrada y pagada: {infraccion} - ${monto}")
                         break
                 
-                # Si no encontró multa con ese monto exacto
                 if not multa_encontrada:
                     pendientes = []
                     for i, multa in enumerate(historial):
@@ -868,7 +859,7 @@ async def on_message(message):
                             multa_encontrada = True
                             oficial_id = historial[i].get('oficial_id')
                             infraccion = historial[i].get('infraccion')
-                            print(f"✅ Multa encontrada (segunda pasada) y pagada: {infraccion} - ${monto}")
+                            print(f"✅ Multa encontrada y pagada: {infraccion} - ${monto}")
                             break
                 
                 guardar(MULTAS_FILE, multas)
@@ -886,7 +877,6 @@ async def on_message(message):
                             f"👮 <@{oficial_id}> El ciudadano {user_mention} ha pagado su multa de **${monto}**."
                         )
                 else:
-                    # Mostrar multas pendientes del usuario
                     pendientes_texto = ""
                     for multa in historial:
                         if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
