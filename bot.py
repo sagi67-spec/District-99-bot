@@ -710,7 +710,7 @@ async def mis_multas(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed)
 
-# ==================== PAGAR MULTAS (UNBELIEVABOAT) ====================
+# ==================== PAGAR MULTAS (UNBELIEVABOAT CORREGIDO) ====================
 @bot.tree.command(name="pagar_multa", description="💰 Pagar una multa")
 @app_commands.describe(
     numero_multa="Número de la multa a pagar (1, 2, 3...)",
@@ -741,14 +741,14 @@ async def pagar_multa(interaction: discord.Interaction, numero_multa: int = None
             total += multa['precio']
             indices_a_pagar.append(idx)
         
-        # Verificar saldo con UnbelievaBoat
         canal_pagos = bot.get_channel(CANAL_PAGOS_ID)
         if not canal_pagos:
             await interaction.response.send_message("❌ No encontré el canal de pagos. Contacta a un administrador.", ephemeral=True)
             return
         
-        # Enviar comando de pago a UnbelievaBoat
-        await canal_pagos.send(f"!bal {interaction.user.name}")
+        # Enviar comando de pago a UnbelievaBoat usando el ID del bot
+        await canal_pagos.send(f"!pay <@{bot.user.id}> {total}")
+        await canal_pagos.send(f"💰 {interaction.user.mention} está pagando todas sus multas (${total})")
         
         # Marcar multas como pagadas
         for idx in indices_a_pagar:
@@ -756,7 +756,6 @@ async def pagar_multa(interaction: discord.Interaction, numero_multa: int = None
             historial[idx]['fecha_pago'] = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
         guardar(MULTAS_FILE, multas)
         
-        # Notificar al oficial
         oficial_id = None
         for idx in indices_a_pagar:
             if not oficial_id:
@@ -773,7 +772,7 @@ async def pagar_multa(interaction: discord.Interaction, numero_multa: int = None
         
         await interaction.response.send_message(embed=embed)
         if oficial_id:
-            await canal_pagos.send(f"<@{oficial_id}> ¡Un ciudadano ha pagado sus multas!")
+            await canal_pagos.send(f"<@{oficial_id}> ¡El ciudadano {interaction.user.mention} ha pagado sus multas!")
         return
     
     # Pagar una multa específica
@@ -788,21 +787,20 @@ async def pagar_multa(interaction: discord.Interaction, numero_multa: int = None
     idx, multa = mis_multas_pendientes[numero_multa - 1]
     monto = multa['precio']
     
-    # Verificar saldo con UnbelievaBoat
     canal_pagos = bot.get_channel(CANAL_PAGOS_ID)
     if not canal_pagos:
         await interaction.response.send_message("❌ No encontré el canal de pagos. Contacta a un administrador.", ephemeral=True)
         return
     
-    # Enviar comando de pago a UnbelievaBoat
-    await canal_pagos.send(f"!pay @District99Bot {monto}")
+    # Enviar comando de pago a UnbelievaBoat usando el ID del bot
+    await canal_pagos.send(f"!pay <@{bot.user.id}> {monto}")
+    await canal_pagos.send(f"💰 {interaction.user.mention} está pagando una multa (${monto})")
     
     # Marcar multa como pagada
     historial[idx]['pagada'] = True
     historial[idx]['fecha_pago'] = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
     guardar(MULTAS_FILE, multas)
     
-    # Notificar al oficial
     oficial_id = multa.get('oficial_id')
     
     embed = discord.Embed(
@@ -817,7 +815,6 @@ async def pagar_multa(interaction: discord.Interaction, numero_multa: int = None
     
     await interaction.response.send_message(embed=embed)
     
-    # Notificar al oficial
     if oficial_id:
         await canal_pagos.send(f"<@{oficial_id}> ¡El ciudadano {interaction.user.mention} ha pagado su multa!")
 
