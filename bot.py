@@ -329,8 +329,7 @@ async def cerrar_votacion(interaction: discord.Interaction):
     del votaciones[channel_id]
     guardar(VOTACIONES_FILE, votaciones)
     await interaction.response.send_message("🔒 Votacion cerrada")
-
-# ==================== AUTOS ====================
+    # ==================== AUTOS ====================
 @bot.tree.command(name="registrar_auto", description="🚗 Registrar auto")
 async def registrar_auto(interaction: discord.Interaction):
     class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehiculo"):
@@ -434,4 +433,40 @@ async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member)
         que_hizo = discord.ui.TextInput(label="Que hizo?", placeholder="Ej: Ayudo en el rol", max_length=100)
         calificacion = discord.ui.TextInput(label="Calificacion (1-10)", placeholder="Ej: 8", max_length=2)
         amable = discord.ui.TextInput(label="Fue amable?", placeholder="Ej: Si, muy atento", max_length=150)
-        qu
+        queja = discord.ui.TextInput(label="Sugerencias", required=False, max_length=300)
+        async def on_submit(self, modal_interaction: discord.Interaction):
+            try:
+                nota = int(self.calificacion.value)
+                if not 1 <= nota <= 10:
+                    raise ValueError
+            except:
+                await modal_interaction.response.send_message("⚠️ 1-10", ephemeral=True)
+                return
+            evaluaciones = cargar(EVALUACIONES_FILE)
+            clave = str(staff.id)
+            evaluaciones.setdefault(clave, []).append({
+                "staff": str(staff),
+                "evaluador": str(modal_interaction.user),
+                "que_hizo": self.que_hizo.value,
+                "calificacion": nota,
+                "amable": self.amable.value,
+                "queja": self.queja.value or "Ninguna",
+                "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"),
+            })
+            guardar(EVALUACIONES_FILE, evaluaciones)
+            estrellas = "⭐" * round(nota / 2)
+            embed = discord.Embed(title="📝 EVALUACION REGISTRADA", color=discord.Color.purple())
+            embed.add_field(name="⭐ Calificacion", value=f"{estrellas} ({nota}/10)", inline=False)
+            embed.add_field(name="🤝 Amabilidad", value=self.amable.value, inline=False)
+            embed.add_field(name="💬 Sugerencias", value=self.queja.value or "Ninguna", inline=False)
+            await modal_interaction.response.send_message(content=staff.mention, embed=embed)
+    await interaction.response.send_modal(EvalModal(staff))
+
+# ==================== INICIAR ====================
+print("🚀 Intentando conectar a Discord...")
+try:
+    bot.run(TOKEN)
+except Exception as e:
+    print(f"❌ ERROR FATAL: {e}")
+    import traceback
+    traceback.print_exc()
