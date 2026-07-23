@@ -204,11 +204,11 @@ async def eliminar_dni(interaction: discord.Interaction):
     
     await interaction.response.send_message("🗑️ Tu DNI ha sido eliminado", ephemeral=True)
 
-# ==================== ESCENAS (CON VELOCIDAD ADELANTAMIENTO) ====================
+# ==================== ESCENAS (CON mph) ====================
 @bot.tree.command(name="abrir_escena", description="🎬 Abrir sesion - SOLO HOSTS")
 @app_commands.describe(
     vias="1 o 2",
-    velocidad_maxima="km/h",
+    velocidad_maxima="Limite de velocidad (mph)",
     adelantamientos="Selecciona Si o No",
     link="Link del servidor"
 )
@@ -225,16 +225,14 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         await interaction.response.send_message("⚠️ Velocidad: numero", ephemeral=True)
         return
     
-    # Validar que solo sea Si o No
     if adelantamientos.lower() not in ["si", "no"]:
         await interaction.response.send_message("⚠️ Solo puedes seleccionar `Si` o `No`", ephemeral=True)
         return
     
-    # SI elige "Si", pedir velocidad de adelantamiento
     if adelantamientos.lower() == "si":
         class VelocidadAdelantoModal(discord.ui.Modal, title="🚗 Velocidad de Adelantamiento"):
             velocidad_adelanto = discord.ui.TextInput(
-                label="Velocidad permitida para adelantar (km/h)",
+                label="Velocidad permitida para adelantar (mph)",
                 placeholder="Ej: 80",
                 max_length=10,
                 required=True
@@ -272,9 +270,9 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
                     color=discord.Color.gold()
                 )
                 embed.add_field(name="🛣️ Vias", value=f"{vias} vias", inline=True)
-                embed.add_field(name="🚗 Velocidad Max", value=f"{velocidad_maxima} km/h", inline=True)
+                embed.add_field(name="🚗 Velocidad Max", value=f"{velocidad_maxima} mph", inline=True)
                 embed.add_field(name="🏁 Adelantamientos", value="✅ Permitidos", inline=True)
-                embed.add_field(name="🚀 Vel. Adelanto", value=f"{velocidad_adelanto} km/h", inline=True)
+                embed.add_field(name="🚀 Vel. Adelanto", value=f"{velocidad_adelanto} mph", inline=True)
                 embed.add_field(name="👑 Host", value=modal_interaction.user.mention, inline=False)
                 embed.add_field(name="🔗 Link", value=f"[Haz clic aqui]({link})", inline=False)
                 embed.set_footer(text="¡Todos con DNI listo para el rol! 🪪")
@@ -284,7 +282,6 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         await interaction.response.send_modal(VelocidadAdelantoModal())
         return
     
-    # Si NO se permiten adelantamientos
     escenas = cargar(ESCENAS_FILE)
     channel_id = str(interaction.channel_id)
     
@@ -309,7 +306,7 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         color=discord.Color.gold()
     )
     embed.add_field(name="🛣️ Vias", value=f"{vias} vias", inline=True)
-    embed.add_field(name="🚗 Velocidad Max", value=f"{velocidad_maxima} km/h", inline=True)
+    embed.add_field(name="🚗 Velocidad Max", value=f"{velocidad_maxima} mph", inline=True)
     embed.add_field(name="🏁 Adelantamientos", value="❌ No permitidos", inline=True)
     embed.add_field(name="👑 Host", value=interaction.user.mention, inline=False)
     embed.add_field(name="🔗 Link", value=f"[Haz clic aqui]({link})", inline=False)
@@ -450,47 +447,40 @@ async def cerrar_votacion(interaction: discord.Interaction):
     
     await interaction.response.send_message("🔒 Votacion cerrada")
 
-# ==================== AUTOS (CORREGIDO - CON CAMPOS NORMALES) ====================
+# ==================== AUTOS (CORREGIDO - FOTO OBLIGATORIA) ====================
 @bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehiculo con foto")
 @app_commands.describe(
-    usuario_discord="Tu usuario de Discord (para que te pongas ping)",
     usuario_roblox="Tu usuario de Roblox",
     placa="Placa del vehiculo",
     modelo="Modelo/Marca del vehiculo",
     color="Color del vehiculo",
-    foto="Sube una foto del vehiculo (adjunta una imagen)"
+    foto="Sube una foto del vehiculo (OBLIGATORIO - adjunta una imagen)"
 )
 async def registrar_auto(
     interaction: discord.Interaction,
-    usuario_discord: discord.Member,
     usuario_roblox: str,
     placa: str,
     modelo: str,
     color: str,
-    foto: discord.Attachment = None
+    foto: discord.Attachment
 ):
-    """Registra un vehiculo con opcion de subir foto directamente desde Discord"""
-    
-    # Verificar que el usuario_discord sea el mismo que ejecuta el comando o que sea un usuario válido
-    if usuario_discord.id != interaction.user.id:
-        await interaction.response.send_message("⚠️ Solo puedes registrar autos para ti mismo. Usa tu propio usuario.", ephemeral=True)
-        return
+    """Registra un vehiculo con foto OBLIGATORIA"""
     
     autos = cargar(AUTOS_FILE)
     user_id = str(interaction.user.id)
     
-    # Guardar la foto si se subió
-    foto_url = None
-    if foto:
-        foto_url = foto.url
+    # Verificar si la foto es válida (que sea una imagen)
+    if not foto.content_type or not foto.content_type.startswith('image/'):
+        await interaction.response.send_message("⚠️ El archivo debe ser una imagen (jpg, png, gif, etc.)", ephemeral=True)
+        return
     
     autos.setdefault(user_id, []).append({
-        "usuario_discord": str(usuario_discord),
+        "usuario_discord": str(interaction.user),
         "usuario_roblox": usuario_roblox,
         "placa": placa,
         "modelo": modelo,
         "color": color,
-        "foto": foto_url,
+        "foto": foto.url,
         "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
         "registrado_por": str(interaction.user)
     })
@@ -500,13 +490,12 @@ async def registrar_auto(
         title="🚗 ¡VEHICULO REGISTRADO!",
         color=discord.Color.green()
     )
-    embed.add_field(name="👤 Usuario Discord", value=usuario_discord.mention, inline=False)
+    embed.add_field(name="👤 Usuario Discord", value=interaction.user.mention, inline=False)
     embed.add_field(name="🎮 Usuario Roblox", value=usuario_roblox, inline=False)
     embed.add_field(name="📋 Modelo", value=modelo, inline=True)
     embed.add_field(name="🎨 Color", value=color, inline=True)
     embed.add_field(name="🅿️ Placa", value=placa, inline=True)
-    if foto_url:
-        embed.set_image(url=foto_url)
+    embed.set_image(url=foto.url)
     embed.set_footer(text=f"Registrado por {interaction.user.name}")
     
     await interaction.response.send_message(embed=embed)
