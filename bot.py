@@ -208,7 +208,6 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         await interaction.response.send_message("⛔ **No tienes permisos para usar este comando.**\nSolo los **Hosts** pueden abrir escenas.", ephemeral=True)
         return
     
-    # 🔥 VALIDACIÓN: Solo 1 o 2 vías
     if vias not in ["1", "2"]:
         await interaction.response.send_message("⚠️ **Vías inválidas.** Solo puedes seleccionar `1` o `2`.", ephemeral=True)
         return
@@ -217,7 +216,6 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         await interaction.response.send_message("⚠️ **Velocidad inválida.** Debe ser un número", ephemeral=True)
         return
     
-    # 🔥 VALIDACIÓN: Solo Si o No
     if adelantamientos.lower() not in ["si", "no"]:
         await interaction.response.send_message("⚠️ **Respuesta inválida.** Solo puedes seleccionar `Si` o `No`", ephemeral=True)
         return
@@ -231,9 +229,7 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
 
     adelanto_permitido = adelantamientos.lower() == "si"
     
-    # 🔥 Si adelantamientos es "Si", pedir velocidad de adelantamiento
     if adelanto_permitido:
-        # Creamos un modal para pedir la velocidad de adelantamiento
         class VelocidadAdelantoModal(discord.ui.Modal, title="🚗 Velocidad de Adelantamiento"):
             velocidad_adelanto = discord.ui.TextInput(
                 label="Velocidad permitida para adelantar (km/h)",
@@ -248,7 +244,6 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
                 
                 velocidad_adelanto = int(self.velocidad_adelanto.value)
                 
-                # Guardar la escena con velocidad de adelantamiento
                 escenas[channel_id] = {
                     "vias": vias,
                     "velocidad_maxima": velocidad_maxima,
@@ -280,7 +275,6 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         await interaction.response.send_modal(VelocidadAdelantoModal())
         return
     
-    # Si NO se permiten adelantamientos
     escenas[channel_id] = {
         "vias": vias,
         "velocidad_maxima": velocidad_maxima,
@@ -411,7 +405,6 @@ async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: in
         await interaction.response.send_message("⛔ **No tienes permisos para usar este comando.**\nSolo los **Hosts** pueden crear votaciones.", ephemeral=True)
         return
     
-    # 🔥 VALIDACIÓN: Solo entre 1 y 20 votos
     if not (1 <= votos_requeridos <= 20):
         await interaction.response.send_message("⚠️ **Número inválido.** Debe ser entre `1` y `20`.", ephemeral=True)
         return
@@ -487,4 +480,10 @@ class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehículo"):
         guardar(AUTOS_FILE, autos)
 
         embed = discord.Embed(
-        
+            title="🚗 **¡VEHÍCULO REGISTRADO!**",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="🎮 Roblox", value=self.usuario_roblox.value, inline=False)
+        embed.add_field(name="📋 Modelo", value=self.modelo.value, inline=True)
+        embed.add_field(name="🎨 Color", value=self.color.value, inline=True)
+        embed.add_field(n
