@@ -486,4 +486,4 @@ class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehículo"):
         embed.add_field(name="🎮 Roblox", value=self.usuario_roblox.value, inline=False)
         embed.add_field(name="📋 Modelo", value=self.modelo.value, inline=True)
         embed.add_field(name="🎨 Color", value=self.color.value, inline=True)
-        embed.add_field(n
+        embed.add_field(name="📢", value="**¡Todos con DNI listo para el rol!** 🪪", inline=False)
