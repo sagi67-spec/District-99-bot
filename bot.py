@@ -77,7 +77,8 @@ async def on_ready():
     fecha_nacimiento="Fecha (DD/MM/YYYY)",
     edad="Edad",
 )
-async def crear_dni(interaction, nombre, apellidos, fecha_nacimiento, edad):
+async def crear_dni(interaction: discord.Interaction, nombre: str, apellidos: str, fecha_nacimiento: str, edad: int):
+    #                ^^^^^ agregado tipo ^^^^^^^^   ^^^^^ tipo ^^   ^^^^^ tipo ^^      ^^^^^ tipo ^^      ^^^ tipo ^^
     if not validar_fecha(fecha_nacimiento):
         await interaction.response.send_message("⚠️ Usa: DD/MM/YYYY", ephemeral=True)
         return
@@ -112,7 +113,8 @@ async def crear_dni(interaction, nombre, apellidos, fecha_nacimiento, edad):
 
 @bot.tree.command(name="ver_dni", description="🔍 Ve un DNI")
 @app_commands.describe(usuario="Usuario (opcional)")
-async def ver_dni(interaction, usuario=None):
+async def ver_dni(interaction: discord.Interaction, usuario: discord.Member = None):
+    #                                               ^^^^ tipo ^^^
     objetivo = usuario or interaction.user
     dnis = cargar(DNI_FILE)
     datos = dnis.get(str(objetivo.id))
@@ -129,7 +131,8 @@ async def ver_dni(interaction, usuario=None):
     await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="eliminar_dni", description="🗑️ Elimina tu DNI")
-async def eliminar_dni(interaction):
+async def eliminar_dni(interaction: discord.Interaction):
+    #                     ^^^^ tipo ^^^
     dnis = cargar(DNI_FILE)
     if str(interaction.user.id) not in dnis:
         await interaction.response.send_message("❌ Sin DNI", ephemeral=True)
@@ -142,7 +145,8 @@ async def eliminar_dni(interaction):
 
 @bot.tree.command(name="abrir_escena", description="🎬 Abre sesión - SOLO HOSTS")
 @app_commands.describe(vias="1 o 2", velocidad_maxima="Números", adelantamientos="Sí/No", link="Link")
-async def abrir_escena(interaction, vias, velocidad_maxima, adelantamientos, link):
+async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_maxima: str, adelantamientos: str, link: str):
+    #                                               ^^^ tipo ^    ^^^^^^^^^^^ tipo ^   ^^^^^^^^^ tipo ^   ^^^ tipo ^
     if not es_host(interaction.user):
         await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
         return
@@ -187,7 +191,8 @@ async def abrir_escena(interaction, vias, velocidad_maxima, adelantamientos, lin
     await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="cerrar_escena", description="🔒 Cierra sesión - SOLO HOSTS")
-async def cerrar_escena(interaction):
+async def cerrar_escena(interaction: discord.Interaction):
+    #                     ^^^^ tipo ^^^
     if not es_host(interaction.user):
         await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
         return
@@ -265,7 +270,8 @@ class VotoView(discord.ui.View):
 
 @bot.tree.command(name="votacion_sesion", description="🗳️ Votación (0-20) - SOLO HOSTS")
 @app_commands.describe(votos_requeridos="1-20")
-async def votacion_sesion(interaction, votos_requeridos):
+async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: int):
+    #                                               ^^^^^^^ tipo ^^^
     if not es_host(interaction.user):
         await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
         return
@@ -299,7 +305,8 @@ async def votacion_sesion(interaction, votos_requeridos):
     await interaction.response.send_message(embed=embed, view=VotoView(interaction.channel_id))
 
 @bot.tree.command(name="cerrar_votacion", description="❌ Cierra votación - SOLO HOSTS")
-async def cerrar_votacion(interaction):
+async def cerrar_votacion(interaction: discord.Interaction):
+    #                     ^^^^ tipo ^^^
     if not es_host(interaction.user):
         await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
         return
@@ -322,7 +329,8 @@ class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehículo"):
     modelo = discord.ui.TextInput(label="Modelo/Marca", max_length=50)
     color = discord.ui.TextInput(label="Color", max_length=30)
 
-    async def on_submit(self, interaction):
+    async def on_submit(self, interaction: discord.Interaction):
+        #                     ^^^^ tipo ^^^
         autos = cargar(AUTOS_FILE)
         user_id = str(interaction.user.id)
         autos.setdefault(user_id, []).append({
@@ -343,12 +351,14 @@ class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehículo"):
         await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="registrar_auto", description="🚗 Registra tu vehículo")
-async def registrar_auto(interaction):
+async def registrar_auto(interaction: discord.Interaction):
+    #                     ^^^^ tipo ^^^
     await interaction.response.send_modal(AutoModal())
 
 @bot.tree.command(name="ver_autos", description="🚗 Ve autos registrados")
 @app_commands.describe(usuario="Usuario (opcional)")
-async def ver_autos(interaction, usuario=None):
+async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = None):
+    #                                               ^^^^ tipo ^^^
     objetivo = usuario or interaction.user
     autos = cargar(AUTOS_FILE)
     user_autos = autos.get(str(objetivo.id), [])
@@ -372,7 +382,8 @@ class MultiModal(discord.ui.Modal, title="🚨 Registrar Multa"):
     infraccion = discord.ui.TextInput(label="Infracción", max_length=100)
     precio = discord.ui.TextInput(label="Monto ($)", max_length=10)
 
-    async def on_submit(self, interaction):
+    async def on_submit(self, interaction: discord.Interaction):
+        #                     ^^^^ tipo ^^^
         if not es_policia(interaction.user):
             await interaction.response.send_message("⛔ Solo policía", ephemeral=True)
             return
@@ -398,14 +409,16 @@ class MultiModal(discord.ui.Modal, title="🚨 Registrar Multa"):
         await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="registrar_multa", description="🚨 Registra multa - SOLO POLICÍA")
-async def registrar_multa(interaction):
+async def registrar_multa(interaction: discord.Interaction):
+    #                     ^^^^ tipo ^^^
     if not es_policia(interaction.user):
         await interaction.response.send_message("⛔ Solo policía", ephemeral=True)
         return
     await interaction.response.send_modal(MultiModal())
 
 @bot.tree.command(name="historial_multas", description="📋 Historial de multas")
-async def historial_multas(interaction):
+async def historial_multas(interaction: discord.Interaction):
+    #                     ^^^^ tipo ^^^
     multas = cargar(MULTAS_FILE)
     historial = multas.get("historial", [])
     if not historial:
@@ -433,7 +446,8 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
         super().__init__()
         self.staff = staff
 
-    async def on_submit(self, interaction):
+    async def on_submit(self, interaction: discord.Interaction):
+        #                     ^^^^ tipo ^^^
         try:
             nota = int(self.calificacion.value.strip())
             if not 1 <= nota <= 10:
@@ -462,9 +476,4 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
         embed.add_field(name="💬 Sugerencias", value=self.queja.value or "Ninguna", inline=False)
         await interaction.response.send_message(content=self.staff.mention, embed=embed)
 
-@bot.tree.command(name="evaluar_staff", description="⭐ Evalúa al staff")
-@app_commands.describe(staff="Staff a evaluar")
-async def evaluar_staff(interaction, staff):
-    await interaction.response.send_modal(EvalModal(staff))
-
-bot.run(TOKEN)
+@bot.tree
