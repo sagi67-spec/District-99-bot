@@ -60,17 +60,25 @@ intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# ========== CREAR ARCHIVOS JSON SI NO EXISTEN ==========
+ARCHIVOS_JSON = [DNI_FILE, ESCENAS_FILE, EVALUACIONES_FILE, VOTACIONES_FILE, AUTOS_FILE, MULTAS_FILE]
+for archivo in ARCHIVOS_JSON:
+    if not os.path.exists(archivo):
+        with open(archivo, "w", encoding="utf-8") as f:
+            json.dump({}, f)
+        print(f"✅ Creado: {archivo}")
+
 @bot.event
 async def on_ready():
     try:
         synced = await bot.tree.sync()
-        print(f"✅ Bot online. {len(synced)} comandos.")
+        print(f"✅ Bot online. {len(synced)} comandos sincronizados.")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error al sincronizar: {e}")
 
 # ==================== DNI ====================
 
-@bot.tree.command(name="crear_dni", description="🪪 Crea el DNI de tu personaje")
+@bot.tree.command(name="crear_dni", description="Crea el DNI de tu personaje")
 @app_commands.describe(
     nombre="Nombre",
     apellidos="Apellidos",
@@ -78,7 +86,6 @@ async def on_ready():
     edad="Edad",
 )
 async def crear_dni(interaction: discord.Interaction, nombre: str, apellidos: str, fecha_nacimiento: str, edad: int):
-    #                ^^^^^ agregado tipo ^^^^^^^^   ^^^^^ tipo ^^   ^^^^^ tipo ^^      ^^^^^ tipo ^^      ^^^ tipo ^^
     if not validar_fecha(fecha_nacimiento):
         await interaction.response.send_message("⚠️ Usa: DD/MM/YYYY", ephemeral=True)
         return
@@ -111,10 +118,9 @@ async def crear_dni(interaction: discord.Interaction, nombre: str, apellidos: st
     embed.set_thumbnail(url=interaction.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="ver_dni", description="🔍 Ve un DNI")
+@bot.tree.command(name="ver_dni", description="Ve un DNI")
 @app_commands.describe(usuario="Usuario (opcional)")
 async def ver_dni(interaction: discord.Interaction, usuario: discord.Member = None):
-    #                                               ^^^^ tipo ^^^
     objetivo = usuario or interaction.user
     dnis = cargar(DNI_FILE)
     datos = dnis.get(str(objetivo.id))
@@ -130,9 +136,8 @@ async def ver_dni(interaction: discord.Interaction, usuario: discord.Member = No
     embed.set_thumbnail(url=objetivo.display_avatar.url)
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="eliminar_dni", description="🗑️ Elimina tu DNI")
+@bot.tree.command(name="eliminar_dni", description="Elimina tu DNI")
 async def eliminar_dni(interaction: discord.Interaction):
-    #                     ^^^^ tipo ^^^
     dnis = cargar(DNI_FILE)
     if str(interaction.user.id) not in dnis:
         await interaction.response.send_message("❌ Sin DNI", ephemeral=True)
@@ -143,30 +148,29 @@ async def eliminar_dni(interaction: discord.Interaction):
 
 # ==================== ESCENAS ====================
 
-@bot.tree.command(name="abrir_escena", description="🎬 Abre sesión - SOLO HOSTS")
-@app_commands.describe(vias="1 o 2", velocidad_maxima="Números", adelantamientos="Sí/No", link="Link")
+@bot.tree.command(name="abrir_escena", description="Abre sesion - SOLO HOSTS")
+@app_commands.describe(vias="1 o 2", velocidad_maxima="Numeros", adelantamientos="Si/No", link="Link")
 async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_maxima: str, adelantamientos: str, link: str):
-    #                                               ^^^ tipo ^    ^^^^^^^^^^^ tipo ^   ^^^^^^^^^ tipo ^   ^^^ tipo ^
     if not es_host(interaction.user):
         await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
         return
     if vias not in ["1", "2"]:
-        await interaction.response.send_message("⚠️ Vías: 1 o 2", ephemeral=True)
+        await interaction.response.send_message("⚠️ Vias: 1 o 2", ephemeral=True)
         return
     if not velocidad_maxima.isdigit():
-        await interaction.response.send_message("⚠️ Velocidad: números", ephemeral=True)
+        await interaction.response.send_message("⚠️ Velocidad: numeros", ephemeral=True)
         return
-    if adelantamientos.lower() not in ["sí", "si", "no"]:
-        await interaction.response.send_message("⚠️ Adelanto: Sí/No", ephemeral=True)
+    if adelantamientos.lower() not in ["si", "no"]:
+        await interaction.response.send_message("⚠️ Adelanto: Si/No", ephemeral=True)
         return
 
     escenas = cargar(ESCENAS_FILE)
     channel_id = str(interaction.channel_id)
     if channel_id in escenas:
-        await interaction.response.send_message("⚠️ Ya hay sesión abierta", ephemeral=True)
+        await interaction.response.send_message("⚠️ Ya hay sesion abierta", ephemeral=True)
         return
 
-    adelanto_permitido = adelantamientos.lower() in ["sí", "si"]
+    adelanto_permitido = adelantamientos.lower() == "si"
     escenas[channel_id] = {
         "vias": vias,
         "velocidad_maxima": velocidad_maxima,
@@ -179,20 +183,19 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
     guardar(ESCENAS_FILE, escenas)
 
     desc = (
-        f"🎬 **{NOMBRE_SERVIDOR}** - SESIÓN ABIERTA\n\n"
-        f"🔹 Vías: {vias}\n"
-        f"🔹 Velocidad máx: {velocidad_maxima} km/h\n"
+        f"🎬 **{NOMBRE_SERVIDOR}** - SESION ABIERTA\n\n"
+        f"🔹 Vias: {vias}\n"
+        f"🔹 Velocidad max: {velocidad_maxima} km/h\n"
         f"🔹 Adelantos: {'✅' if adelanto_permitido else '❌'}\n"
         f"🔹 Host: {interaction.user.mention}\n"
         f"🔗 Link: {link}\n\n"
         "¡Traigan su DNI! 🪪"
     )
-    embed = discord.Embed(title="📢 INICIO DE SESIÓN", description=desc, color=discord.Color.gold())
+    embed = discord.Embed(title="📢 INICIO DE SESION", description=desc, color=discord.Color.gold())
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="cerrar_escena", description="🔒 Cierra sesión - SOLO HOSTS")
+@bot.tree.command(name="cerrar_escena", description="Cierra sesion - SOLO HOSTS")
 async def cerrar_escena(interaction: discord.Interaction):
-    #                     ^^^^ tipo ^^^
     if not es_host(interaction.user):
         await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
         return
@@ -200,7 +203,7 @@ async def cerrar_escena(interaction: discord.Interaction):
     escenas = cargar(ESCENAS_FILE)
     channel_id = str(interaction.channel_id)
     if channel_id not in escenas:
-        await interaction.response.send_message("🚫 No hay sesión", ephemeral=True)
+        await interaction.response.send_message("🚫 No hay sesion", ephemeral=True)
         return
 
     escena = escenas[channel_id]
@@ -213,8 +216,8 @@ async def cerrar_escena(interaction: discord.Interaction):
     guardar(ESCENAS_FILE, escenas)
 
     embed = discord.Embed(
-        title="🔒 SESIÓN FINALIZADA",
-        description=f"¡Buen rol! Duración: {horas}h {minutos}m\n⭐ Califiquen con `/evaluar_staff`",
+        title="🔒 SESION FINALIZADA",
+        description=f"¡Buen rol! Duracion: {horas}h {minutos}m\n⭐ Califiquen con `/evaluar_staff`",
         color=discord.Color.red()
     )
     host_id = escena.get("host_id")
@@ -226,23 +229,23 @@ async def cerrar_escena(interaction: discord.Interaction):
 # ==================== VOTACIONES ====================
 
 class VotoView(discord.ui.View):
-    def __init__(self, channel_id):
+    def __init__(self, channel_id: str):
         super().__init__(timeout=None)
         self.channel_id = channel_id
 
     @discord.ui.button(label="Asistir", emoji="✅", style=discord.ButtonStyle.success)
-    async def asistir(self, interaction, button):
+    async def asistir(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._votar(interaction, "asistentes")
 
     @discord.ui.button(label="No asistir", emoji="❌", style=discord.ButtonStyle.danger)
-    async def no_asistir(self, interaction, button):
+    async def no_asistir(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._votar(interaction, "no_asistentes")
 
-    async def _votar(self, interaction, voto_tipo):
+    async def _votar(self, interaction: discord.Interaction, voto_tipo: str):
         votaciones = cargar(VOTACIONES_FILE)
         votacion = votaciones.get(str(self.channel_id))
         if not votacion:
-            await interaction.response.send_message("⛔ Votación expirada", ephemeral=True)
+            await interaction.response.send_message("⛔ Votacion expirada", ephemeral=True)
             return
 
         user_id = str(interaction.user.id)
@@ -256,8 +259,8 @@ class VotoView(discord.ui.View):
         asist = votacion.get("asistentes", [])
         no_asist = votacion.get("no_asistentes", [])
         embed = discord.Embed(
-            title="🗳️ VOTACIÓN",
-            description=f"✅ Irán: {len(asist)}/{votacion['votos_requeridos']}\n❌ No irán: {len(no_asist)}",
+            title="🗳️ VOTACION",
+            description=f"✅ Iran: {len(asist)}/{votacion['votos_requeridos']}\n❌ No iran: {len(no_asist)}",
             color=discord.Color.orange()
         )
         embed.add_field(name="✅", value="\n".join(f"<@{u}>" for u in asist) or "Nadie", inline=False)
@@ -268,10 +271,9 @@ class VotoView(discord.ui.View):
         if len(asist) == votacion["votos_requeridos"]:
             await interaction.channel.send(f"🎉 <@{votacion['host_id']}> ¡Meta alcanzada! Abre con `/abrir_escena`")
 
-@bot.tree.command(name="votacion_sesion", description="🗳️ Votación (0-20) - SOLO HOSTS")
+@bot.tree.command(name="votacion_sesion", description="Votacion (0-20) - SOLO HOSTS")
 @app_commands.describe(votos_requeridos="1-20")
 async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: int):
-    #                                               ^^^^^^^ tipo ^^^
     if not es_host(interaction.user):
         await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
         return
@@ -282,7 +284,7 @@ async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: in
     votaciones = cargar(VOTACIONES_FILE)
     channel_id = str(interaction.channel_id)
     if channel_id in votaciones:
-        await interaction.response.send_message("⚠️ Ya hay votación", ephemeral=True)
+        await interaction.response.send_message("⚠️ Ya hay votacion", ephemeral=True)
         return
 
     votacion = {
@@ -296,17 +298,16 @@ async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: in
     guardar(VOTACIONES_FILE, votaciones)
 
     embed = discord.Embed(
-        title="🗳️ ¿ABRIMOS SESIÓN?",
+        title="🗳️ ¿ABRIMOS SESION?",
         description=f"Meta: {votos_requeridos} votos",
         color=discord.Color.orange()
     )
-    embed.add_field(name="✅ Irán", value="Nadie", inline=False)
-    embed.add_field(name="❌ No irán", value="Nadie", inline=False)
+    embed.add_field(name="✅ Iran", value="Nadie", inline=False)
+    embed.add_field(name="❌ No iran", value="Nadie", inline=False)
     await interaction.response.send_message(embed=embed, view=VotoView(interaction.channel_id))
 
-@bot.tree.command(name="cerrar_votacion", description="❌ Cierra votación - SOLO HOSTS")
+@bot.tree.command(name="cerrar_votacion", description="Cierra votacion - SOLO HOSTS")
 async def cerrar_votacion(interaction: discord.Interaction):
-    #                     ^^^^ tipo ^^^
     if not es_host(interaction.user):
         await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
         return
@@ -314,23 +315,22 @@ async def cerrar_votacion(interaction: discord.Interaction):
     votaciones = cargar(VOTACIONES_FILE)
     channel_id = str(interaction.channel_id)
     if channel_id not in votaciones:
-        await interaction.response.send_message("🚫 Sin votación", ephemeral=True)
+        await interaction.response.send_message("🚫 Sin votacion", ephemeral=True)
         return
 
     del votaciones[channel_id]
     guardar(VOTACIONES_FILE, votaciones)
-    await interaction.response.send_message("🔒 Votación cerrada")
+    await interaction.response.send_message("🔒 Votacion cerrada")
 
 # ==================== AUTOS ====================
 
-class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehículo"):
+class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehiculo"):
     usuario_roblox = discord.ui.TextInput(label="Usuario Roblox", max_length=50)
     placa = discord.ui.TextInput(label="Placa", max_length=20)
     modelo = discord.ui.TextInput(label="Modelo/Marca", max_length=50)
     color = discord.ui.TextInput(label="Color", max_length=30)
 
     async def on_submit(self, interaction: discord.Interaction):
-        #                     ^^^^ tipo ^^^
         autos = cargar(AUTOS_FILE)
         user_id = str(interaction.user.id)
         autos.setdefault(user_id, []).append({
@@ -350,15 +350,13 @@ class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehículo"):
         embed.add_field(name="🅿️ Placa", value=self.placa.value, inline=True)
         await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="registrar_auto", description="🚗 Registra tu vehículo")
+@bot.tree.command(name="registrar_auto", description="Registra tu vehiculo")
 async def registrar_auto(interaction: discord.Interaction):
-    #                     ^^^^ tipo ^^^
     await interaction.response.send_modal(AutoModal())
 
-@bot.tree.command(name="ver_autos", description="🚗 Ve autos registrados")
+@bot.tree.command(name="ver_autos", description="Ve autos registrados")
 @app_commands.describe(usuario="Usuario (opcional)")
 async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = None):
-    #                                               ^^^^ tipo ^^^
     objetivo = usuario or interaction.user
     autos = cargar(AUTOS_FILE)
     user_autos = autos.get(str(objetivo.id), [])
@@ -379,16 +377,15 @@ async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = 
 
 class MultiModal(discord.ui.Modal, title="🚨 Registrar Multa"):
     infractor = discord.ui.TextInput(label="Infractor", max_length=100)
-    infraccion = discord.ui.TextInput(label="Infracción", max_length=100)
+    infraccion = discord.ui.TextInput(label="Infraccion", max_length=100)
     precio = discord.ui.TextInput(label="Monto ($)", max_length=10)
 
     async def on_submit(self, interaction: discord.Interaction):
-        #                     ^^^^ tipo ^^^
         if not es_policia(interaction.user):
-            await interaction.response.send_message("⛔ Solo policía", ephemeral=True)
+            await interaction.response.send_message("⛔ Solo policia", ephemeral=True)
             return
         if not self.precio.value.isdigit():
-            await interaction.response.send_message("⚠️ Monto: números", ephemeral=True)
+            await interaction.response.send_message("⚠️ Monto: numeros", ephemeral=True)
             return
 
         multas = cargar(MULTAS_FILE)
@@ -404,21 +401,19 @@ class MultiModal(discord.ui.Modal, title="🚨 Registrar Multa"):
         embed = discord.Embed(title="🚨 MULTA REGISTRADA", color=discord.Color.red())
         embed.add_field(name="👮 Oficial", value=interaction.user.mention, inline=False)
         embed.add_field(name="👤 Infractor", value=self.infractor.value, inline=False)
-        embed.add_field(name="⚖️ Infracción", value=self.infraccion.value, inline=False)
+        embed.add_field(name="⚖️ Infraccion", value=self.infraccion.value, inline=False)
         embed.add_field(name="💰 Monto", value=f"${self.precio.value}", inline=True)
         await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="registrar_multa", description="🚨 Registra multa - SOLO POLICÍA")
+@bot.tree.command(name="registrar_multa", description="Registra multa - SOLO POLICIA")
 async def registrar_multa(interaction: discord.Interaction):
-    #                     ^^^^ tipo ^^^
     if not es_policia(interaction.user):
-        await interaction.response.send_message("⛔ Solo policía", ephemeral=True)
+        await interaction.response.send_message("⛔ Solo policia", ephemeral=True)
         return
     await interaction.response.send_modal(MultiModal())
 
-@bot.tree.command(name="historial_multas", description="📋 Historial de multas")
+@bot.tree.command(name="historial_multas", description="Historial de multas")
 async def historial_multas(interaction: discord.Interaction):
-    #                     ^^^^ tipo ^^^
     multas = cargar(MULTAS_FILE)
     historial = multas.get("historial", [])
     if not historial:
@@ -434,20 +429,19 @@ async def historial_multas(interaction: discord.Interaction):
         )
     await interaction.response.send_message(embed=embed)
 
-# ==================== EVALUACIÓN ====================
+# ==================== EVALUACION ====================
 
 class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
-    que_hizo = discord.ui.TextInput(label="¿Qué hizo?", max_length=100)
+    que_hizo = discord.ui.TextInput(label="¿Que hizo?", max_length=100)
     calificacion = discord.ui.TextInput(label="1-10", max_length=2)
     amable = discord.ui.TextInput(label="¿Fue amable?", max_length=150)
     queja = discord.ui.TextInput(label="Sugerencias", required=False, max_length=300)
 
-    def __init__(self, staff):
+    def __init__(self, staff: discord.Member):
         super().__init__()
         self.staff = staff
 
     async def on_submit(self, interaction: discord.Interaction):
-        #                     ^^^^ tipo ^^^
         try:
             nota = int(self.calificacion.value.strip())
             if not 1 <= nota <= 10:
@@ -470,10 +464,17 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
         guardar(EVALUACIONES_FILE, evaluaciones)
 
         estrellas = "⭐" * round(nota / 2) if nota >= 2 else "✩"
-        embed = discord.Embed(title="📝 EVALUACIÓN", color=discord.Color.purple())
-        embed.add_field(name="⭐ Atención", value=f"{estrellas} ({nota}/10)", inline=False)
+        embed = discord.Embed(title="📝 EVALUACION", color=discord.Color.purple())
+        embed.add_field(name="⭐ Atencion", value=f"{estrellas} ({nota}/10)", inline=False)
         embed.add_field(name="🤝 Amable", value=self.amable.value, inline=False)
         embed.add_field(name="💬 Sugerencias", value=self.queja.value or "Ninguna", inline=False)
         await interaction.response.send_message(content=self.staff.mention, embed=embed)
 
-@bot.tree
+@bot.tree.command(name="evaluar_staff", description="Evalua al staff")
+@app_commands.describe(staff="Staff a evaluar")
+async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
+    await interaction.response.send_modal(EvalModal(staff))
+
+# ==================== INICIAR BOT ====================
+if __name__ == "__main__":
+    bot.run(TO
