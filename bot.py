@@ -1,7 +1,6 @@
 """
-Bot de Discord para servidor de rol (RP) — DISTRICT 99 v3
-Sistema completo: DNI, votaciones, escenas, autos, multas
-Permisos por roles: Hosts y Policías
+Bot de Discord para servidor de rol (RP) — DISTRICT 99 v2
+Sistema completo con: DNI, votaciones, escenas, autos, y multas
 """
 
 import json
@@ -10,7 +9,7 @@ import re
 from datetime import datetime, timezone
 
 import discord
-from discord import app_commands, Attachment
+from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -26,9 +25,9 @@ AUTOS_FILE = "autos.json"
 MULTAS_FILE = "multas.json"
 
 NOMBRE_SERVIDOR = "DISTRICT 99"
-ROL_POLICIA = "Wsp | 👮"
-ROL_HOST = "Host | 🎮"
-ROL_DNI = "Dni | 📋"
+ROL_POLICIA = "Wsp | 👮"  # Rol de policías
+ROL_HOST = "Host | 🎮"  # Rol de hosts
+ROL_DNI = "Dni | 📋"  # Rol que se asigna al crear DNI
 
 # ---------- Utilidades ----------
 
@@ -46,6 +45,7 @@ def generar_numero_dni(user_id: str) -> str:
     return f"{int(user_id) % 100000000:08d}"
 
 def validar_fecha(fecha: str) -> bool:
+    """Valida formato DD/MM/YYYY con solo números"""
     if not re.match(r'^\d{2}/\d{2}/\d{4}$', fecha):
         return False
     try:
@@ -57,10 +57,16 @@ def validar_fecha(fecha: str) -> bool:
         return False
 
 def es_host(member: discord.Member) -> bool:
+    """Verifica si el usuario tiene rol de host"""
     return any(rol.name.lower() == ROL_HOST.lower() for rol in member.roles)
 
 def es_policia(member: discord.Member) -> bool:
+    """Verifica si el usuario tiene rol de policía"""
     return any(rol.name.lower() == ROL_POLICIA.lower() for rol in member.roles)
+
+def solo_hosts(member: discord.Member) -> bool:
+    """Verifica si el usuario es host"""
+    return es_host(member)
 
 # ---------- Configuración del bot ----------
 
@@ -93,6 +99,7 @@ async def crear_dni(
     fecha_nacimiento: str,
     edad: int,
 ):
+    # Validar fecha
     if not validar_fecha(fecha_nacimiento):
         await interaction.response.send_message(
             "⚠️ Formato de fecha inválido. Usa: DD/MM/YYYY (solo números)",
@@ -195,6 +202,7 @@ async def abrir_escena(
     adelantamientos: str,
     link_servidor: str,
 ):
+    # Verificar si es host
     if not es_host(interaction.user):
         await interaction.response.send_message(
             "⛔ Solo los hosts pueden abrir escenas.",
@@ -202,6 +210,7 @@ async def abrir_escena(
         )
         return
 
+    # Validar vías (solo 1 o 2)
     if vias not in ["1", "2"]:
         await interaction.response.send_message(
             "⚠️ Las vías deben ser solo: 1 o 2",
@@ -209,6 +218,7 @@ async def abrir_escena(
         )
         return
 
+    # Validar velocidad (solo números)
     if not velocidad_maxima.isdigit():
         await interaction.response.send_message(
             "⚠️ La velocidad máxima solo debe contener números.",
@@ -216,6 +226,7 @@ async def abrir_escena(
         )
         return
 
+    # Validar adelantamientos
     if adelantamientos.lower() not in ["sí", "si", "no"]:
         await interaction.response.send_message(
             "⚠️ Adelantamientos: solo 'Sí' o 'No'",
@@ -234,7 +245,9 @@ async def abrir_escena(
         return
 
     adelantamiento_permitido = adelantamientos.lower() in ["sí", "si"]
-    velocidad_adelanto = "Pendiente configurar" if adelantamiento_permitido else "No aplica"
+    velocidad_adelanto = ""
+    if adelantamiento_permitido:
+        velocidad_adelanto = "Pendiente configurar"
 
     escena = {
         "vias": vias,
@@ -272,6 +285,7 @@ async def abrir_escena(
 
 @bot.tree.command(name="cerrar_escena", description="🔒 Cierra la sesión actual - SOLO HOSTS")
 async def cerrar_escena(interaction: discord.Interaction):
+    # Verificar si es host
     if not es_host(interaction.user):
         await interaction.response.send_message(
             "⛔ Solo los hosts pueden cerrar escenas.",
@@ -378,6 +392,7 @@ class VotacionView(discord.ui.View):
 @bot.tree.command(name="votacion_sesion", description="🗳️ Abre una votación (máx 20) - SOLO HOSTS")
 @app_commands.describe(votos_requeridos="Votos necesarios (0-20)")
 async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: int):
+    # Verificar si es host
     if not es_host(interaction.user):
         await interaction.response.send_message(
             "⛔ Solo los hosts pueden abrir votaciones.",
@@ -385,6 +400,7 @@ async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: in
         )
         return
 
+    # Validar rango (0-20)
     if not (0 < votos_requeridos <= 20):
         await interaction.response.send_message(
             "⚠️ Los votos deben estar entre 1 y 20.",
@@ -418,6 +434,7 @@ async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: in
 
 @bot.tree.command(name="cerrar_votacion", description="❌ Cierra la votación - SOLO HOSTS")
 async def cerrar_votacion(interaction: discord.Interaction):
+    # Verificar si es host
     if not es_host(interaction.user):
         await interaction.response.send_message(
             "⛔ Solo los hosts pueden cerrar votaciones.",
@@ -445,77 +462,20 @@ class RegistroAutoModal(discord.ui.Modal, title="🚗 Registrar Vehículo"):
     color = discord.ui.TextInput(label="Color", max_length=30)
 
     async def on_submit(self, interaction: discord.Interaction):
+        # Mostrar mensaje temporal pidiendo foto
         await interaction.response.send_message(
-            "📸 Perfecto. Ahora usa `/subir_foto_auto` para adjuntar la foto de tu vehículo.",
+            "📸 Sube la foto de tu vehículo en el siguiente mensaje (imagen o archivo).",
             ephemeral=True,
         )
-        # Guardar datos temporales
-        temporal = cargar("temporal_autos.json") if os.path.exists("temporal_autos.json") else {}
-        user_id = str(interaction.user.id)
-        temporal[user_id] = {
-            "usuario_roblox": self.usuario_roblox.value,
-            "placa": self.placa.value,
-            "modelo": self.modelo.value,
-            "color": self.color.value,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-        guardar("temporal_autos.json", temporal)
+        
+        # Guardar datos temporalmente en sesión
+        self.user = interaction.user
+        self.guild = interaction.guild
+        self.channel = interaction.channel
 
-@bot.tree.command(name="registrar_auto", description="🚗 Registra tu vehículo - Paso 1/2")
+@bot.tree.command(name="registrar_auto", description="🚗 Registra tu vehículo")
 async def registrar_auto(interaction: discord.Interaction):
     await interaction.response.send_modal(RegistroAutoModal())
-
-@bot.tree.command(name="subir_foto_auto", description="📸 Sube la foto de tu vehículo registrado")
-@app_commands.describe(foto="Foto del vehículo (imagen o archivo)")
-async def subir_foto_auto(interaction: discord.Interaction, foto: Attachment):
-    user_id = str(interaction.user.id)
-    temporal = cargar("temporal_autos.json") if os.path.exists("temporal_autos.json") else {}
-
-    if user_id not in temporal:
-        await interaction.response.send_message(
-            "⚠️ Primero usa `/registrar_auto` para crear el registro.",
-            ephemeral=True,
-        )
-        return
-
-    # Validar que sea imagen
-    if not foto.content_type or "image" not in foto.content_type:
-        await interaction.response.send_message(
-            "⚠️ Solo se aceptan imágenes.",
-            ephemeral=True,
-        )
-        return
-
-    # Guardar datos del auto
-    autos = cargar(AUTOS_FILE)
-    autos.setdefault(user_id, []).append({
-        "usuario_discord": str(interaction.user),
-        "usuario_roblox": temporal[user_id]["usuario_roblox"],
-        "placa": temporal[user_id]["placa"],
-        "modelo": temporal[user_id]["modelo"],
-        "color": temporal[user_id]["color"],
-        "foto_url": foto.url,
-        "fecha_registro": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
-    })
-    guardar(AUTOS_FILE, autos)
-
-    # Eliminar dato temporal
-    del temporal[user_id]
-    guardar("temporal_autos.json", temporal)
-
-    embed = discord.Embed(
-        title="🚗 VEHÍCULO REGISTRADO",
-        description="¡Tu auto fue registrado exitosamente! 🎉",
-        color=discord.Color.green(),
-    )
-    embed.add_field(name="👤 Discord", value=interaction.user.mention, inline=False)
-    embed.add_field(name="🎮 Roblox", value=temporal[user_id]["usuario_roblox"] if user_id in temporal else "N/A", inline=False)
-    embed.add_field(name="📋 Modelo", value=temporal[user_id]["modelo"] if user_id in temporal else autos[user_id][-1]["modelo"], inline=True)
-    embed.add_field(name="🎨 Color", value=temporal[user_id]["color"] if user_id in temporal else autos[user_id][-1]["color"], inline=True)
-    embed.add_field(name="🅿️ Placa", value=autos[user_id][-1]["placa"], inline=True)
-    embed.set_image(url=foto.url)
-
-    await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="ver_autos", description="🚗 Ve los autos registrados")
 @app_commands.describe(usuario="Usuario (opcional)")
@@ -543,9 +503,53 @@ async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = 
                 f"🎮 **Roblox:** {auto['usuario_roblox']}\n"
                 f"📋 **Modelo:** {auto['modelo']}\n"
                 f"🎨 **Color:** {auto['color']}\n"
-                f"🅿️ **Placa:** {auto['placa']}"
+                f"🅿️ **Placa:** {auto['placa']}\n"
+                f"📸 **Foto:** {auto['foto_url']}"
             ),
             inline=False,
         )
 
-    await interaction.response.send_message(embed=
+    await interaction.response.send_message(embed=embed)
+
+# ---------- SISTEMA DE MULTAS ----------
+
+class RegistroMultaModal(discord.ui.Modal, title="🚨 Registrar Multa"):
+    infractor = discord.ui.TextInput(label="Nombre del infractor", max_length=100)
+    infraccion = discord.ui.TextInput(label="Tipo de infracción", max_length=100)
+    precio = discord.ui.TextInput(label="Precio de la multa ($)", max_length=10)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if not es_policia(interaction.user):
+            await interaction.response.send_message(
+                "⛔ Solo la policía puede registrar multas.",
+                ephemeral=True,
+            )
+            return
+
+        if not self.precio.value.isdigit():
+            await interaction.response.send_message(
+                "⚠️ El precio solo debe contener números.",
+                ephemeral=True,
+            )
+            return
+
+        multas = cargar(MULTAS_FILE)
+        multas.setdefault("historial", []).append({
+            "oficial": str(interaction.user),
+            "infractor": self.infractor.value,
+            "infraccion": self.infraccion.value,
+            "precio": int(self.precio.value),
+            "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"),
+        })
+        guardar(MULTAS_FILE, multas)
+
+        embed = discord.Embed(
+            title="🚨 MULTA REGISTRADA",
+            description="La multa ha sido registrada en el sistema. 📝",
+            color=discord.Color.red(),
+        )
+        embed.add_field(name="👮 Oficial", value=interaction.user.mention, inline=False)
+        embed.add_field(name="👤 Infractor", value=self.infractor.value, inline=False)
+        embed.add_field(name="⚖️ Infracción", value=self.infraccion.value, inline=False)
+        embed.add_field(name="💰 Monto", value=f"${self.precio.value}", inline=True)
+        embed.add_field(name="📅 Fecha", value=embed.fields[3].value if len(embed.fields) > 3 else "Hoy", inline=Tr
