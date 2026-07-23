@@ -436,4 +436,4 @@ async def historial_multas(interaction: discord.Interaction):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
-        que_hizo = discord.ui.TextInput(label="Que hizo?", placeholder="Ej: Ayu
+        que_hizo = discord.ui.TextInput(label="Que hizo?", placeholder="Ej: Ayudo en el rol", max_length=100)
