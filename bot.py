@@ -30,7 +30,7 @@ MULTAS_FILE = "multas.json"
 
 NOMBRE_SERVIDOR = "DISTRICT 99"
 
-# ==================== ROLES (NOMBRES EXACTOS DE DISCORD) ====================
+# ==================== ROLES ====================
 ROL_HOST_NOMBRE = "Host│🎮"
 ROL_POLICIA_NOMBRE = "Wsp│👮"
 ROL_DNI_NOMBRE = "Dni│🪪"
@@ -203,12 +203,13 @@ async def eliminar_dni(interaction: discord.Interaction):
         pass
     
     await interaction.response.send_message("🗑️ Tu DNI ha sido eliminado", ephemeral=True)
-    # ==================== ESCENAS (CON VELOCIDAD DE ADELANTAMIENTO) ====================
+
+# ==================== ESCENAS (CON VELOCIDAD ADELANTAMIENTO) ====================
 @bot.tree.command(name="abrir_escena", description="🎬 Abrir sesion - SOLO HOSTS")
 @app_commands.describe(
     vias="1 o 2",
     velocidad_maxima="km/h",
-    adelantamientos="Si/No",
+    adelantamientos="Selecciona Si o No",
     link="Link del servidor"
 )
 async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_maxima: str, adelantamientos: str, link: str):
@@ -224,17 +225,19 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         await interaction.response.send_message("⚠️ Velocidad: numero", ephemeral=True)
         return
     
+    # Validar que solo sea Si o No
     if adelantamientos.lower() not in ["si", "no"]:
-        await interaction.response.send_message("⚠️ Si/No", ephemeral=True)
+        await interaction.response.send_message("⚠️ Solo puedes seleccionar `Si` o `No`", ephemeral=True)
         return
     
-    # Si adelantamientos es "si", pedir velocidad de adelantamiento
+    # SI elige "Si", pedir velocidad de adelantamiento
     if adelantamientos.lower() == "si":
         class VelocidadAdelantoModal(discord.ui.Modal, title="🚗 Velocidad de Adelantamiento"):
             velocidad_adelanto = discord.ui.TextInput(
                 label="Velocidad permitida para adelantar (km/h)",
                 placeholder="Ej: 80",
-                max_length=10
+                max_length=10,
+                required=True
             )
             
             async def on_submit(self, modal_interaction: discord.Interaction):
@@ -344,8 +347,7 @@ async def cerrar_escena(interaction: discord.Interaction):
     embed.add_field(name="⭐", value="No olvides evaluar al staff con `/evaluar_staff`", inline=False)
     
     await interaction.response.send_message(embed=embed)
-
-# ==================== VOTACIONES ====================
+    # ==================== VOTACIONES ====================
 class VotoView(discord.ui.View):
     def __init__(self, channel_id: str):
         super().__init__(timeout=None)
@@ -447,77 +449,67 @@ async def cerrar_votacion(interaction: discord.Interaction):
     guardar(VOTACIONES_FILE, votaciones)
     
     await interaction.response.send_message("🔒 Votacion cerrada")
-    # ==================== AUTOS (CORREGIDO) ====================
-class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehiculo"):
-    usuario_roblox = discord.ui.TextInput(
-        label="Usuario de Roblox",
-        placeholder="Ej: Juanito_99",
-        max_length=50,
-        required=True
-    )
-    placa = discord.ui.TextInput(
-        label="Placa del vehiculo",
-        placeholder="Ej: ABC-123",
-        max_length=20,
-        required=True
-    )
-    modelo = discord.ui.TextInput(
-        label="Modelo/Marca",
-        placeholder="Ej: Ferrari 488",
-        max_length=50,
-        required=True
-    )
-    color = discord.ui.TextInput(
-        label="Color",
-        placeholder="Ej: Rojo",
-        max_length=30,
-        required=True
-    )
-    foto = discord.ui.TextInput(
-        label="Link de la foto del vehiculo",
-        placeholder="Ej: https://imgur.com/...",
-        max_length=200,
-        required=False
-    )
 
-    async def on_submit(self, interaction: discord.Interaction):
-        autos = cargar(AUTOS_FILE)
-        user_id = str(interaction.user.id)
-        
-        autos.setdefault(user_id, []).append({
-            "usuario_discord": str(interaction.user),
-            "usuario_roblox": self.usuario_roblox.value,
-            "placa": self.placa.value,
-            "modelo": self.modelo.value,
-            "color": self.color.value,
-            "foto": self.foto.value if self.foto.value else None,
-            "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
-            "registrado_por": str(interaction.user)
-        })
-        guardar(AUTOS_FILE, autos)
-        
-        embed = discord.Embed(
-            title="🚗 ¡VEHICULO REGISTRADO!",
-            color=discord.Color.green()
-        )
-        embed.add_field(name="👤 Usuario Discord", value=interaction.user.mention, inline=False)
-        embed.add_field(name="🎮 Usuario Roblox", value=self.usuario_roblox.value, inline=False)
-        embed.add_field(name="📋 Modelo", value=self.modelo.value, inline=True)
-        embed.add_field(name="🎨 Color", value=self.color.value, inline=True)
-        embed.add_field(name="🅿️ Placa", value=self.placa.value, inline=True)
-        if self.foto.value:
-            embed.set_image(url=self.foto.value)
-        embed.set_footer(text=f"Registrado por {interaction.user.name}")
-        
-        await interaction.response.send_message(embed=embed)
-
+# ==================== AUTOS (CORREGIDO - CON CAMPOS NORMALES) ====================
 @bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehiculo con foto")
-async def registrar_auto(interaction: discord.Interaction):
-    """Registra un vehiculo con opcion de foto"""
-    try:
-        await interaction.response.send_modal(AutoModal())
-    except Exception as e:
-        await interaction.response.send_message(f"❌ Error al abrir el formulario: {e}", ephemeral=True)
+@app_commands.describe(
+    usuario_discord="Tu usuario de Discord (para que te pongas ping)",
+    usuario_roblox="Tu usuario de Roblox",
+    placa="Placa del vehiculo",
+    modelo="Modelo/Marca del vehiculo",
+    color="Color del vehiculo",
+    foto="Sube una foto del vehiculo (adjunta una imagen)"
+)
+async def registrar_auto(
+    interaction: discord.Interaction,
+    usuario_discord: discord.Member,
+    usuario_roblox: str,
+    placa: str,
+    modelo: str,
+    color: str,
+    foto: discord.Attachment = None
+):
+    """Registra un vehiculo con opcion de subir foto directamente desde Discord"""
+    
+    # Verificar que el usuario_discord sea el mismo que ejecuta el comando o que sea un usuario válido
+    if usuario_discord.id != interaction.user.id:
+        await interaction.response.send_message("⚠️ Solo puedes registrar autos para ti mismo. Usa tu propio usuario.", ephemeral=True)
+        return
+    
+    autos = cargar(AUTOS_FILE)
+    user_id = str(interaction.user.id)
+    
+    # Guardar la foto si se subió
+    foto_url = None
+    if foto:
+        foto_url = foto.url
+    
+    autos.setdefault(user_id, []).append({
+        "usuario_discord": str(usuario_discord),
+        "usuario_roblox": usuario_roblox,
+        "placa": placa,
+        "modelo": modelo,
+        "color": color,
+        "foto": foto_url,
+        "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
+        "registrado_por": str(interaction.user)
+    })
+    guardar(AUTOS_FILE, autos)
+    
+    embed = discord.Embed(
+        title="🚗 ¡VEHICULO REGISTRADO!",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="👤 Usuario Discord", value=usuario_discord.mention, inline=False)
+    embed.add_field(name="🎮 Usuario Roblox", value=usuario_roblox, inline=False)
+    embed.add_field(name="📋 Modelo", value=modelo, inline=True)
+    embed.add_field(name="🎨 Color", value=color, inline=True)
+    embed.add_field(name="🅿️ Placa", value=placa, inline=True)
+    if foto_url:
+        embed.set_image(url=foto_url)
+    embed.set_footer(text=f"Registrado por {interaction.user.name}")
+    
+    await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="ver_autos", description="🚗 Ver autos de un usuario")
 @app_commands.describe(usuario="Usuario (opcional)")
@@ -552,8 +544,7 @@ async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = 
             embed.set_image(url=auto['foto'])
     
     await interaction.response.send_message(embed=embed)
-
-# ==================== MULTAS (CON PING AL INFRACTOR) ====================
+    # ==================== MULTAS ====================
 @bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
 @app_commands.describe(
     infractor="Usuario infractor",
@@ -679,7 +670,8 @@ async def mis_multas(interaction: discord.Interaction):
     embed.set_footer(text="Mostrando ultimas 10 multas")
     
     await interaction.response.send_message(embed=embed)
-    # ==================== EVALUAR STAFF ====================
+
+# ==================== EVALUAR STAFF ====================
 class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
     que_hizo = discord.ui.TextInput(
         label="Que hizo el staff?",
