@@ -131,7 +131,6 @@ async def crear_dni(interaction: discord.Interaction, nombre: str, apellidos: st
     }
     guardar(DNI_FILE, dnis)
 
-    # Intentar asignar rol de DNI
     try:
         rol = discord.utils.get(interaction.guild.roles, name=ROL_DNI_NOMBRE)
         if rol:
@@ -181,11 +180,9 @@ async def eliminar_dni(interaction: discord.Interaction):
         await interaction.response.send_message("❌ **No tienes un DNI para eliminar**", ephemeral=True)
         return
     
-    # Confirmación antes de eliminar
     del dnis[user_id]
     guardar(DNI_FILE, dnis)
     
-    # Intentar quitar rol de DNI
     try:
         rol = discord.utils.get(interaction.guild.roles, name=ROL_DNI_NOMBRE)
         if rol and rol in interaction.user.roles:
@@ -199,10 +196,10 @@ async def eliminar_dni(interaction: discord.Interaction):
 
 @bot.tree.command(name="abrir_escena", description="🎬 Abrir sesión de rol - SOLO HOSTS")
 @app_commands.describe(
-    vias="1 o 2 vías",
+    vias="Número de vías (1 o 2)",
     velocidad_maxima="Límite de velocidad (km/h)",
     adelantamientos="¿Se permiten adelantamientos? (Si/No)",
-    link="Link del servidor (ej: https://..."
+    link="Link del servidor (ej: https://...)"
 )
 async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_maxima: str, adelantamientos: str, link: str):
     """🔒 Solo usuarios con rol HOST pueden abrir escenas"""
@@ -211,16 +208,18 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         await interaction.response.send_message("⛔ **No tienes permisos para usar este comando.**\nSolo los **Hosts** pueden abrir escenas.", ephemeral=True)
         return
     
+    # 🔥 VALIDACIÓN: Solo 1 o 2 vías
     if vias not in ["1", "2"]:
-        await interaction.response.send_message("⚠️ **Vías inválidas.** Usa `1` o `2`", ephemeral=True)
+        await interaction.response.send_message("⚠️ **Vías inválidas.** Solo puedes seleccionar `1` o `2`.", ephemeral=True)
         return
     
     if not velocidad_maxima.isdigit():
         await interaction.response.send_message("⚠️ **Velocidad inválida.** Debe ser un número", ephemeral=True)
         return
     
+    # 🔥 VALIDACIÓN: Solo Si o No
     if adelantamientos.lower() not in ["si", "no"]:
-        await interaction.response.send_message("⚠️ **Respuesta inválida.** Usa `Si` o `No`", ephemeral=True)
+        await interaction.response.send_message("⚠️ **Respuesta inválida.** Solo puedes seleccionar `Si` o `No`", ephemeral=True)
         return
 
     escenas = cargar(ESCENAS_FILE)
@@ -231,10 +230,61 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         return
 
     adelanto_permitido = adelantamientos.lower() == "si"
+    
+    # 🔥 Si adelantamientos es "Si", pedir velocidad de adelantamiento
+    if adelanto_permitido:
+        # Creamos un modal para pedir la velocidad de adelantamiento
+        class VelocidadAdelantoModal(discord.ui.Modal, title="🚗 Velocidad de Adelantamiento"):
+            velocidad_adelanto = discord.ui.TextInput(
+                label="Velocidad permitida para adelantar (km/h)",
+                placeholder="Ej: 80",
+                max_length=10
+            )
+            
+            async def on_submit(self, modal_interaction: discord.Interaction):
+                if not self.velocidad_adelanto.value.isdigit():
+                    await modal_interaction.response.send_message("⚠️ **Velocidad inválida.** Debe ser un número", ephemeral=True)
+                    return
+                
+                velocidad_adelanto = int(self.velocidad_adelanto.value)
+                
+                # Guardar la escena con velocidad de adelantamiento
+                escenas[channel_id] = {
+                    "vias": vias,
+                    "velocidad_maxima": velocidad_maxima,
+                    "adelantamientos": True,
+                    "velocidad_adelanto": velocidad_adelanto,
+                    "link_servidor": link,
+                    "host": str(interaction.user),
+                    "host_id": str(interaction.user.id),
+                    "inicio": datetime.now(timezone.utc).isoformat(),
+                }
+                guardar(ESCENAS_FILE, escenas)
+                
+                embed = discord.Embed(
+                    title="🎬 **SESIÓN ABIERTA**",
+                    description=f"**{NOMBRE_SERVIDOR}** - ¡Comienza el rol!",
+                    color=discord.Color.gold()
+                )
+                embed.add_field(name="🛣️ Vías", value=f"{vias} vías", inline=True)
+                embed.add_field(name="🚗 Velocidad Máx", value=f"{velocidad_maxima} km/h", inline=True)
+                embed.add_field(name="🏁 Adelantamientos", value="✅ Permitidos", inline=True)
+                embed.add_field(name="🚀 Vel. Adelanto", value=f"{velocidad_adelanto} km/h", inline=True)
+                embed.add_field(name="👑 Host", value=interaction.user.mention, inline=False)
+                embed.add_field(name="🔗 Servidor", value=f"[Haz clic aquí]({link})", inline=False)
+                embed.add_field(name="📢", value="**¡Todos con DNI listo para el rol!** 🪪", inline=False)
+                embed.set_footer(text=f"Sesión iniciada por {interaction.user.name}")
+                
+                await modal_interaction.response.send_message(embed=embed)
+        
+        await interaction.response.send_modal(VelocidadAdelantoModal())
+        return
+    
+    # Si NO se permiten adelantamientos
     escenas[channel_id] = {
         "vias": vias,
         "velocidad_maxima": velocidad_maxima,
-        "adelantamientos": adelanto_permitido,
+        "adelantamientos": False,
         "link_servidor": link,
         "host": str(interaction.user),
         "host_id": str(interaction.user.id),
@@ -249,7 +299,7 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
     )
     embed.add_field(name="🛣️ Vías", value=f"{vias} vías", inline=True)
     embed.add_field(name="🚗 Velocidad Máx", value=f"{velocidad_maxima} km/h", inline=True)
-    embed.add_field(name="🏁 Adelantamientos", value="✅ Permitidos" if adelanto_permitido else "❌ No permitidos", inline=True)
+    embed.add_field(name="🏁 Adelantamientos", value="❌ No permitidos", inline=True)
     embed.add_field(name="👑 Host", value=interaction.user.mention, inline=False)
     embed.add_field(name="🔗 Servidor", value=f"[Haz clic aquí]({link})", inline=False)
     embed.add_field(name="📢", value="**¡Todos con DNI listo para el rol!** 🪪", inline=False)
@@ -286,7 +336,7 @@ async def cerrar_escena(interaction: discord.Interaction):
         description=f"**¡Excelente rol!** 👏\nDuración: {horas}h {minutos}m",
         color=discord.Color.red()
     )
-    embed.add_field(name="⭐", value="**¡No olvides evaluar al staff con `/evaluar_staff` !**", inline=False)
+    embed.add_field(name="⭐", value="**¡No olvides evaluar al staff con `/evaluar_staff`!**", inline=False)
     
     host_id = escena.get("host_id")
     await interaction.response.send_message(
@@ -361,8 +411,9 @@ async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: in
         await interaction.response.send_message("⛔ **No tienes permisos para usar este comando.**\nSolo los **Hosts** pueden crear votaciones.", ephemeral=True)
         return
     
-    if not (0 < votos_requeridos <= 20):
-        await interaction.response.send_message("⚠️ **Número inválido.** Debe ser entre `1` y `20`", ephemeral=True)
+    # 🔥 VALIDACIÓN: Solo entre 1 y 20 votos
+    if not (1 <= votos_requeridos <= 20):
+        await interaction.response.send_message("⚠️ **Número inválido.** Debe ser entre `1` y `20`.", ephemeral=True)
         return
 
     votaciones = cargar(VOTACIONES_FILE)
@@ -436,65 +487,4 @@ class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehículo"):
         guardar(AUTOS_FILE, autos)
 
         embed = discord.Embed(
-            title="🚗 **¡VEHÍCULO REGISTRADO!**",
-            color=discord.Color.green()
-        )
-        embed.add_field(name="🎮 Roblox", value=self.usuario_roblox.value, inline=False)
-        embed.add_field(name="📋 Modelo", value=self.modelo.value, inline=True)
-        embed.add_field(name="🎨 Color", value=self.color.value, inline=True)
-        embed.add_field(name="🅿️ Placa", value=self.placa.value, inline=True)
-        embed.set_footer(text=f"Registrado por {interaction.user.name}")
         
-        await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehículo personal")
-async def registrar_auto(interaction: discord.Interaction):
-    """✅ Cualquier usuario puede registrar su auto"""
-    await interaction.response.send_modal(AutoModal())
-
-@bot.tree.command(name="ver_autos", description="🚗 Ver los vehículos de un usuario")
-@app_commands.describe(usuario="Usuario a consultar (opcional)")
-async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = None):
-    """✅ Cualquier usuario puede ver los autos de otros"""
-    
-    objetivo = usuario or interaction.user
-    autos = cargar(AUTOS_FILE)
-    user_autos = autos.get(str(objetivo.id), [])
-    
-    if not user_autos:
-        await interaction.response.send_message(
-            f"❌ **{objetivo.name} no ha registrado ningún vehículo**",
-            ephemeral=True
-        )
-        return
-
-    embed = discord.Embed(
-        title=f"🚗 VEHÍCULOS DE {objetivo.name.upper()}",
-        color=discord.Color.blue()
-    )
-    
-    for i, auto in enumerate(user_autos, 1):
-        embed.add_field(
-            name=f"🚘 Auto #{i}",
-            value=(
-                f"🎮 **Roblox:** {auto['usuario_roblox']}\n"
-                f"📋 **Modelo:** {auto['modelo']}\n"
-                f"🎨 **Color:** {auto['color']}\n"
-                f"🅿️ **Placa:** {auto['placa']}"
-            ),
-            inline=False,
-        )
-    
-    embed.set_footer(text=f"Consultado por {interaction.user.name}")
-    await interaction.response.send_message(embed=embed)
-
-# ==================== MULTAS ====================
-
-class MultiModal(discord.ui.Modal, title="🚨 Registrar Multa"):
-    infractor = discord.ui.TextInput(label="Nombre del infractor", placeholder="Ej: Juan Pérez", max_length=100)
-    infraccion = discord.ui.TextInput(label="Infracción cometida", placeholder="Ej: Exceso de velocidad", max_length=100)
-    precio = discord.ui.TextInput(label="Monto de la multa ($)", placeholder="Ej: 500", max_length=10)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        if not es_policia(interaction.user):
-            await interaction.response.send_message("⛔ **No tienes permisos para registra
