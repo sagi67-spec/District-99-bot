@@ -24,9 +24,30 @@ AUTOS_FILE = "autos.json"
 MULTAS_FILE = "multas.json"
 
 NOMBRE_SERVIDOR = "DISTRICT 99"
-ROL_POLICIA = "Wsp | 👮"
-ROL_HOST = "Host | 🎮"
-ROL_DNI = "Dni | 📋"
+
+# ==================== CONFIGURACIÓN DE ROLES ====================
+# ¡CAMBIA ESTOS NOMBRES POR LOS DE TU SERVIDOR!
+ROL_HOST_NOMBRE = "Host | 🎮"
+ROL_POLICIA_NOMBRE = "Wsp | 👮"
+ROL_DNI_NOMBRE = "Dni | 📋"
+
+def tiene_rol(member, rol_buscado):
+    """Verifica si un miembro tiene un rol específico"""
+    if not member:
+        return False
+    rol_buscado_lower = rol_buscado.lower().strip()
+    for rol in member.roles:
+        if rol.name.lower().strip() == rol_buscado_lower:
+            return True
+    return False
+
+def es_host(member):
+    return tiene_rol(member, ROL_HOST_NOMBRE)
+
+def es_policia(member):
+    return tiene_rol(member, ROL_POLICIA_NOMBRE)
+
+# ==================== FUNCIONES DE ARCHIVOS ====================
 
 def cargar(archivo):
     if not os.path.exists(archivo):
@@ -50,17 +71,13 @@ def validar_fecha(fecha):
     except:
         return False
 
-def es_host(member):
-    return any(rol.name.lower() == ROL_HOST.lower() for rol in member.roles)
-
-def es_policia(member):
-    return any(rol.name.lower() == ROL_POLICIA.lower() for rol in member.roles)
+# ==================== CONFIGURACIÓN DEL BOT ====================
 
 intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ========== CREAR ARCHIVOS JSON SI NO EXISTEN ==========
+# Crear archivos JSON si no existen
 ARCHIVOS_JSON = [DNI_FILE, ESCENAS_FILE, EVALUACIONES_FILE, VOTACIONES_FILE, AUTOS_FILE, MULTAS_FILE]
 for archivo in ARCHIVOS_JSON:
     if not os.path.exists(archivo):
@@ -72,26 +89,38 @@ for archivo in ARCHIVOS_JSON:
 async def on_ready():
     try:
         synced = await bot.tree.sync()
-        print(f"✅ Bot online. {len(synced)} comandos sincronizados.")
+        print(f"✅ Bot online como {bot.user.name}")
+        print(f"✅ {len(synced)} comandos sincronizados")
+        print(f"✅ Roles configurados:")
+        print(f"   🔹 Host: {ROL_HOST_NOMBRE}")
+        print(f"   🔹 Policía: {ROL_POLICIA_NOMBRE}")
+        print(f"   🔹 DNI: {ROL_DNI_NOMBRE}")
     except Exception as e:
         print(f"❌ Error al sincronizar: {e}")
 
 # ==================== DNI ====================
 
-@bot.tree.command(name="crear_dni", description="Crea el DNI de tu personaje")
+@bot.tree.command(name="crear_dni", description="🪪 Crea tu DNI de personaje")
 @app_commands.describe(
-    nombre="Nombre",
-    apellidos="Apellidos",
-    fecha_nacimiento="Fecha (DD/MM/YYYY)",
-    edad="Edad",
+    nombre="Nombre del personaje",
+    apellidos="Apellidos del personaje",
+    fecha_nacimiento="Fecha de nacimiento (DD/MM/YYYY)",
+    edad="Edad del personaje"
 )
 async def crear_dni(interaction: discord.Interaction, nombre: str, apellidos: str, fecha_nacimiento: str, edad: int):
+    """✅ Cualquier usuario puede crear su DNI"""
+    
     if not validar_fecha(fecha_nacimiento):
-        await interaction.response.send_message("⚠️ Usa: DD/MM/YYYY", ephemeral=True)
+        await interaction.response.send_message("❌ Formato de fecha inválido. Usa: **DD/MM/YYYY**", ephemeral=True)
         return
 
     dnis = cargar(DNI_FILE)
     user_id = str(interaction.user.id)
+    
+    if user_id in dnis:
+        await interaction.response.send_message("⚠️ Ya tienes un DNI creado. Usa `/ver_dni` para verlo.", ephemeral=True)
+        return
+    
     dnis[user_id] = {
         "nombre": nombre,
         "apellidos": apellidos,
@@ -102,72 +131,103 @@ async def crear_dni(interaction: discord.Interaction, nombre: str, apellidos: st
     }
     guardar(DNI_FILE, dnis)
 
+    # Intentar asignar rol de DNI
     try:
-        rol = discord.utils.get(interaction.guild.roles, name=ROL_DNI)
+        rol = discord.utils.get(interaction.guild.roles, name=ROL_DNI_NOMBRE)
         if rol:
             await interaction.user.add_roles(rol)
+            await interaction.response.send_message("✅ **¡DNI creado exitosamente!** Te he asignado el rol correspondiente. 🪪", ephemeral=True)
+        else:
+            await interaction.response.send_message("✅ **¡DNI creado exitosamente!** 🪪", ephemeral=True)
     except:
-        pass
+        await interaction.response.send_message("✅ **¡DNI creado exitosamente!** 🪪", ephemeral=True)
 
-    embed = discord.Embed(title="📋 DNI CREADO", color=discord.Color.blue())
-    embed.add_field(name="👤 Nombre", value=nombre, inline=True)
-    embed.add_field(name="👥 Apellidos", value=apellidos, inline=True)
-    embed.add_field(name="🎂 Edad", value=str(edad), inline=True)
-    embed.add_field(name="📅 Nacimiento", value=fecha_nacimiento, inline=True)
-    embed.add_field(name="🔢 DNI", value=dnis[user_id]["numero_dni"], inline=True)
-    embed.set_thumbnail(url=interaction.user.display_avatar.url)
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="ver_dni", description="Ve un DNI")
-@app_commands.describe(usuario="Usuario (opcional)")
+@bot.tree.command(name="ver_dni", description="🔍 Ver el DNI de un usuario")
+@app_commands.describe(usuario="Usuario a consultar (opcional)")
 async def ver_dni(interaction: discord.Interaction, usuario: discord.Member = None):
+    """✅ Cualquier usuario puede ver DNIs"""
+    
     objetivo = usuario or interaction.user
     dnis = cargar(DNI_FILE)
     datos = dnis.get(str(objetivo.id))
+    
     if not datos:
-        await interaction.response.send_message(f"🚫 {objetivo.mention} sin DNI", ephemeral=True)
+        await interaction.response.send_message(f"❌ {objetivo.mention} **no tiene DNI creado**", ephemeral=True)
         return
-    embed = discord.Embed(title="📋 DNI", color=discord.Color.blue())
+    
+    embed = discord.Embed(
+        title=f"🪪 DNI DE {objetivo.name.upper()}",
+        color=discord.Color.blue()
+    )
     embed.add_field(name="👤 Nombre", value=datos["nombre"], inline=True)
     embed.add_field(name="👥 Apellidos", value=datos["apellidos"], inline=True)
     embed.add_field(name="🎂 Edad", value=str(datos["edad"]), inline=True)
     embed.add_field(name="📅 Nacimiento", value=datos["fecha_nacimiento"], inline=True)
-    embed.add_field(name="🔢 DNI", value=datos["numero_dni"], inline=True)
+    embed.add_field(name="🔢 Número", value=datos["numero_dni"], inline=True)
+    embed.add_field(name="📆 Expedición", value=datos.get("fecha_expedicion", "Desconocida"), inline=True)
     embed.set_thumbnail(url=objetivo.display_avatar.url)
+    embed.set_footer(text=f"Solicitado por {interaction.user.name}")
+    
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="eliminar_dni", description="Elimina tu DNI")
+@bot.tree.command(name="eliminar_dni", description="🗑️ Elimina tu propio DNI")
 async def eliminar_dni(interaction: discord.Interaction):
+    """✅ Solo el dueño del DNI puede eliminarlo"""
+    
     dnis = cargar(DNI_FILE)
-    if str(interaction.user.id) not in dnis:
-        await interaction.response.send_message("❌ Sin DNI", ephemeral=True)
+    user_id = str(interaction.user.id)
+    
+    if user_id not in dnis:
+        await interaction.response.send_message("❌ **No tienes un DNI para eliminar**", ephemeral=True)
         return
-    del dnis[str(interaction.user.id)]
+    
+    # Confirmación antes de eliminar
+    del dnis[user_id]
     guardar(DNI_FILE, dnis)
-    await interaction.response.send_message("✅ DNI eliminado")
+    
+    # Intentar quitar rol de DNI
+    try:
+        rol = discord.utils.get(interaction.guild.roles, name=ROL_DNI_NOMBRE)
+        if rol and rol in interaction.user.roles:
+            await interaction.user.remove_roles(rol)
+    except:
+        pass
+    
+    await interaction.response.send_message("🗑️ **Tu DNI ha sido eliminado correctamente**", ephemeral=True)
 
 # ==================== ESCENAS ====================
 
-@bot.tree.command(name="abrir_escena", description="Abre sesion - SOLO HOSTS")
-@app_commands.describe(vias="1 o 2", velocidad_maxima="Numeros", adelantamientos="Si/No", link="Link")
+@bot.tree.command(name="abrir_escena", description="🎬 Abrir sesión de rol - SOLO HOSTS")
+@app_commands.describe(
+    vias="1 o 2 vías",
+    velocidad_maxima="Límite de velocidad (km/h)",
+    adelantamientos="¿Se permiten adelantamientos? (Si/No)",
+    link="Link del servidor (ej: https://..."
+)
 async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_maxima: str, adelantamientos: str, link: str):
+    """🔒 Solo usuarios con rol HOST pueden abrir escenas"""
+    
     if not es_host(interaction.user):
-        await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
+        await interaction.response.send_message("⛔ **No tienes permisos para usar este comando.**\nSolo los **Hosts** pueden abrir escenas.", ephemeral=True)
         return
+    
     if vias not in ["1", "2"]:
-        await interaction.response.send_message("⚠️ Vias: 1 o 2", ephemeral=True)
+        await interaction.response.send_message("⚠️ **Vías inválidas.** Usa `1` o `2`", ephemeral=True)
         return
+    
     if not velocidad_maxima.isdigit():
-        await interaction.response.send_message("⚠️ Velocidad: numeros", ephemeral=True)
+        await interaction.response.send_message("⚠️ **Velocidad inválida.** Debe ser un número", ephemeral=True)
         return
+    
     if adelantamientos.lower() not in ["si", "no"]:
-        await interaction.response.send_message("⚠️ Adelanto: Si/No", ephemeral=True)
+        await interaction.response.send_message("⚠️ **Respuesta inválida.** Usa `Si` o `No`", ephemeral=True)
         return
 
     escenas = cargar(ESCENAS_FILE)
     channel_id = str(interaction.channel_id)
+    
     if channel_id in escenas:
-        await interaction.response.send_message("⚠️ Ya hay sesion abierta", ephemeral=True)
+        await interaction.response.send_message("⚠️ **Ya hay una sesión abierta en este canal**", ephemeral=True)
         return
 
     adelanto_permitido = adelantamientos.lower() == "si"
@@ -182,28 +242,34 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
     }
     guardar(ESCENAS_FILE, escenas)
 
-    desc = (
-        f"🎬 **{NOMBRE_SERVIDOR}** - SESION ABIERTA\n\n"
-        f"🔹 Vias: {vias}\n"
-        f"🔹 Velocidad max: {velocidad_maxima} km/h\n"
-        f"🔹 Adelantos: {'✅' if adelanto_permitido else '❌'}\n"
-        f"🔹 Host: {interaction.user.mention}\n"
-        f"🔗 Link: {link}\n\n"
-        "¡Traigan su DNI! 🪪"
+    embed = discord.Embed(
+        title="🎬 **SESIÓN ABIERTA**",
+        description=f"**{NOMBRE_SERVIDOR}** - ¡Comienza el rol!",
+        color=discord.Color.gold()
     )
-    embed = discord.Embed(title="📢 INICIO DE SESION", description=desc, color=discord.Color.gold())
+    embed.add_field(name="🛣️ Vías", value=f"{vias} vías", inline=True)
+    embed.add_field(name="🚗 Velocidad Máx", value=f"{velocidad_maxima} km/h", inline=True)
+    embed.add_field(name="🏁 Adelantamientos", value="✅ Permitidos" if adelanto_permitido else "❌ No permitidos", inline=True)
+    embed.add_field(name="👑 Host", value=interaction.user.mention, inline=False)
+    embed.add_field(name="🔗 Servidor", value=f"[Haz clic aquí]({link})", inline=False)
+    embed.add_field(name="📢", value="**¡Todos con DNI listo para el rol!** 🪪", inline=False)
+    embed.set_footer(text=f"Sesión iniciada por {interaction.user.name}")
+    
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="cerrar_escena", description="Cierra sesion - SOLO HOSTS")
+@bot.tree.command(name="cerrar_escena", description="🔒 Cerrar sesión de rol - SOLO HOSTS")
 async def cerrar_escena(interaction: discord.Interaction):
+    """🔒 Solo usuarios con rol HOST pueden cerrar escenas"""
+    
     if not es_host(interaction.user):
-        await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
+        await interaction.response.send_message("⛔ **No tienes permisos para usar este comando.**\nSolo los **Hosts** pueden cerrar escenas.", ephemeral=True)
         return
 
     escenas = cargar(ESCENAS_FILE)
     channel_id = str(interaction.channel_id)
+    
     if channel_id not in escenas:
-        await interaction.response.send_message("🚫 No hay sesion", ephemeral=True)
+        await interaction.response.send_message("❌ **No hay una sesión activa en este canal**", ephemeral=True)
         return
 
     escena = escenas[channel_id]
@@ -216,10 +282,12 @@ async def cerrar_escena(interaction: discord.Interaction):
     guardar(ESCENAS_FILE, escenas)
 
     embed = discord.Embed(
-        title="🔒 SESION FINALIZADA",
-        description=f"¡Buen rol! Duracion: {horas}h {minutos}m\n⭐ Califiquen con `/evaluar_staff`",
+        title="🔒 **SESIÓN FINALIZADA**",
+        description=f"**¡Excelente rol!** 👏\nDuración: {horas}h {minutos}m",
         color=discord.Color.red()
     )
+    embed.add_field(name="⭐", value="**¡No olvides evaluar al staff con `/evaluar_staff` !**", inline=False)
+    
     host_id = escena.get("host_id")
     await interaction.response.send_message(
         content=f"<@{host_id}>" if host_id else None,
@@ -233,19 +301,20 @@ class VotoView(discord.ui.View):
         super().__init__(timeout=None)
         self.channel_id = channel_id
 
-    @discord.ui.button(label="Asistir", emoji="✅", style=discord.ButtonStyle.success)
+    @discord.ui.button(label="✅ Asistir", style=discord.ButtonStyle.success)
     async def asistir(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._votar(interaction, "asistentes")
 
-    @discord.ui.button(label="No asistir", emoji="❌", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="❌ No asistir", style=discord.ButtonStyle.danger)
     async def no_asistir(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._votar(interaction, "no_asistentes")
 
     async def _votar(self, interaction: discord.Interaction, voto_tipo: str):
         votaciones = cargar(VOTACIONES_FILE)
         votacion = votaciones.get(str(self.channel_id))
+        
         if not votacion:
-            await interaction.response.send_message("⛔ Votacion expirada", ephemeral=True)
+            await interaction.response.send_message("⛔ **Esta votación ya no está activa**", ephemeral=True)
             return
 
         user_id = str(interaction.user.id)
@@ -258,33 +327,49 @@ class VotoView(discord.ui.View):
 
         asist = votacion.get("asistentes", [])
         no_asist = votacion.get("no_asistentes", [])
+        
         embed = discord.Embed(
-            title="🗳️ VOTACION",
-            description=f"✅ Iran: {len(asist)}/{votacion['votos_requeridos']}\n❌ No iran: {len(no_asist)}",
+            title="🗳️ **VOTACIÓN EN CURSO**",
+            description=f"✅ **Asistirán:** {len(asist)}/{votacion['votos_requeridos']}\n❌ **No asistirán:** {len(no_asist)}",
             color=discord.Color.orange()
         )
-        embed.add_field(name="✅", value="\n".join(f"<@{u}>" for u in asist) or "Nadie", inline=False)
-        embed.add_field(name="❌", value="\n".join(f"<@{u}>" for u in no_asist) or "Nadie", inline=False)
+        embed.add_field(
+            name="✅ Asistentes",
+            value="\n".join(f"<@{u}>" for u in asist) or "Nadie aún",
+            inline=False
+        )
+        embed.add_field(
+            name="❌ No asistentes",
+            value="\n".join(f"<@{u}>" for u in no_asist) or "Nadie aún",
+            inline=False
+        )
 
         await interaction.response.edit_message(embed=embed, view=self)
 
         if len(asist) == votacion["votos_requeridos"]:
-            await interaction.channel.send(f"🎉 <@{votacion['host_id']}> ¡Meta alcanzada! Abre con `/abrir_escena`")
+            await interaction.channel.send(
+                f"🎉 **<@{votacion['host_id']}> ¡Meta alcanzada!**\n"
+                f"Puedes abrir la sesión con `/abrir_escena` 🚗"
+            )
 
-@bot.tree.command(name="votacion_sesion", description="Votacion (0-20) - SOLO HOSTS")
-@app_commands.describe(votos_requeridos="1-20")
+@bot.tree.command(name="votacion_sesion", description="🗳️ Crear votación para abrir sesión - SOLO HOSTS")
+@app_commands.describe(votos_requeridos="Número de votos necesarios (1-20)")
 async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: int):
+    """🔒 Solo usuarios con rol HOST pueden crear votaciones"""
+    
     if not es_host(interaction.user):
-        await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
+        await interaction.response.send_message("⛔ **No tienes permisos para usar este comando.**\nSolo los **Hosts** pueden crear votaciones.", ephemeral=True)
         return
+    
     if not (0 < votos_requeridos <= 20):
-        await interaction.response.send_message("⚠️ 1-20 votos", ephemeral=True)
+        await interaction.response.send_message("⚠️ **Número inválido.** Debe ser entre `1` y `20`", ephemeral=True)
         return
 
     votaciones = cargar(VOTACIONES_FILE)
     channel_id = str(interaction.channel_id)
+    
     if channel_id in votaciones:
-        await interaction.response.send_message("⚠️ Ya hay votacion", ephemeral=True)
+        await interaction.response.send_message("⚠️ **Ya hay una votación activa en este canal**", ephemeral=True)
         return
 
     votacion = {
@@ -298,41 +383,48 @@ async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: in
     guardar(VOTACIONES_FILE, votaciones)
 
     embed = discord.Embed(
-        title="🗳️ ¿ABRIMOS SESION?",
-        description=f"Meta: {votos_requeridos} votos",
+        title="🗳️ **¿ABRIMOS SESIÓN?**",
+        description=f"**Necesitamos {votos_requeridos} votos para empezar**",
         color=discord.Color.orange()
     )
-    embed.add_field(name="✅ Iran", value="Nadie", inline=False)
-    embed.add_field(name="❌ No iran", value="Nadie", inline=False)
+    embed.add_field(name="✅ Asistentes", value="Nadie aún", inline=False)
+    embed.add_field(name="❌ No asistentes", value="Nadie aún", inline=False)
+    embed.set_footer(text=f"Host: {interaction.user.name}")
+    
     await interaction.response.send_message(embed=embed, view=VotoView(interaction.channel_id))
 
-@bot.tree.command(name="cerrar_votacion", description="Cierra votacion - SOLO HOSTS")
+@bot.tree.command(name="cerrar_votacion", description="🔒 Cerrar votación - SOLO HOSTS")
 async def cerrar_votacion(interaction: discord.Interaction):
+    """🔒 Solo usuarios con rol HOST pueden cerrar votaciones"""
+    
     if not es_host(interaction.user):
-        await interaction.response.send_message("⛔ Solo hosts", ephemeral=True)
+        await interaction.response.send_message("⛔ **No tienes permisos para usar este comando.**\nSolo los **Hosts** pueden cerrar votaciones.", ephemeral=True)
         return
 
     votaciones = cargar(VOTACIONES_FILE)
     channel_id = str(interaction.channel_id)
+    
     if channel_id not in votaciones:
-        await interaction.response.send_message("🚫 Sin votacion", ephemeral=True)
+        await interaction.response.send_message("❌ **No hay una votación activa en este canal**", ephemeral=True)
         return
 
     del votaciones[channel_id]
     guardar(VOTACIONES_FILE, votaciones)
-    await interaction.response.send_message("🔒 Votacion cerrada")
+    
+    await interaction.response.send_message("🔒 **Votación cerrada exitosamente**")
 
 # ==================== AUTOS ====================
 
-class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehiculo"):
-    usuario_roblox = discord.ui.TextInput(label="Usuario Roblox", max_length=50)
-    placa = discord.ui.TextInput(label="Placa", max_length=20)
-    modelo = discord.ui.TextInput(label="Modelo/Marca", max_length=50)
-    color = discord.ui.TextInput(label="Color", max_length=30)
+class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehículo"):
+    usuario_roblox = discord.ui.TextInput(label="Usuario de Roblox", placeholder="Ej: Juanito_99", max_length=50)
+    placa = discord.ui.TextInput(label="Placa del vehículo", placeholder="Ej: ABC-123", max_length=20)
+    modelo = discord.ui.TextInput(label="Modelo/Marca", placeholder="Ej: Ferrari 488", max_length=50)
+    color = discord.ui.TextInput(label="Color", placeholder="Ej: Rojo", max_length=30)
 
     async def on_submit(self, interaction: discord.Interaction):
         autos = cargar(AUTOS_FILE)
         user_id = str(interaction.user.id)
+        
         autos.setdefault(user_id, []).append({
             "usuario_discord": str(interaction.user),
             "usuario_roblox": self.usuario_roblox.value,
@@ -343,138 +435,66 @@ class AutoModal(discord.ui.Modal, title="🚗 Registrar Vehiculo"):
         })
         guardar(AUTOS_FILE, autos)
 
-        embed = discord.Embed(title="🚗 AUTO REGISTRADO", color=discord.Color.green())
+        embed = discord.Embed(
+            title="🚗 **¡VEHÍCULO REGISTRADO!**",
+            color=discord.Color.green()
+        )
         embed.add_field(name="🎮 Roblox", value=self.usuario_roblox.value, inline=False)
         embed.add_field(name="📋 Modelo", value=self.modelo.value, inline=True)
         embed.add_field(name="🎨 Color", value=self.color.value, inline=True)
         embed.add_field(name="🅿️ Placa", value=self.placa.value, inline=True)
+        embed.set_footer(text=f"Registrado por {interaction.user.name}")
+        
         await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="registrar_auto", description="Registra tu vehiculo")
+@bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehículo personal")
 async def registrar_auto(interaction: discord.Interaction):
+    """✅ Cualquier usuario puede registrar su auto"""
     await interaction.response.send_modal(AutoModal())
 
-@bot.tree.command(name="ver_autos", description="Ve autos registrados")
-@app_commands.describe(usuario="Usuario (opcional)")
+@bot.tree.command(name="ver_autos", description="🚗 Ver los vehículos de un usuario")
+@app_commands.describe(usuario="Usuario a consultar (opcional)")
 async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = None):
+    """✅ Cualquier usuario puede ver los autos de otros"""
+    
     objetivo = usuario or interaction.user
     autos = cargar(AUTOS_FILE)
     user_autos = autos.get(str(objetivo.id), [])
+    
     if not user_autos:
-        await interaction.response.send_message(f"🚫 {objetivo.mention} sin autos", ephemeral=True)
+        await interaction.response.send_message(
+            f"❌ **{objetivo.name} no ha registrado ningún vehículo**",
+            ephemeral=True
+        )
         return
 
-    embed = discord.Embed(title=f"🚗 AUTOS DE {objetivo.name.upper()}", color=discord.Color.blue())
+    embed = discord.Embed(
+        title=f"🚗 VEHÍCULOS DE {objetivo.name.upper()}",
+        color=discord.Color.blue()
+    )
+    
     for i, auto in enumerate(user_autos, 1):
         embed.add_field(
-            name=f"Auto #{i}",
-            value=f"🎮 {auto['usuario_roblox']}\n📋 {auto['modelo']}\n🎨 {auto['color']}\n🅿️ {auto['placa']}",
+            name=f"🚘 Auto #{i}",
+            value=(
+                f"🎮 **Roblox:** {auto['usuario_roblox']}\n"
+                f"📋 **Modelo:** {auto['modelo']}\n"
+                f"🎨 **Color:** {auto['color']}\n"
+                f"🅿️ **Placa:** {auto['placa']}"
+            ),
             inline=False,
         )
+    
+    embed.set_footer(text=f"Consultado por {interaction.user.name}")
     await interaction.response.send_message(embed=embed)
 
 # ==================== MULTAS ====================
 
 class MultiModal(discord.ui.Modal, title="🚨 Registrar Multa"):
-    infractor = discord.ui.TextInput(label="Infractor", max_length=100)
-    infraccion = discord.ui.TextInput(label="Infraccion", max_length=100)
-    precio = discord.ui.TextInput(label="Monto ($)", max_length=10)
+    infractor = discord.ui.TextInput(label="Nombre del infractor", placeholder="Ej: Juan Pérez", max_length=100)
+    infraccion = discord.ui.TextInput(label="Infracción cometida", placeholder="Ej: Exceso de velocidad", max_length=100)
+    precio = discord.ui.TextInput(label="Monto de la multa ($)", placeholder="Ej: 500", max_length=10)
 
     async def on_submit(self, interaction: discord.Interaction):
         if not es_policia(interaction.user):
-            await interaction.response.send_message("⛔ Solo policia", ephemeral=True)
-            return
-        if not self.precio.value.isdigit():
-            await interaction.response.send_message("⚠️ Monto: numeros", ephemeral=True)
-            return
-
-        multas = cargar(MULTAS_FILE)
-        multas.setdefault("historial", []).append({
-            "oficial": str(interaction.user),
-            "infractor": self.infractor.value,
-            "infraccion": self.infraccion.value,
-            "precio": int(self.precio.value),
-            "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"),
-        })
-        guardar(MULTAS_FILE, multas)
-
-        embed = discord.Embed(title="🚨 MULTA REGISTRADA", color=discord.Color.red())
-        embed.add_field(name="👮 Oficial", value=interaction.user.mention, inline=False)
-        embed.add_field(name="👤 Infractor", value=self.infractor.value, inline=False)
-        embed.add_field(name="⚖️ Infraccion", value=self.infraccion.value, inline=False)
-        embed.add_field(name="💰 Monto", value=f"${self.precio.value}", inline=True)
-        await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="registrar_multa", description="Registra multa - SOLO POLICIA")
-async def registrar_multa(interaction: discord.Interaction):
-    if not es_policia(interaction.user):
-        await interaction.response.send_message("⛔ Solo policia", ephemeral=True)
-        return
-    await interaction.response.send_modal(MultiModal())
-
-@bot.tree.command(name="historial_multas", description="Historial de multas")
-async def historial_multas(interaction: discord.Interaction):
-    multas = cargar(MULTAS_FILE)
-    historial = multas.get("historial", [])
-    if not historial:
-        await interaction.response.send_message("📋 Sin multas", ephemeral=True)
-        return
-
-    embed = discord.Embed(title="🚨 HISTORIAL", color=discord.Color.red())
-    for i, multa in enumerate(historial[-10:], 1):
-        embed.add_field(
-            name=f"#{i}",
-            value=f"👮 {multa['oficial']}\n👤 {multa['infractor']}\n⚖️ {multa['infraccion']}\n💰 ${multa['precio']}\n📅 {multa['fecha']}",
-            inline=False,
-        )
-    await interaction.response.send_message(embed=embed)
-
-# ==================== EVALUACION ====================
-
-class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
-    que_hizo = discord.ui.TextInput(label="¿Que hizo?", max_length=100)
-    calificacion = discord.ui.TextInput(label="1-10", max_length=2)
-    amable = discord.ui.TextInput(label="¿Fue amable?", max_length=150)
-    queja = discord.ui.TextInput(label="Sugerencias", required=False, max_length=300)
-
-    def __init__(self, staff: discord.Member):
-        super().__init__()
-        self.staff = staff
-
-    async def on_submit(self, interaction: discord.Interaction):
-        try:
-            nota = int(self.calificacion.value.strip())
-            if not 1 <= nota <= 10:
-                raise ValueError
-        except:
-            await interaction.response.send_message("⚠️ 1-10", ephemeral=True)
-            return
-
-        evaluaciones = cargar(EVALUACIONES_FILE)
-        clave = str(self.staff.id)
-        evaluaciones.setdefault(clave, []).append({
-            "staff": str(self.staff),
-            "evaluador": str(interaction.user),
-            "que_hizo": self.que_hizo.value,
-            "calificacion": nota,
-            "amable": self.amable.value,
-            "queja": self.queja.value or "Ninguna",
-            "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"),
-        })
-        guardar(EVALUACIONES_FILE, evaluaciones)
-
-        estrellas = "⭐" * round(nota / 2) if nota >= 2 else "✩"
-        embed = discord.Embed(title="📝 EVALUACION", color=discord.Color.purple())
-        embed.add_field(name="⭐ Atencion", value=f"{estrellas} ({nota}/10)", inline=False)
-        embed.add_field(name="🤝 Amable", value=self.amable.value, inline=False)
-        embed.add_field(name="💬 Sugerencias", value=self.queja.value or "Ninguna", inline=False)
-        await interaction.response.send_message(content=self.staff.mention, embed=embed)
-
-@bot.tree.command(name="evaluar_staff", description="Evalua al staff")
-@app_commands.describe(staff="Staff a evaluar")
-async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
-    await interaction.response.send_modal(EvalModal(staff))
-
-# ==================== INICIAR BOT ====================
-if __name__ == "__main__":
-    bot.run(TOKEN)
+            await interaction.response.send_message("⛔ **No tienes permisos para registra
