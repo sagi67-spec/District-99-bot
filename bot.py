@@ -477,4 +477,4 @@ async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member)
 
 # ==================== INICIAR BOT ====================
 if __name__ == "__main__":
-    bot.run(TO
+    bot.run(TOKEN)
