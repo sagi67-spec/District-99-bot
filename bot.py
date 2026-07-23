@@ -793,9 +793,11 @@ async def confirmar_pago(interaction: discord.Interaction):
     # Verificar si el usuario tiene un pago pendiente
     if user_id not in PAGOS_PENDIENTES:
         await interaction.response.send_message(
-            "❌ No tienes un pago pendiente.\n"
-            "Primero escribe `!pay <@District99Bot> [monto]` en este canal.\n"
-            "**Asegúrate de tener suficiente dinero en mano.**",
+            "❌ **NO PUEDES CONFIRMAR ESTE PAGO**\n"
+            "El pago fue rechazado por UnbelievaBoat porque no tenías suficiente dinero.\n"
+            "💰 **Alternativas:**\n"
+            "1. Retira dinero del banco con `!withdraw [cantidad]`\n"
+            "2. Vuelve a intentar con `!pay <@District99Bot> [monto]`",
             ephemeral=True
         )
         return
@@ -1010,24 +1012,29 @@ async def on_message(message):
                     contenido = respuesta.content.lower()
                     print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
                     
-                    # Palabras clave de rechazo
+                    # ========== PALABRAS CLAVE DE RECHAZO ==========
                     rechazo = [
                         "don't have that much money",
                         "insufficient",
                         "not enough",
                         "you don't have",
                         "you have insufficient",
-                        "you currently have"
+                        "you currently have",
+                        "you only have",
+                        "don't have enough",
+                        "you do not have"
                     ]
                     
-                    # Palabras clave de éxito
+                    # ========== PALABRAS CLAVE DE ÉXITO ==========
                     exito = [
                         "sent",
                         "paid",
                         "success",
                         "transferred",
                         "gave",
-                        "✅"
+                        "✅",
+                        "successfully",
+                        "completed"
                     ]
                     
                     # Verificar si fue rechazado
@@ -1038,8 +1045,10 @@ async def on_message(message):
                             f"💰 Tu saldo actual es de **$0** en mano.\n"
                             f"🏦 **Alternativas:** Retira dinero del banco con `!withdraw [cantidad]`"
                         )
+                        # ELIMINAR el pago pendiente
                         if user_id in PAGOS_PENDIENTES:
                             del PAGOS_PENDIENTES[user_id]
+                            print(f"❌ Pago rechazado y eliminado para {user_id}")
                         return
                     
                     # Verificar si fue exitoso
