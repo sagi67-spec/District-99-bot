@@ -680,6 +680,7 @@ async def historial_multas(interaction: discord.Interaction, usuario: discord.Me
     embed.set_footer(text="Mostrando ultimas 10 multas")
     await interaction.response.send_message(embed=embed)
 
+
 # ==================== MIS MULTAS (CIUDADANOS) ====================
 @bot.tree.command(name="mis_multas", description="📋 Ver tu historial de multas")
 async def mis_multas(interaction: discord.Interaction):
@@ -721,6 +722,7 @@ async def mis_multas(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed)
 
+
 # ==================== PANEL DE LICENCIAS ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
@@ -754,6 +756,8 @@ class PanelLicenciasView(discord.ui.View):
 
                 num_licencia = len(licencias) + 1
                 licencia_id = f"LIC-2026-{num_licencia:04d}"
+                
+                # Foto de perfil de Roblox
                 foto_roblox = f"https://www.roblox.com/headshot-thumbnail/image?userId={self.user_roblox.value}&width=420&height=420"
 
                 licencias[user_id] = {
@@ -767,7 +771,8 @@ class PanelLicenciasView(discord.ui.View):
                     "licencia_id": licencia_id,
                     "fecha_expedicion": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
                     "fecha_expiracion": (datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"),
-                    "estado": "Activa"
+                    "estado": "Activa",
+                    "foto_roblox": foto_roblox
                 }
                 guardar(LICENCIAS_FILE, licencias)
 
@@ -793,6 +798,8 @@ class PanelLicenciasView(discord.ui.View):
                 embed.add_field(name="📅 Expedición", value=datetime.now(timezone.utc).strftime("%d/%m/%Y"), inline=True)
                 embed.add_field(name="📅 Expiración", value=(datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"), inline=True)
                 embed.add_field(name="📌 Estado", value="🟢 ACTIVA", inline=True)
+                
+                # Imagenes
                 embed.set_thumbnail(url=foto_roblox)
                 embed.set_image(url="https://i.imgur.com/fAcMg8P.jpeg")
                 embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
@@ -809,6 +816,7 @@ class PanelLicenciasView(discord.ui.View):
                 await modal_interaction.response.send_message("✅ **¡Licencia creada exitosamente!**", ephemeral=True)
 
         await interaction.response.send_modal(LicenciaModal())
+
 
 @bot.tree.command(name="panel_licencias", description="📋 Panel para solicitar licencias - SOLO ADMIN/HOST")
 async def panel_licencias(interaction: discord.Interaction):
@@ -841,6 +849,7 @@ async def panel_licencias(interaction: discord.Interaction):
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
 
+
 # ==================== VER LICENCIA ====================
 @bot.tree.command(name="ver_licencia", description="🪪 Ver la licencia de un usuario")
 @app_commands.describe(usuario="Usuario (opcional)")
@@ -868,12 +877,91 @@ async def ver_licencia(interaction: discord.Interaction, usuario: discord.Member
     embed.add_field(name="📅 Expedición", value=datos.get("fecha_expedicion", "N/A"), inline=True)
     embed.add_field(name="📅 Expiración", value=datos.get("fecha_expiracion", "N/A"), inline=True)
     embed.add_field(name="📌 Estado", value="🟢 ACTIVA", inline=True)
-    embed.set_thumbnail(url=objetivo.display_avatar.url)
+    
+    # Foto de perfil de Roblox
+    foto_roblox = datos.get("foto_roblox")
+    if foto_roblox:
+        embed.set_thumbnail(url=foto_roblox)
+    else:
+        embed.set_thumbnail(url=objetivo.display_avatar.url)
+    
     embed.set_image(url="https://i.imgur.com/fAcMg8P.jpeg")
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     
     await interaction.response.send_message(embed=embed)
-    # ==================== EVALUAR STAFF ====================
+
+
+# ==================== ELIMINAR LICENCIA ====================
+@bot.tree.command(name="eliminar_licencia", description="🗑️ Eliminar licencia de un usuario - SOLO ADMIN/HOST")
+@app_commands.describe(
+    usuario="Usuario a eliminar licencia",
+    motivo="Motivo de la eliminación (opcional)"
+)
+async def eliminar_licencia(
+    interaction: discord.Interaction,
+    usuario: discord.Member,
+    motivo: str = None
+):
+    """Solo hosts y admins pueden eliminar licencias"""
+    
+    # Verificar permisos
+    if not es_host(interaction.user) and not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
+        return
+    
+    licencias = cargar(LICENCIAS_FILE)
+    user_id = str(usuario.id)
+    
+    # Verificar si el usuario tiene licencia
+    if user_id not in licencias:
+        await interaction.response.send_message(f"❌ {usuario.mention} no tiene licencia activa.", ephemeral=True)
+        return
+    
+    # Guardar datos de la licencia para el embed
+    datos_licencia = licencias[user_id]
+    licencia_id = datos_licencia.get("licencia_id", "N/A")
+    nombre = datos_licencia.get("nombre", "N/A")
+    apellidos = datos_licencia.get("apellidos", "N/A")
+    
+    # Eliminar licencia
+    del licencias[user_id]
+    guardar(LICENCIAS_FILE, licencias)
+    
+    # Quitar rol de licencia
+    try:
+        rol = discord.utils.get(interaction.guild.roles, name=ROL_LICENCIA_NOMBRE)
+        if rol and rol in usuario.roles:
+            await usuario.remove_roles(rol)
+    except:
+        pass
+    
+    # Embed de confirmación
+    embed = discord.Embed(
+        title="🗑️ LICENCIA ELIMINADA",
+        description=f"**{usuario.mention}** ya no tiene licencia de conducir.",
+        color=discord.Color.red()
+    )
+    embed.add_field(name="📋 Licencia", value=licencia_id, inline=True)
+    embed.add_field(name="👤 Nombre", value=f"{nombre} {apellidos}", inline=True)
+    embed.add_field(name="👮 Eliminado por", value=interaction.user.mention, inline=False)
+    if motivo:
+        embed.add_field(name="📌 Motivo", value=motivo, inline=False)
+    embed.set_thumbnail(url=usuario.display_avatar.url)
+    embed.set_footer(text=f"Eliminado el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
+    
+    await interaction.response.send_message(embed=embed)
+    
+    # Notificar al canal de registro
+    canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
+    if canal_registro:
+        await canal_registro.send(
+            f"📢 **Licencia eliminada**\n"
+            f"👤 Usuario: {usuario.mention}\n"
+            f"📋 Licencia: {licencia_id}\n"
+            f"👮 Eliminado por: {interaction.user.mention}\n"
+            f"📌 Motivo: {motivo if motivo else 'No especificado'}"
+    )
+        # ==================== EVALUAR STAFF ====================
 class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
     que_hizo = discord.ui.TextInput(
         label="Que hizo el staff?",
