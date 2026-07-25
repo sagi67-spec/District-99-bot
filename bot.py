@@ -85,82 +85,74 @@ def validar_fecha(fecha):
         return 1 <= month <= 12 and 1 <= day <= 31
     except:
         return False
-
-# ==================== GENERAR LICENCIA CON PIL ====================
+        # ==================== GENERAR LICENCIA CON PIL ====================
 PLANTILLA_LICENCIA_URL = "https://i.imgur.com/adKYkJN.jpeg"
 
 def generar_imagen_licencia(datos_usuario, foto_roblox_url):
     """Genera la imagen de la licencia con los datos del usuario"""
-    
-    # Descargar plantilla
-    response = requests.get(PLANTILLA_LICENCIA_URL)
-    plantilla = Image.open(io.BytesIO(response.content))
-    
-    # Crear un objeto para dibujar
-    draw = ImageDraw.Draw(plantilla)
-    
-    # Intentar cargar una fuente (si no existe, usar default)
     try:
-        font = ImageFont.truetype("arial.ttf", 20)
-        font_bold = ImageFont.truetype("arialbd.ttf", 22)
-    except:
-        font = ImageFont.load_default()
-        font_bold = font
-    
-    # Colores
-    color_texto = (255, 255, 255)  # Blanco
-    color_dorado = (255, 215, 0)  # Dorado
-    
-    # Posiciones para los datos (ajusta según tu plantilla)
-    posiciones = {
-        "nombre": (150, 280),
-        "apellidos": (150, 310),
-        "fecha_nac": (150, 340),
-        "dni": (150, 370),
-        "licencia": (150, 400),
-        "fecha_exp": (150, 430),
-        "fecha_expira": (150, 460),
-        "firma": (150, 520)
-    }
-    
-    # Escribir los datos
-    draw.text(posiciones["nombre"], f"Nombre: {datos_usuario['nombre']}", fill=color_texto, font=font)
-    draw.text(posiciones["apellidos"], f"Apellidos: {datos_usuario['apellidos']}", fill=color_texto, font=font)
-    draw.text(posiciones["fecha_nac"], f"Nacimiento: {datos_usuario.get('fecha_nacimiento', 'N/A')}", fill=color_texto, font=font)
-    draw.text(posiciones["dni"], f"DNI: {datos_usuario.get('dni', 'N/A')}", fill=color_texto, font=font)
-    draw.text(posiciones["licencia"], f"Licencia: {datos_usuario['licencia_id']}", fill=color_dorado, font=font_bold)
-    draw.text(posiciones["fecha_exp"], f"Expedición: {datos_usuario['fecha_expedicion']}", fill=color_texto, font=font)
-    draw.text(posiciones["fecha_expira"], f"Expiración: {datos_usuario['fecha_expiracion']}", fill=color_texto, font=font)
-    draw.text(posiciones["firma"], f"Firma: {datos_usuario['nombre']} {datos_usuario['apellidos']}", fill=color_texto, font=font)
-    
-    # Pegar foto de Roblox en el círculo
-    if foto_roblox_url:
+        # Descargar plantilla
+        response = requests.get(PLANTILLA_LICENCIA_URL)
+        plantilla = Image.open(io.BytesIO(response.content))
+        
+        # Crear un objeto para dibujar
+        draw = ImageDraw.Draw(plantilla)
+        
+        # Intentar cargar una fuente
         try:
-            response_foto = requests.get(foto_roblox_url)
-            foto = Image.open(io.BytesIO(response_foto.content))
-            
-            # Redimensionar y hacer círculo
-            foto = foto.resize((120, 120))
-            mascara = Image.new('L', (120, 120), 0)
-            draw_mask = ImageDraw.Draw(mascara)
-            draw_mask.ellipse((0, 0, 120, 120), fill=255)
-            
-            # Crear imagen circular
-            foto_circular = ImageOps.fit(foto, (120, 120), centering=(0.5, 0.5))
-            foto_circular.putalpha(mascara)
-            
-            # Pegar en la plantilla (posición del círculo)
-            plantilla.paste(foto_circular, (60, 260), foto_circular)
+            font = ImageFont.truetype("arial.ttf", 18)
+            font_bold = ImageFont.truetype("arialbd.ttf", 20)
         except:
-            pass
-    
-    # Guardar en bytes
-    output = io.BytesIO()
-    plantilla.save(output, format='PNG')
-    output.seek(0)
-    
-    return output
-
+            font = ImageFont.load_default()
+            font_bold = font
+        
+        # Colores
+        color_texto = (255, 255, 255)  # Blanco
+        color_dorado = (255, 215, 0)   # Dorado
+        
+        # Posiciones (ajusta según tu plantilla)
+        pos_x = 150
+        pos_y = 280
+        espaciado = 30
+        
+        # Escribir los datos en la imagen
+        draw.text((pos_x, pos_y), f"Nombre: {datos_usuario.get('nombre', 'N/A')}", fill=color_texto, font=font)
+        draw.text((pos_x, pos_y + espaciado), f"Apellidos: {datos_usuario.get('apellidos', 'N/A')}", fill=color_texto, font=font)
+        draw.text((pos_x, pos_y + espaciado * 2), f"DNI: {datos_usuario.get('dni', 'N/A')}", fill=color_texto, font=font)
+        draw.text((pos_x, pos_y + espaciado * 3), f"Licencia: {datos_usuario.get('licencia_id', 'N/A')}", fill=color_dorado, font=font_bold)
+        draw.text((pos_x, pos_y + espaciado * 4), f"Expedición: {datos_usuario.get('fecha_expedicion', 'N/A')}", fill=color_texto, font=font)
+        draw.text((pos_x, pos_y + espaciado * 5), f"Expiración: {datos_usuario.get('fecha_expiracion', 'N/A')}", fill=color_texto, font=font)
+        draw.text((pos_x, pos_y + espaciado * 6), f"Firma: {datos_usuario.get('nombre', 'N/A')} {datos_usuario.get('apellidos', 'N/A')}", fill=color_texto, font=font)
+        
+        # Pegar foto de Roblox en el círculo
+        if foto_roblox_url:
+            try:
+                response_foto = requests.get(foto_roblox_url)
+                foto = Image.open(io.BytesIO(response_foto.content))
+                
+                # Redimensionar y hacer círculo
+                foto = foto.resize((120, 120))
+                mascara = Image.new('L', (120, 120), 0)
+                draw_mask = ImageDraw.Draw(mascara)
+                draw_mask.ellipse((0, 0, 120, 120), fill=255)
+                
+                foto_circular = ImageOps.fit(foto, (120, 120), centering=(0.5, 0.5))
+                foto_circular.putalpha(mascara)
+                
+                plantilla.paste(foto_circular, (60, 260), foto_circular)
+            except Exception as e:
+                print(f"⚠️ Error al pegar foto: {e}")
+        
+        # Guardar en bytes
+        output = io.BytesIO()
+        plantilla.save(output, format='PNG')
+        output.seek(0)
+        return output
+        
+    except Exception as e:
+        print(f"❌ Error generando imagen: {e}")
+        return None
+        
 # ==================== BOT ====================
 intents = discord.Intents.default()
 intents.members = True
