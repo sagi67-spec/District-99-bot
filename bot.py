@@ -103,7 +103,7 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
         # Crear un objeto para dibujar
         draw = ImageDraw.Draw(plantilla)
         
-        # ========== USAR FUENTE DEJAVU (INSTALAR CON apt-get) ==========
+        # ========== USAR FUENTE DEJAVU ==========
         try:
             font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
             font_bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 30)
@@ -116,15 +116,15 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
         color_blanco = (255, 255, 255)
         color_dorado = (255, 215, 0)
         
-        # ========== COORDENADAS DE LA PLANTILLA ==========
+        # ========== COORDENADAS ACTUALIZADAS ==========
         # Posición X izquierda (Nombre, Apellidos, Fecha Nac, DNI)
-        pos_x_izq = 115
+        pos_x_izq = 220
         # Posición X derecha (Licencia, Expedición, Expiración)
-        pos_x_der = 580
+        pos_x_der = 520
         # Posición Y inicial (primer campo: Nombre)
-        pos_y_inicio = 535
+        pos_y_inicio = 280
         # Espaciado vertical entre campos
-        espaciado = 38
+        espaciado = 50
         
         # ========== ESCRIBIR DATOS EN LA PLANTILLA ==========
         # Columna izquierda
@@ -134,9 +134,9 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
         draw.text((pos_x_izq, pos_y_inicio + espaciado * 3), f"{datos_usuario.get('dni', 'N/A')}", fill=color_blanco, font=font)
         
         # Columna derecha
-        draw.text((pos_x_der, pos_y_inicio + espaciado * 1), f"{datos_usuario.get('licencia_id', 'N/A')}", fill=color_dorado, font=font_bold)
-        draw.text((pos_x_der, pos_y_inicio + espaciado * 2), f"{datos_usuario.get('fecha_expedicion', 'N/A')}", fill=color_blanco, font=font)
-        draw.text((pos_x_der, pos_y_inicio + espaciado * 3), f"{datos_usuario.get('fecha_expiracion', 'N/A')}", fill=color_blanco, font=font)
+        draw.text((pos_x_der, pos_y_inicio + espaciado * 0), f"{datos_usuario.get('licencia_id', 'N/A')}", fill=color_dorado, font=font_bold)
+        draw.text((pos_x_der, pos_y_inicio + espaciado * 1), f"{datos_usuario.get('fecha_expedicion', 'N/A')}", fill=color_blanco, font=font)
+        draw.text((pos_x_der, pos_y_inicio + espaciado * 2), f"{datos_usuario.get('fecha_expiracion', 'N/A')}", fill=color_blanco, font=font)
         
         # Firma (abajo de todo)
         firma_y = pos_y_inicio + (espaciado * 5)
