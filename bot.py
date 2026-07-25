@@ -27,16 +27,20 @@ EVALUACIONES_FILE = "evaluaciones.json"
 VOTACIONES_FILE = "votaciones.json"
 AUTOS_FILE = "autos.json"
 MULTAS_FILE = "multas.json"
+LICENCIAS_FILE = "licencias.json"
 
 NOMBRE_SERVIDOR = "DISTRICT 99"
 
-# ==================== CONFIGURACIÓN ====================
-CANAL_PAGOS_ID = 1529957306198917200  # ID del canal para pagar multas
+# ==================== CONFIGURACIÓN DE CANALES ====================
+CANAL_PAGOS_ID = 1529957306198917200  # Canal para pagar multas
+CANAL_CREAR_LICENCIAS_ID = 1530408543784669256  # Canal donde va el panel de licencias
+CANAL_REGISTRO_LICENCIAS_ID = 1530408361802334341  # Canal donde se registran las licencias
 
 # ==================== ROLES ====================
 ROL_HOST_NOMBRE = "Host│🎮"
 ROL_POLICIA_NOMBRE = "Wsp│👮"
 ROL_DNI_NOMBRE = "Dni│🪪"
+ROL_LICENCIA_NOMBRE = "Licencia│🚗"
 
 def tiene_rol(member, rol_buscado):
     if not member:
@@ -84,7 +88,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Crear archivos
-ARCHIVOS_JSON = [DNI_FILE, ESCENAS_FILE, EVALUACIONES_FILE, VOTACIONES_FILE, AUTOS_FILE, MULTAS_FILE]
+ARCHIVOS_JSON = [DNI_FILE, ESCENAS_FILE, EVALUACIONES_FILE, VOTACIONES_FILE, AUTOS_FILE, MULTAS_FILE, LICENCIAS_FILE]
 for archivo in ARCHIVOS_JSON:
     if not os.path.exists(archivo):
         with open(archivo, "w", encoding="utf-8") as f:
@@ -101,6 +105,11 @@ async def on_ready():
         print(f"   🔹 Host: {ROL_HOST_NOMBRE}")
         print(f"   🔹 Policía: {ROL_POLICIA_NOMBRE}")
         print(f"   🔹 DNI: {ROL_DNI_NOMBRE}")
+        print(f"   🔹 Licencia: {ROL_LICENCIA_NOMBRE}")
+        print(f"✅ Canales configurados:")
+        print(f"   🔹 Pagos: {CANAL_PAGOS_ID}")
+        print(f"   🔹 Crear Licencias: {CANAL_CREAR_LICENCIAS_ID}")
+        print(f"   🔹 Registro Licencias: {CANAL_REGISTRO_LICENCIAS_ID}")
     except Exception as e:
         print(f"❌ Error al sincronizar: {e}")
 
@@ -626,7 +635,7 @@ async def registrar_multa(
         content=f"{infractor.mention} ¡Has recibido una multa!\n"
                 f"📢 **Para pagar:** Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District 99 Bot {precio}`",
         embed=embed
-                 )
+    )
     # ==================== HISTORIAL MULTAS (SOLO POLICIA) ====================
 @bot.tree.command(name="historial_multas", description="📋 Ver historial de multas - SOLO POLICIA")
 @app_commands.describe(usuario="Usuario (opcional)")
@@ -709,6 +718,173 @@ async def mis_multas(interaction: discord.Interaction):
     
     embed.add_field(name="💸 TOTAL ADEUDADO", value=f"**${total}**", inline=False)
     embed.set_footer(text="Mostrando ultimas 10 multas")
+    
+    await interaction.response.send_message(embed=embed)
+
+# ==================== PANEL DE LICENCIAS ====================
+class PanelLicenciasView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="📝 Crear Licencia", style=discord.ButtonStyle.success, custom_id="crear_licencia")
+    async def crear_licencia(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Verificar que el comando se use en el canal correcto
+        if interaction.channel.id != CANAL_CREAR_LICENCIAS_ID:
+            await interaction.response.send_message(f"⚠️ Este panel solo funciona en <#{CANAL_CREAR_LICENCIAS_ID}>", ephemeral=True)
+            return
+
+        class LicenciaModal(discord.ui.Modal, title="📝 Solicitar Licencia"):
+            nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
+            apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
+            edad = discord.ui.TextInput(label="Edad", placeholder="Ej: 25", max_length=3, required=True)
+            oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
+            user_roblox = discord.ui.TextInput(label="User de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
+
+            async def on_submit(self, modal_interaction: discord.Interaction):
+                # Verificar si el usuario ya tiene licencia
+                licencias = cargar(LICENCIAS_FILE)
+                user_id = str(modal_interaction.user.id)
+                
+                if user_id in licencias:
+                    await modal_interaction.response.send_message("⚠️ Ya tienes una licencia activa.", ephemeral=True)
+                    return
+
+                # Verificar si el usuario tiene DNI
+                dnis = cargar(DNI_FILE)
+                if user_id not in dnis:
+                    await modal_interaction.response.send_message("⚠️ Necesitas tener un DNI antes de solicitar licencia. Usa `/crear_dni`", ephemeral=True)
+                    return
+
+                # Generar número de licencia
+                num_licencia = len(licencias) + 1
+                licencia_id = f"LIC-2026-{num_licencia:04d}"
+
+                # Obtener foto de perfil de Roblox
+                foto_roblox = f"https://www.roblox.com/headshot-thumbnail/image?userId={self.user_roblox.value}&width=420&height=420"
+
+                # Guardar licencia
+                licencias[user_id] = {
+                    "nombre": self.nombre.value,
+                    "apellidos": self.apellidos.value,
+                    "edad": self.edad.value,
+                    "oficio": self.oficio.value,
+                    "user_roblox": self.user_roblox.value,
+                    "user_discord": str(modal_interaction.user),
+                    "dni": dnis[user_id]["numero_dni"],
+                    "licencia_id": licencia_id,
+                    "fecha_expedicion": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
+                    "fecha_expiracion": (datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"),  # 2 años
+                    "estado": "Activa"
+                }
+                guardar(LICENCIAS_FILE, licencias)
+
+                # Asignar rol de licencia
+                try:
+                    rol = discord.utils.get(modal_interaction.guild.roles, name=ROL_LICENCIA_NOMBRE)
+                    if rol:
+                        await modal_interaction.user.add_roles(rol)
+                except:
+                    pass
+
+                # Embed de la licencia
+                embed = discord.Embed(
+                    title="🪪 NUEVA LICENCIA GENERADA",
+                    description=f"**{modal_interaction.user.mention}**",
+                    color=discord.Color.gold()
+                )
+                embed.add_field(name="📋 Licencia", value=f"**{licencia_id}**", inline=False)
+                embed.add_field(name="👤 Nombre", value=self.nombre.value, inline=True)
+                embed.add_field(name="👥 Apellidos", value=self.apellidos.value, inline=True)
+                embed.add_field(name="🎂 Edad", value=f"{self.edad.value} años", inline=True)
+                embed.add_field(name="💼 Oficio", value=self.oficio.value, inline=True)
+                embed.add_field(name="🎮 Roblox", value=self.user_roblox.value, inline=True)
+                embed.add_field(name="🔢 DNI", value=dnis[user_id]["numero_dni"], inline=True)
+                embed.add_field(name="📅 Expedición", value=datetime.now(timezone.utc).strftime("%d/%m/%Y"), inline=True)
+                embed.add_field(name="📅 Expiración", value=(datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"), inline=True)
+                embed.add_field(name="📌 Estado", value="🟢 ACTIVA", inline=True)
+                embed.set_thumbnail(url=foto_roblox)
+                embed.set_image(url="https://i.imgur.com/fAcMg8P.jpeg")
+                embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
+
+                # Enviar al canal de registro de licencias
+                canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
+                if canal_registro:
+                    await canal_registro.send(
+                        content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
+                        embed=embed
+                    )
+                else:
+                    await modal_interaction.response.send_message("❌ No se encontró el canal de registro de licencias.", ephemeral=True)
+
+                await modal_interaction.response.send_message("✅ **¡Licencia creada exitosamente!**", ephemeral=True)
+
+        await interaction.response.send_modal(LicenciaModal())
+
+@bot.tree.command(name="panel_licencias", description="📋 Panel para solicitar licencias - SOLO ADMIN/HOST")
+async def panel_licencias(interaction: discord.Interaction):
+    """Solo hosts y admins pueden usar este comando"""
+    
+    # Verificar si el usuario es host o admin
+    if not es_host(interaction.user) and not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
+        return
+    
+    # Verificar que el comando se use en el canal correcto
+    if interaction.channel.id != CANAL_CREAR_LICENCIAS_ID:
+        await interaction.response.send_message(f"⚠️ Este comando solo funciona en <#{CANAL_CREAR_LICENCIAS_ID}>", ephemeral=True)
+        return
+    
+    embed = discord.Embed(
+        title="📋 PANEL DE LICENCIAS DE CONDUCIR",
+        description=(
+            "Presiona el botón para completar tus datos y generar tu licencia de conducir de **DISTRICT 99 - GVRP**.\n\n"
+            "📌 **Datos solicitados:**\n"
+            "• Nombre\n"
+            "• Apellidos\n"
+            "• Edad\n"
+            "• Oficio\n"
+            "• User de Roblox\n\n"
+            "⚠️ **Requisitos:**\n"
+            "• Debes tener un DNI creado (`/crear_dni`)\n\n"
+            "El User de Discord se colocará automáticamente."
+        ),
+        color=discord.Color.gold()
+    )
+    embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
+    
+    view = PanelLicenciasView()
+    await interaction.response.send_message(embed=embed, view=view)
+
+# ==================== VER LICENCIA ====================
+@bot.tree.command(name="ver_licencia", description="🪪 Ver la licencia de un usuario")
+@app_commands.describe(usuario="Usuario (opcional)")
+async def ver_licencia(interaction: discord.Interaction, usuario: discord.Member = None):
+    objetivo = usuario or interaction.user
+    licencias = cargar(LICENCIAS_FILE)
+    datos = licencias.get(str(objetivo.id))
+    
+    if not datos:
+        await interaction.response.send_message(f"❌ {objetivo.mention} no tiene licencia.", ephemeral=True)
+        return
+    
+    embed = discord.Embed(
+        title="🪪 LICENCIA DE CONDUCIR",
+        description=f"**{objetivo.mention}**",
+        color=discord.Color.gold()
+    )
+    embed.add_field(name="📋 Licencia", value=datos.get("licencia_id", "N/A"), inline=False)
+    embed.add_field(name="👤 Nombre", value=datos.get("nombre", "N/A"), inline=True)
+    embed.add_field(name="👥 Apellidos", value=datos.get("apellidos", "N/A"), inline=True)
+    embed.add_field(name="🎂 Edad", value=datos.get("edad", "N/A"), inline=True)
+    embed.add_field(name="💼 Oficio", value=datos.get("oficio", "N/A"), inline=True)
+    embed.add_field(name="🎮 Roblox", value=datos.get("user_roblox", "N/A"), inline=True)
+    embed.add_field(name="🔢 DNI", value=datos.get("dni", "N/A"), inline=True)
+    embed.add_field(name="📅 Expedición", value=datos.get("fecha_expedicion", "N/A"), inline=True)
+    embed.add_field(name="📅 Expiración", value=datos.get("fecha_expiracion", "N/A"), inline=True)
+    embed.add_field(name="📌 Estado", value="🟢 ACTIVA", inline=True)
+    embed.set_thumbnail(url=objetivo.display_avatar.url)
+    embed.set_image(url="https://i.imgur.com/fAcMg8P.jpeg")
+    embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     
     await interaction.response.send_message(embed=embed)
 
@@ -882,19 +1058,4 @@ async def on_message(message):
                         if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
                             pendientes_texto += f"• ${multa['precio']} - {multa['infraccion']}\n"
                     
-                    await message.channel.send(
-                        f"{user_mention} ⚠️ **No encontré una multa de ${monto}.**\n"
-                        f"📋 **Tus multas pendientes:**\n{pendientes_texto}\n"
-                        f"💡 **Sugerencia:** Usa `/mis_multas` para ver todas tus multas."
-                    )
-    
-    await bot.process_commands(message)
-
-# ==================== INICIAR ====================
-print("🚀 Intentando conectar a Discord...")
-try:
-    bot.run(TOKEN)
-except Exception as e:
-    print(f"❌ ERROR FATAL: {e}")
-    import traceback
-    traceback.print_exc()
+        
