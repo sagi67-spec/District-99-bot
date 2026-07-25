@@ -5,17 +5,12 @@ Bot de Discord para servidor de rol (RP) — DISTRICT 99
 import json
 import os
 import re
-import io
 from datetime import datetime, timezone, timedelta
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-
-# Pillow para generar imágenes
-from PIL import Image, ImageDraw, ImageFont, ImageOps
-import requests
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -47,6 +42,14 @@ ROL_POLICIA_NOMBRE = "Wsp│👮"
 ROL_DNI_NOMBRE = "Dni│🪪"
 ROL_LICENCIA_NOMBRE = "Licencia│🚗"
 
+# ==================== PLANTILLA DE LICENCIA ====================
+PLANTILLA_LICENCIA_URL = "https://i.imgur.com/adKYkJN.jpeg"
+
+def generar_imagen_licencia(datos_usuario, foto_roblox_url):
+    """Versión simplificada - solo devuelve la URL de la plantilla"""
+    return PLANTILLA_LICENCIA_URL
+
+# ==================== FUNCIONES ====================
 def tiene_rol(member, rol_buscado):
     if not member:
         return False
@@ -62,7 +65,6 @@ def es_host(member):
 def es_policia(member):
     return tiene_rol(member, ROL_POLICIA_NOMBRE)
 
-# ==================== FUNCIONES ====================
 def cargar(archivo):
     if not os.path.exists(archivo):
         return {}
@@ -85,74 +87,7 @@ def validar_fecha(fecha):
         return 1 <= month <= 12 and 1 <= day <= 31
     except:
         return False
-        # ==================== GENERAR LICENCIA CON PIL ====================
-PLANTILLA_LICENCIA_URL = "https://i.imgur.com/adKYkJN.jpeg"
 
-def generar_imagen_licencia(datos_usuario, foto_roblox_url):
-    """Genera la imagen de la licencia con los datos del usuario"""
-    try:
-        # Descargar plantilla
-        response = requests.get(PLANTILLA_LICENCIA_URL)
-        plantilla = Image.open(io.BytesIO(response.content))
-        
-        # Crear un objeto para dibujar
-        draw = ImageDraw.Draw(plantilla)
-        
-        # Intentar cargar una fuente
-        try:
-            font = ImageFont.truetype("arial.ttf", 18)
-            font_bold = ImageFont.truetype("arialbd.ttf", 20)
-        except:
-            font = ImageFont.load_default()
-            font_bold = font
-        
-        # Colores
-        color_texto = (255, 255, 255)  # Blanco
-        color_dorado = (255, 215, 0)   # Dorado
-        
-        # Posiciones (ajusta según tu plantilla)
-        pos_x = 150
-        pos_y = 280
-        espaciado = 30
-        
-        # Escribir los datos en la imagen
-        draw.text((pos_x, pos_y), f"Nombre: {datos_usuario.get('nombre', 'N/A')}", fill=color_texto, font=font)
-        draw.text((pos_x, pos_y + espaciado), f"Apellidos: {datos_usuario.get('apellidos', 'N/A')}", fill=color_texto, font=font)
-        draw.text((pos_x, pos_y + espaciado * 2), f"DNI: {datos_usuario.get('dni', 'N/A')}", fill=color_texto, font=font)
-        draw.text((pos_x, pos_y + espaciado * 3), f"Licencia: {datos_usuario.get('licencia_id', 'N/A')}", fill=color_dorado, font=font_bold)
-        draw.text((pos_x, pos_y + espaciado * 4), f"Expedición: {datos_usuario.get('fecha_expedicion', 'N/A')}", fill=color_texto, font=font)
-        draw.text((pos_x, pos_y + espaciado * 5), f"Expiración: {datos_usuario.get('fecha_expiracion', 'N/A')}", fill=color_texto, font=font)
-        draw.text((pos_x, pos_y + espaciado * 6), f"Firma: {datos_usuario.get('nombre', 'N/A')} {datos_usuario.get('apellidos', 'N/A')}", fill=color_texto, font=font)
-        
-        # Pegar foto de Roblox en el círculo
-        if foto_roblox_url:
-            try:
-                response_foto = requests.get(foto_roblox_url)
-                foto = Image.open(io.BytesIO(response_foto.content))
-                
-                # Redimensionar y hacer círculo
-                foto = foto.resize((120, 120))
-                mascara = Image.new('L', (120, 120), 0)
-                draw_mask = ImageDraw.Draw(mascara)
-                draw_mask.ellipse((0, 0, 120, 120), fill=255)
-                
-                foto_circular = ImageOps.fit(foto, (120, 120), centering=(0.5, 0.5))
-                foto_circular.putalpha(mascara)
-                
-                plantilla.paste(foto_circular, (60, 260), foto_circular)
-            except Exception as e:
-                print(f"⚠️ Error al pegar foto: {e}")
-        
-        # Guardar en bytes
-        output = io.BytesIO()
-        plantilla.save(output, format='PNG')
-        output.seek(0)
-        return output
-        
-    except Exception as e:
-        print(f"❌ Error generando imagen: {e}")
-        return None
-        
 # ==================== BOT ====================
 intents = discord.Intents.default()
 intents.members = True
@@ -857,15 +792,10 @@ class PanelLicenciasView(discord.ui.View):
                 except:
                     pass
 
-                # ========== GENERAR IMAGEN DE LA LICENCIA ==========
-                try:
-                    imagen_bytes = generar_imagen_licencia(datos_licencia, foto_roblox)
-                    archivo = discord.File(imagen_bytes, filename=f"licencia_{user_id}.png")
-                except Exception as e:
-                    print(f"❌ Error generando imagen: {e}")
-                    archivo = None
+                # Obtener URL de la plantilla
+                url_plantilla = generar_imagen_licencia(datos_licencia, foto_roblox)
 
-                # Embed con la licencia
+                # Embed de la licencia
                 embed = discord.Embed(
                     title="🪪 NUEVA LICENCIA GENERADA",
                     description=f"**{modal_interaction.user.mention}**",
@@ -881,29 +811,25 @@ class PanelLicenciasView(discord.ui.View):
                 embed.add_field(name="📅 Expedición", value=datetime.now(timezone.utc).strftime("%d/%m/%Y"), inline=True)
                 embed.add_field(name="📅 Expiración", value=(datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"), inline=True)
                 embed.add_field(name="📌 Estado", value="🟢 ACTIVA", inline=True)
+                
+                # Imagenes
+                embed.set_thumbnail(url=foto_roblox)
+                embed.set_image(url=url_plantilla)
                 embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
 
                 # Enviar al canal de registro
                 canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
                 if canal_registro:
-                    if archivo:
-                        await canal_registro.send(
-                            content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
-                            file=archivo,
-                            embed=embed
-                        )
-                    else:
-                        await canal_registro.send(
-                            content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
-                            embed=embed
-                        )
+                    await canal_registro.send(
+                        content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
+                        embed=embed
+                    )
                 else:
                     await modal_interaction.response.send_message("❌ No se encontró el canal de registro de licencias.", ephemeral=True)
 
                 await modal_interaction.response.send_message("✅ **¡Licencia creada exitosamente!**", ephemeral=True)
 
         await interaction.response.send_modal(LicenciaModal())
-
 
 @bot.tree.command(name="panel_licencias", description="📋 Panel para solicitar licencias - SOLO ADMIN/HOST")
 async def panel_licencias(interaction: discord.Interaction):
@@ -935,7 +861,6 @@ async def panel_licencias(interaction: discord.Interaction):
     
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
-
 
 # ==================== VER LICENCIA ====================
 @bot.tree.command(name="ver_licencia", description="🪪 Ver la licencia de un usuario")
@@ -972,10 +897,11 @@ async def ver_licencia(interaction: discord.Interaction, usuario: discord.Member
     else:
         embed.set_thumbnail(url=objetivo.display_avatar.url)
     
+    # Plantilla de licencia
+    embed.set_image(url=PLANTILLA_LICENCIA_URL)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     
     await interaction.response.send_message(embed=embed)
-
 
 # ==================== ELIMINAR LICENCIA ====================
 @bot.tree.command(name="eliminar_licencia", description="🗑️ Eliminar licencia de un usuario - SOLO ADMIN/HOST")
