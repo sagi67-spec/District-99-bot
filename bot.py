@@ -90,8 +90,12 @@ def validar_fecha(fecha):
 PLANTILLA_LICENCIA_URL = "https://i.imgur.com/adKYkJN.jpeg"
 
 def generar_imagen_licencia(datos_usuario, foto_roblox_url):
-    """Genera la imagen de la licencia con los datos del usuario"""
+    """Genera la imagen de la licencia con los datos del usuario usando PIL"""
     try:
+        import requests
+        import io
+        from PIL import Image, ImageDraw, ImageFont, ImageOps
+
         # Descargar plantilla
         response = requests.get(PLANTILLA_LICENCIA_URL)
         plantilla = Image.open(io.BytesIO(response.content))
@@ -99,19 +103,20 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
         # Crear un objeto para dibujar
         draw = ImageDraw.Draw(plantilla)
         
-        # Intentar cargar una fuente
+        # ========== USAR FUENTE DEJAVU (INSTALAR CON apt-get) ==========
         try:
-            font = ImageFont.truetype("arial.ttf", 28)
-            font_bold = ImageFont.truetype("arialbd.ttf", 30)
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
+            font_bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 30)
         except:
+            # Si falla, usar la fuente por defecto
             font = ImageFont.load_default()
-            font_bold = font
+            font_bold = ImageFont.load_default()
         
         # Colores
         color_blanco = (255, 255, 255)
         color_dorado = (255, 215, 0)
         
-        # ========== COORDENADAS DE TU PLANTILLA ==========
+        # ========== COORDENADAS DE LA PLANTILLA ==========
         # Posición X izquierda (Nombre, Apellidos, Fecha Nac, DNI)
         pos_x_izq = 115
         # Posición X derecha (Licencia, Expedición, Expiración)
@@ -153,7 +158,7 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
             except Exception as e:
                 print(f"⚠️ Error al pegar foto: {e}")
         
-        # Guardar en bytes
+        # ========== GUARDAR IMAGEN ==========
         output = io.BytesIO()
         plantilla.save(output, format='PNG')
         output.seek(0)
