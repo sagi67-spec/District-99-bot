@@ -87,17 +87,17 @@ def validar_fecha(fecha):
         return False
 
 # ==================== GENERAR LICENCIA CON PIL ====================
-PLANTILLA_LICENCIA_URL = "https://i.imgur.com/adKYkJN.jpeg"
+PLANTILLA_LICENCIA_URL = "https://cdn.discordapp.com/attachments/1515163303100420156/1530450164458983515/17849514822062.png?ex=6a659e49&is=6a644cc9&hm=db40bab0b5b90d7ca851264614e6e7427c5d5be1a5873c5ba4fd1127aa146450&"
 
 def generar_imagen_licencia(datos_usuario, foto_roblox_url):
     """Genera la imagen de la licencia con los datos del usuario usando PIL"""
     try:
-        import requests
-        import io
-        from PIL import Image, ImageDraw, ImageFont, ImageOps
-
         # Descargar plantilla
         response = requests.get(PLANTILLA_LICENCIA_URL)
+        if response.status_code != 200:
+            print(f"❌ Error descargando plantilla: {response.status_code}")
+            return None
+        
         plantilla = Image.open(io.BytesIO(response.content))
         
         # Crear un objeto para dibujar
@@ -146,15 +146,18 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
         if foto_roblox_url:
             try:
                 response_foto = requests.get(foto_roblox_url)
-                foto = Image.open(io.BytesIO(response_foto.content))
-                foto = foto.resize((130, 130))
-                mascara = Image.new('L', (130, 130), 0)
-                draw_mask = ImageDraw.Draw(mascara)
-                draw_mask.ellipse((0, 0, 130, 130), fill=255)
-                foto_circular = ImageOps.fit(foto, (130, 130), centering=(0.5, 0.5))
-                foto_circular.putalpha(mascara)
-                # Posición del círculo en la plantilla
-                plantilla.paste(foto_circular, (85, 210), foto_circular)
+                if response_foto.status_code == 200:
+                    foto = Image.open(io.BytesIO(response_foto.content))
+                    foto = foto.resize((130, 130))
+                    mascara = Image.new('L', (130, 130), 0)
+                    draw_mask = ImageDraw.Draw(mascara)
+                    draw_mask.ellipse((0, 0, 130, 130), fill=255)
+                    foto_circular = ImageOps.fit(foto, (130, 130), centering=(0.5, 0.5))
+                    foto_circular.putalpha(mascara)
+                    # Posición del círculo en la plantilla
+                    plantilla.paste(foto_circular, (85, 210), foto_circular)
+                else:
+                    print(f"⚠️ Error descargando foto de Roblox: {response_foto.status_code}")
             except Exception as e:
                 print(f"⚠️ Error al pegar foto: {e}")
         
@@ -873,12 +876,13 @@ class PanelLicenciasView(discord.ui.View):
                     pass
 
                 # ========== GENERAR IMAGEN DE LA LICENCIA ==========
+                archivo = None
                 try:
                     imagen_bytes = generar_imagen_licencia(datos_licencia, foto_roblox)
-                    archivo = discord.File(imagen_bytes, filename=f"licencia_{user_id}.png")
+                    if imagen_bytes:
+                        archivo = discord.File(imagen_bytes, filename=f"licencia_{user_id}.png")
                 except Exception as e:
                     print(f"❌ Error generando imagen: {e}")
-                    archivo = None
 
                 # Embed de la licencia
                 embed = discord.Embed(
@@ -1234,3 +1238,4 @@ except Exception as e:
     print(f"❌ ERROR FATAL: {e}")
     import traceback
     traceback.print_exc()
+    
