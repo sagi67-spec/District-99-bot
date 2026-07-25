@@ -116,15 +116,15 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
         color_blanco = (255, 255, 255)
         color_dorado = (255, 215, 0)
         
-        # ========== COORDENADAS ACTUALIZADAS ==========
-        # Posición X izquierda (Nombre, Apellidos, Fecha Nac, DNI)
-        pos_x_izq = 220
-        # Posición X derecha (Licencia, Expedición, Expiración)
-        pos_x_der = 520
-        # Posición Y inicial (primer campo: Nombre)
-        pos_y_inicio = 280
-        # Espaciado vertical entre campos
-        espaciado = 50
+        # ========== COORDENADAS CORREGIDAS ==========
+# Posición X izquierda (Nombre, Apellidos, Fecha Nac, DNI)
+pos_x_izq = 200
+# Posición X derecha (Licencia, Expedición, Expiración)
+pos_x_der = 500
+# Posición Y inicial (primer campo: Nombre)
+pos_y_inicio = 310
+# Espaciado vertical entre campos
+espaciado = 60
         
         # ========== ESCRIBIR DATOS EN LA PLANTILLA ==========
         # Columna izquierda
@@ -139,7 +139,7 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
         draw.text((pos_x_der, pos_y_inicio + espaciado * 2), f"{datos_usuario.get('fecha_expiracion', 'N/A')}", fill=color_blanco, font=font)
         
         # Firma (abajo de todo)
-        firma_y = pos_y_inicio + (espaciado * 5)
+        firma_y = pos_y_inicio + (espaciado * 5) + 10
         draw.text((pos_x_izq, firma_y), f"{datos_usuario.get('nombre', 'N/A')} {datos_usuario.get('apellidos', 'N/A')}", fill=color_blanco, font=font)
         
         # ========== PEGAR FOTO DE ROBLOX EN EL CÍRCULO ==========
