@@ -5,17 +5,12 @@ Bot de Discord para servidor de rol (RP) — DISTRICT 99
 import json
 import os
 import re
-import io
 from datetime import datetime, timezone, timedelta
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-
-# Pillow para generar imágenes
-from PIL import Image, ImageDraw, ImageFont, ImageOps
-import requests
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -86,90 +81,10 @@ def validar_fecha(fecha):
     except:
         return False
 
-# ==================== GENERAR LICENCIA CON PIL ====================
-PLANTILLA_LICENCIA_URL = "https://cdn.discordapp.com/attachments/1515163303100420156/1530450164458983515/17849514822062.png?ex=6a659e49&is=6a644cc9&hm=db40bab0b5b90d7ca851264614e6e7427c5d5be1a5873c5ba4fd1127aa146450&"
-
+# ==================== GENERAR LICENCIA (VERSIÓN SIMPLIFICADA - SIN IMAGEN) ====================
 def generar_imagen_licencia(datos_usuario, foto_roblox_url):
-    """Genera la imagen de la licencia con los datos del usuario usando PIL"""
-    try:
-        # Descargar plantilla
-        response = requests.get(PLANTILLA_LICENCIA_URL)
-        if response.status_code != 200:
-            print(f"❌ Error descargando plantilla: {response.status_code}")
-            return None
-        
-        plantilla = Image.open(io.BytesIO(response.content))
-        
-        # Crear un objeto para dibujar
-        draw = ImageDraw.Draw(plantilla)
-        
-        # ========== USAR FUENTE DEJAVU ==========
-        try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
-            font_bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 30)
-        except:
-            # Si falla, usar la fuente por defecto
-            font = ImageFont.load_default()
-            font_bold = ImageFont.load_default()
-        
-        # Colores
-        color_blanco = (255, 255, 255)
-        color_dorado = (255, 215, 0)
-        
-        # ========== COORDENADAS CORREGIDAS ==========
-        # Posición X izquierda (Nombre, Apellidos, Fecha Nac, DNI)
-        pos_x_izq = 200
-        # Posición X derecha (Licencia, Expedición, Expiración)
-        pos_x_der = 500
-        # Posición Y inicial (primer campo: Nombre)
-        pos_y_inicio = 310
-        # Espaciado vertical entre campos
-        espaciado = 60
-        
-        # ========== ESCRIBIR DATOS EN LA PLANTILLA ==========
-        # Columna izquierda
-        draw.text((pos_x_izq, pos_y_inicio), f"{datos_usuario.get('nombre', 'N/A')}", fill=color_blanco, font=font)
-        draw.text((pos_x_izq, pos_y_inicio + espaciado), f"{datos_usuario.get('apellidos', 'N/A')}", fill=color_blanco, font=font)
-        draw.text((pos_x_izq, pos_y_inicio + espaciado * 2), f"{datos_usuario.get('fecha_nacimiento', 'N/A')}", fill=color_blanco, font=font)
-        draw.text((pos_x_izq, pos_y_inicio + espaciado * 3), f"{datos_usuario.get('dni', 'N/A')}", fill=color_blanco, font=font)
-        
-        # Columna derecha
-        draw.text((pos_x_der, pos_y_inicio + espaciado * 0), f"{datos_usuario.get('licencia_id', 'N/A')}", fill=color_dorado, font=font_bold)
-        draw.text((pos_x_der, pos_y_inicio + espaciado * 1), f"{datos_usuario.get('fecha_expedicion', 'N/A')}", fill=color_blanco, font=font)
-        draw.text((pos_x_der, pos_y_inicio + espaciado * 2), f"{datos_usuario.get('fecha_expiracion', 'N/A')}", fill=color_blanco, font=font)
-        
-        # Firma (abajo de todo)
-        firma_y = pos_y_inicio + (espaciado * 5) + 10
-        draw.text((pos_x_izq, firma_y), f"{datos_usuario.get('nombre', 'N/A')} {datos_usuario.get('apellidos', 'N/A')}", fill=color_blanco, font=font)
-        
-        # ========== PEGAR FOTO DE ROBLOX EN EL CÍRCULO ==========
-        if foto_roblox_url:
-            try:
-                response_foto = requests.get(foto_roblox_url)
-                if response_foto.status_code == 200:
-                    foto = Image.open(io.BytesIO(response_foto.content))
-                    foto = foto.resize((130, 130))
-                    mascara = Image.new('L', (130, 130), 0)
-                    draw_mask = ImageDraw.Draw(mascara)
-                    draw_mask.ellipse((0, 0, 130, 130), fill=255)
-                    foto_circular = ImageOps.fit(foto, (130, 130), centering=(0.5, 0.5))
-                    foto_circular.putalpha(mascara)
-                    # Posición del círculo en la plantilla
-                    plantilla.paste(foto_circular, (85, 210), foto_circular)
-                else:
-                    print(f"⚠️ Error descargando foto de Roblox: {response_foto.status_code}")
-            except Exception as e:
-                print(f"⚠️ Error al pegar foto: {e}")
-        
-        # ========== GUARDAR IMAGEN ==========
-        output = io.BytesIO()
-        plantilla.save(output, format='PNG')
-        output.seek(0)
-        return output
-        
-    except Exception as e:
-        print(f"❌ Error generando imagen: {e}")
-        return None
+    """Versión simplificada - no genera imagen, solo devuelve None"""
+    return None
 
 # ==================== BOT ====================
 intents = discord.Intents.default()
@@ -725,7 +640,7 @@ async def registrar_multa(
         content=f"{infractor.mention} ¡Has recibido una multa!\n"
                 f"📢 **Para pagar:** Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District 99 Bot {precio}`",
         embed=embed
-    )
+                                               )
     # ==================== HISTORIAL MULTAS (SOLO POLICIA) ====================
 @bot.tree.command(name="historial_multas", description="📋 Ver historial de multas - SOLO POLICIA")
 @app_commands.describe(usuario="Usuario (opcional)")
@@ -875,16 +790,7 @@ class PanelLicenciasView(discord.ui.View):
                 except:
                     pass
 
-                # ========== GENERAR IMAGEN DE LA LICENCIA ==========
-                archivo = None
-                try:
-                    imagen_bytes = generar_imagen_licencia(datos_licencia, foto_roblox)
-                    if imagen_bytes:
-                        archivo = discord.File(imagen_bytes, filename=f"licencia_{user_id}.png")
-                except Exception as e:
-                    print(f"❌ Error generando imagen: {e}")
-
-                # Embed de la licencia
+                # Embed de la licencia (SIN IMAGEN)
                 embed = discord.Embed(
                     title="🪪 NUEVA LICENCIA GENERADA",
                     description=f"**{modal_interaction.user.mention}**",
@@ -901,24 +807,17 @@ class PanelLicenciasView(discord.ui.View):
                 embed.add_field(name="📅 Expiración", value=(datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"), inline=True)
                 embed.add_field(name="📌 Estado", value="🟢 ACTIVA", inline=True)
                 
-                # Imagenes
+                # Solo la foto de Roblox como thumbnail
                 embed.set_thumbnail(url=foto_roblox)
                 embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
 
                 # Enviar al canal de registro
                 canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
                 if canal_registro:
-                    if archivo:
-                        await canal_registro.send(
-                            content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
-                            file=archivo,
-                            embed=embed
-                        )
-                    else:
-                        await canal_registro.send(
-                            content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
-                            embed=embed
-                        )
+                    await canal_registro.send(
+                        content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
+                        embed=embed
+                    )
                 else:
                     await modal_interaction.response.send_message("❌ No se encontró el canal de registro de licencias.", ephemeral=True)
 
@@ -1056,7 +955,7 @@ async def eliminar_licencia(
             f"📋 Licencia: {licencia_id}\n"
             f"👮 Eliminado por: {interaction.user.mention}\n"
             f"📌 Motivo: {motivo if motivo else 'No especificado'}"
-                )
+                                           )
         # ==================== EVALUAR STAFF ====================
 class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
     que_hizo = discord.ui.TextInput(
@@ -1238,4 +1137,3 @@ except Exception as e:
     print(f"❌ ERROR FATAL: {e}")
     import traceback
     traceback.print_exc()
-    
