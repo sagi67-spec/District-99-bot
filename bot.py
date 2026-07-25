@@ -117,14 +117,14 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
         color_dorado = (255, 215, 0)
         
         # ========== COORDENADAS CORREGIDAS ==========
-# Posición X izquierda (Nombre, Apellidos, Fecha Nac, DNI)
-pos_x_izq = 200
-# Posición X derecha (Licencia, Expedición, Expiración)
-pos_x_der = 500
-# Posición Y inicial (primer campo: Nombre)
-pos_y_inicio = 310
-# Espaciado vertical entre campos
-espaciado = 60
+        # Posición X izquierda (Nombre, Apellidos, Fecha Nac, DNI)
+        pos_x_izq = 200
+        # Posición X derecha (Licencia, Expedición, Expiración)
+        pos_x_der = 500
+        # Posición Y inicial (primer campo: Nombre)
+        pos_y_inicio = 310
+        # Espaciado vertical entre campos
+        espaciado = 60
         
         # ========== ESCRIBIR DATOS EN LA PLANTILLA ==========
         # Columna izquierda
