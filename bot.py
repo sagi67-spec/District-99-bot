@@ -5,12 +5,17 @@ Bot de Discord para servidor de rol (RP) — DISTRICT 99
 import json
 import os
 import re
+import io
 from datetime import datetime, timezone, timedelta
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
+
+# Pillow para generar imágenes
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+import requests
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -80,6 +85,81 @@ def validar_fecha(fecha):
         return 1 <= month <= 12 and 1 <= day <= 31
     except:
         return False
+
+# ==================== GENERAR LICENCIA CON PIL ====================
+PLANTILLA_LICENCIA_URL = "https://i.imgur.com/adKYkJN.jpeg"
+
+def generar_imagen_licencia(datos_usuario, foto_roblox_url):
+    """Genera la imagen de la licencia con los datos del usuario"""
+    
+    # Descargar plantilla
+    response = requests.get(PLANTILLA_LICENCIA_URL)
+    plantilla = Image.open(io.BytesIO(response.content))
+    
+    # Crear un objeto para dibujar
+    draw = ImageDraw.Draw(plantilla)
+    
+    # Intentar cargar una fuente (si no existe, usar default)
+    try:
+        font = ImageFont.truetype("arial.ttf", 20)
+        font_bold = ImageFont.truetype("arialbd.ttf", 22)
+    except:
+        font = ImageFont.load_default()
+        font_bold = font
+    
+    # Colores
+    color_texto = (255, 255, 255)  # Blanco
+    color_dorado = (255, 215, 0)  # Dorado
+    
+    # Posiciones para los datos (ajusta según tu plantilla)
+    posiciones = {
+        "nombre": (150, 280),
+        "apellidos": (150, 310),
+        "fecha_nac": (150, 340),
+        "dni": (150, 370),
+        "licencia": (150, 400),
+        "fecha_exp": (150, 430),
+        "fecha_expira": (150, 460),
+        "firma": (150, 520)
+    }
+    
+    # Escribir los datos
+    draw.text(posiciones["nombre"], f"Nombre: {datos_usuario['nombre']}", fill=color_texto, font=font)
+    draw.text(posiciones["apellidos"], f"Apellidos: {datos_usuario['apellidos']}", fill=color_texto, font=font)
+    draw.text(posiciones["fecha_nac"], f"Nacimiento: {datos_usuario.get('fecha_nacimiento', 'N/A')}", fill=color_texto, font=font)
+    draw.text(posiciones["dni"], f"DNI: {datos_usuario.get('dni', 'N/A')}", fill=color_texto, font=font)
+    draw.text(posiciones["licencia"], f"Licencia: {datos_usuario['licencia_id']}", fill=color_dorado, font=font_bold)
+    draw.text(posiciones["fecha_exp"], f"Expedición: {datos_usuario['fecha_expedicion']}", fill=color_texto, font=font)
+    draw.text(posiciones["fecha_expira"], f"Expiración: {datos_usuario['fecha_expiracion']}", fill=color_texto, font=font)
+    draw.text(posiciones["firma"], f"Firma: {datos_usuario['nombre']} {datos_usuario['apellidos']}", fill=color_texto, font=font)
+    
+    # Pegar foto de Roblox en el círculo
+    if foto_roblox_url:
+        try:
+            response_foto = requests.get(foto_roblox_url)
+            foto = Image.open(io.BytesIO(response_foto.content))
+            
+            # Redimensionar y hacer círculo
+            foto = foto.resize((120, 120))
+            mascara = Image.new('L', (120, 120), 0)
+            draw_mask = ImageDraw.Draw(mascara)
+            draw_mask.ellipse((0, 0, 120, 120), fill=255)
+            
+            # Crear imagen circular
+            foto_circular = ImageOps.fit(foto, (120, 120), centering=(0.5, 0.5))
+            foto_circular.putalpha(mascara)
+            
+            # Pegar en la plantilla (posición del círculo)
+            plantilla.paste(foto_circular, (60, 260), foto_circular)
+        except:
+            pass
+    
+    # Guardar en bytes
+    output = io.BytesIO()
+    plantilla.save(output, format='PNG')
+    output.seek(0)
+    
+    return output
 
 # ==================== BOT ====================
 intents = discord.Intents.default()
@@ -635,7 +715,7 @@ async def registrar_multa(
         content=f"{infractor.mention} ¡Has recibido una multa!\n"
                 f"📢 **Para pagar:** Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District 99 Bot {precio}`",
         embed=embed
-)
+    )
     # ==================== HISTORIAL MULTAS (SOLO POLICIA) ====================
 @bot.tree.command(name="historial_multas", description="📋 Ver historial de multas - SOLO POLICIA")
 @app_commands.describe(usuario="Usuario (opcional)")
@@ -680,7 +760,6 @@ async def historial_multas(interaction: discord.Interaction, usuario: discord.Me
     embed.set_footer(text="Mostrando ultimas 10 multas")
     await interaction.response.send_message(embed=embed)
 
-
 # ==================== MIS MULTAS (CIUDADANOS) ====================
 @bot.tree.command(name="mis_multas", description="📋 Ver tu historial de multas")
 async def mis_multas(interaction: discord.Interaction):
@@ -722,7 +801,6 @@ async def mis_multas(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed)
 
-
 # ==================== PANEL DE LICENCIAS ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
@@ -760,7 +838,8 @@ class PanelLicenciasView(discord.ui.View):
                 # Foto de perfil de Roblox
                 foto_roblox = f"https://www.roblox.com/headshot-thumbnail/image?userId={self.user_roblox.value}&width=420&height=420"
 
-                licencias[user_id] = {
+                # Guardar datos de la licencia
+                datos_licencia = {
                     "nombre": self.nombre.value,
                     "apellidos": self.apellidos.value,
                     "edad": self.edad.value,
@@ -768,14 +847,17 @@ class PanelLicenciasView(discord.ui.View):
                     "user_roblox": self.user_roblox.value,
                     "user_discord": str(modal_interaction.user),
                     "dni": dnis[user_id]["numero_dni"],
+                    "fecha_nacimiento": dnis[user_id]["fecha_nacimiento"],
                     "licencia_id": licencia_id,
                     "fecha_expedicion": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
                     "fecha_expiracion": (datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"),
                     "estado": "Activa",
                     "foto_roblox": foto_roblox
                 }
+                licencias[user_id] = datos_licencia
                 guardar(LICENCIAS_FILE, licencias)
 
+                # Asignar rol de licencia
                 try:
                     rol = discord.utils.get(modal_interaction.guild.roles, name=ROL_LICENCIA_NOMBRE)
                     if rol:
@@ -783,6 +865,15 @@ class PanelLicenciasView(discord.ui.View):
                 except:
                     pass
 
+                # ========== GENERAR IMAGEN DE LA LICENCIA ==========
+                try:
+                    imagen_bytes = generar_imagen_licencia(datos_licencia, foto_roblox)
+                    archivo = discord.File(imagen_bytes, filename=f"licencia_{user_id}.png")
+                except Exception as e:
+                    print(f"❌ Error generando imagen: {e}")
+                    archivo = None
+
+                # Embed con la licencia
                 embed = discord.Embed(
                     title="🪪 NUEVA LICENCIA GENERADA",
                     description=f"**{modal_interaction.user.mention}**",
@@ -798,18 +889,22 @@ class PanelLicenciasView(discord.ui.View):
                 embed.add_field(name="📅 Expedición", value=datetime.now(timezone.utc).strftime("%d/%m/%Y"), inline=True)
                 embed.add_field(name="📅 Expiración", value=(datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"), inline=True)
                 embed.add_field(name="📌 Estado", value="🟢 ACTIVA", inline=True)
-                
-                # Imagenes
-                embed.set_thumbnail(url=foto_roblox)
-                embed.set_image(url="https://i.imgur.com/fAcMg8P.jpeg")
                 embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
 
+                # Enviar al canal de registro
                 canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
                 if canal_registro:
-                    await canal_registro.send(
-                        content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
-                        embed=embed
-                    )
+                    if archivo:
+                        await canal_registro.send(
+                            content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
+                            file=archivo,
+                            embed=embed
+                        )
+                    else:
+                        await canal_registro.send(
+                            content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
+                            embed=embed
+                        )
                 else:
                     await modal_interaction.response.send_message("❌ No se encontró el canal de registro de licencias.", ephemeral=True)
 
@@ -885,7 +980,6 @@ async def ver_licencia(interaction: discord.Interaction, usuario: discord.Member
     else:
         embed.set_thumbnail(url=objetivo.display_avatar.url)
     
-    embed.set_image(url="https://i.imgur.com/fAcMg8P.jpeg")
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     
     await interaction.response.send_message(embed=embed)
@@ -902,9 +996,6 @@ async def eliminar_licencia(
     usuario: discord.Member,
     motivo: str = None
 ):
-    """Solo hosts y admins pueden eliminar licencias"""
-    
-    # Verificar permisos
     if not es_host(interaction.user) and not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
         return
@@ -912,22 +1003,18 @@ async def eliminar_licencia(
     licencias = cargar(LICENCIAS_FILE)
     user_id = str(usuario.id)
     
-    # Verificar si el usuario tiene licencia
     if user_id not in licencias:
         await interaction.response.send_message(f"❌ {usuario.mention} no tiene licencia activa.", ephemeral=True)
         return
     
-    # Guardar datos de la licencia para el embed
     datos_licencia = licencias[user_id]
     licencia_id = datos_licencia.get("licencia_id", "N/A")
     nombre = datos_licencia.get("nombre", "N/A")
     apellidos = datos_licencia.get("apellidos", "N/A")
     
-    # Eliminar licencia
     del licencias[user_id]
     guardar(LICENCIAS_FILE, licencias)
     
-    # Quitar rol de licencia
     try:
         rol = discord.utils.get(interaction.guild.roles, name=ROL_LICENCIA_NOMBRE)
         if rol and rol in usuario.roles:
@@ -935,7 +1022,6 @@ async def eliminar_licencia(
     except:
         pass
     
-    # Embed de confirmación
     embed = discord.Embed(
         title="🗑️ LICENCIA ELIMINADA",
         description=f"**{usuario.mention}** ya no tiene licencia de conducir.",
@@ -951,7 +1037,6 @@ async def eliminar_licencia(
     
     await interaction.response.send_message(embed=embed)
     
-    # Notificar al canal de registro
     canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
     if canal_registro:
         await canal_registro.send(
