@@ -431,17 +431,19 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
                 guardar(ESCENAS_FILE, escenas)
                 
                 embed = discord.Embed(
-                    title="🎬 SESION ABIERTA",
+                    title="🚦 **SESIÓN ABIERTA**",
                     description=f"**{NOMBRE_SERVIDOR}**",
                     color=discord.Color.gold()
                 )
-                embed.add_field(name="🛣️ Vias", value=f"{vias} vias", inline=True)
-                embed.add_field(name="🚗 Velocidad Max", value=f"{velocidad_maxima} mph", inline=True)
-                embed.add_field(name="🏁 Adelantamientos", value="✅ Permitidos", inline=True)
-                embed.add_field(name="🚀 Vel. Adelanto", value=f"{velocidad_adelanto} mph", inline=True)
-                embed.add_field(name="👑 Host", value=modal_interaction.user.mention, inline=False)
-                embed.add_field(name="🔗 Link", value=f"[Haz clic aqui]({link})", inline=False)
-                embed.set_footer(text="¡Todos con DNI listo para el rol! 🪪")
+                embed.add_field(name="🛣️ **Vías**", value=f"`{vias} vías`", inline=True)
+                embed.add_field(name="🚗 **Velocidad Máx**", value=f"`{velocidad_maxima} mph`", inline=True)
+                embed.add_field(name="🏁 **Adelantamientos**", value="`✅ Permitidos`", inline=True)
+                embed.add_field(name="🚀 **Vel. Adelanto**", value=f"`{velocidad_adelanto} mph`", inline=True)
+                embed.add_field(name="👑 **Host**", value=modal_interaction.user.mention, inline=False)
+                embed.add_field(name="🔗 **Link**", value=f"[🌐 Haz clic aquí]({link})", inline=False)
+                embed.add_field(name="📢", value="**`¡Todos con DNI listo para el rol! 🪪`**", inline=False)
+                embed.set_footer(text=f"Sesión iniciada por {modal_interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
+                embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1515163303100420156/1530450164458983515/17849514822062.png?ex=6a659e49&is=6a644cc9&hm=db40bab0b5b90d7ca851264614e6e7427c5d5be1a5873c5ba4fd1127aa146450&")
                 
                 await modal_interaction.response.send_message(embed=embed)
                 await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión en {modal_interaction.channel.mention} (Vías: {vias}, Vel: {velocidad_maxima} mph)", discord.Color.gold())
@@ -468,16 +470,18 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
     guardar(ESCENAS_FILE, escenas)
     
     embed = discord.Embed(
-        title="🎬 SESION ABIERTA",
+        title="🚦 **SESIÓN ABIERTA**",
         description=f"**{NOMBRE_SERVIDOR}**",
         color=discord.Color.gold()
     )
-    embed.add_field(name="🛣️ Vias", value=f"{vias} vias", inline=True)
-    embed.add_field(name="🚗 Velocidad Max", value=f"{velocidad_maxima} mph", inline=True)
-    embed.add_field(name="🏁 Adelantamientos", value="❌ No permitidos", inline=True)
-    embed.add_field(name="👑 Host", value=interaction.user.mention, inline=False)
-    embed.add_field(name="🔗 Link", value=f"[Haz clic aqui]({link})", inline=False)
-    embed.set_footer(text="¡Todos con DNI listo para el rol! 🪪")
+    embed.add_field(name="🛣️ **Vías**", value=f"`{vias} vías`", inline=True)
+    embed.add_field(name="🚗 **Velocidad Máx**", value=f"`{velocidad_maxima} mph`", inline=True)
+    embed.add_field(name="🏁 **Adelantamientos**", value="`❌ No permitidos`", inline=True)
+    embed.add_field(name="👑 **Host**", value=interaction.user.mention, inline=False)
+    embed.add_field(name="🔗 **Link**", value=f"[🌐 Haz clic aquí]({link})", inline=False)
+    embed.add_field(name="📢", value="**`¡Todos con DNI listo para el rol! 🪪`**", inline=False)
+    embed.set_footer(text=f"Sesión iniciada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1515163303100420156/1530450164458983515/17849514822062.png?ex=6a659e49&is=6a644cc9&hm=db40bab0b5b90d7ca851264614e6e7427c5d5be1a5873c5ba4fd1127aa146450&")
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🎬 **{interaction.user.mention}** abrió sesión en {interaction.channel.mention} (Vías: {vias}, Vel: {velocidad_maxima} mph)", discord.Color.gold())
