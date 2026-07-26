@@ -923,8 +923,7 @@ async def mis_multas(interaction: discord.Interaction):
     embed.add_field(name="💸 TOTAL ADEUDADO", value=f"**${total}**", inline=False)
     embed.set_footer(text="Mostrando ultimas 10 multas")
     await interaction.response.send_message(embed=embed)
-
-# ==================== CONFIRMAR PAGO (SOLO POLICIA) ====================
+    # ==================== CONFIRMAR PAGO (SOLO POLICIA) ====================
 @bot.tree.command(name="confirmar_pago", description="👮 Confirmar pago de un ciudadano - SOLO POLICIA")
 @app_commands.describe(
     usuario="Usuario que pagó (nombre de usuario)",
@@ -938,30 +937,30 @@ async def confirmar_pago(
     if not es_policia(interaction.user):
         await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
         return
-    
+
     # Buscar al usuario por nombre
     miembro = None
     for member in interaction.guild.members:
         if member.name.lower() == usuario.lower() or member.display_name.lower() == usuario.lower():
             miembro = member
             break
-    
+
     if not miembro:
         await interaction.response.send_message(f"⚠️ No encontré al usuario `{usuario}`. Usa el nombre exacto.", ephemeral=True)
         return
-    
+
     user_id = str(miembro.id)
     user_mention = miembro.mention
-    
+
     multas = cargar(MULTAS_FILE)
     historial = multas.get("historial", [])
-    
+
     # Buscar multa no pagada con ese monto
     multa_encontrada = False
     oficial_id = None
     infraccion = None
     foto_url = None
-    
+
     for i, multa in enumerate(historial):
         if multa.get('infractor_id') == user_id and not multa.get('pagada', False) and multa.get('precio') == monto:
             historial[i]['pagada'] = True
@@ -971,13 +970,13 @@ async def confirmar_pago(
             infraccion = multa.get('infraccion')
             foto_url = multa.get('foto')
             break
-    
+
     if not multa_encontrada:
         await interaction.response.send_message(f"⚠️ No encontré una multa de **${monto}** para {user_mention}", ephemeral=True)
         return
-    
+
     guardar(MULTAS_FILE, multas)
-    
+
     embed = discord.Embed(
         title="💰 ¡PAGO CONFIRMADO POR OFICIAL!",
         description=f"{user_mention} ha pagado su multa.",
@@ -990,14 +989,14 @@ async def confirmar_pago(
     if foto_url:
         embed.set_image(url=foto_url)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
-    
+
     await interaction.response.send_message(embed=embed)
-    
+
     # Notificar al usuario que su pago fue confirmado
     await interaction.channel.send(
         f"{user_mention} ✅ Tu pago de **${monto}** ha sido confirmado por {interaction.user.mention}."
     )
-    
+
     await enviar_log(f"💰 **{user_mention}** pagó su multa de ${monto} (Confirmado por {interaction.user.mention})", discord.Color.green())
 
 # ==================== COMANDO /STATS (SOLO ADMINS) ====================
