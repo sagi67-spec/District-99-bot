@@ -381,146 +381,296 @@ URL_SESION = "https://cdn.discordapp.com/attachments/1530830750310596618/1531040
 URL_1_VIA = "https://cdn.discordapp.com/attachments/1525650233910886421/1526039294429364495/1_via.png?ex=6a675e98&is=6a660d18&hm=13d164eb5f8642044b3e223fe35bae2b2cabdc63716a50938c5ddc0dd7d7cbcd&"
 URL_2_VIAS = "https://cdn.discordapp.com/attachments/1525650233910886421/1526039465745973318/2_vias.png?ex=6a675ec1&is=6a660d41&hm=7568a14941fd9d4f27d1aec5c4ea13c2abdcc98dc4effcbde285e48691f87eee&"
 
-# ==================== PANEL DE SESIÓN CON BOTONES ====================
-class SesionView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=120)
-        self.vias = None
-        self.adelantamientos = None
-        self.velocidad_maxima = None
-        self.velocidad_adelanto = None
-        self.link = None
-        self.user_id = None
-        self.channel_id = None
+# ==================== ESCENAS (SISTEMA SIMPLE) ====================
+@bot.tree.command(name="abrir_escena", description="🎬 Abrir sesion - SOLO HOSTS")
+@app_commands.describe(
+    vias="1 o 2",
+    velocidad_maxima="Limite de velocidad (mph)",
+    adelantamientos="Selecciona Si o No",
+    link="Link del servidor"
+)
+async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_maxima: str, adelantamientos: str, link: str):
+    if not es_host(interaction.user):
+        await interaction.response.send_message("⛔ Solo HOSTS pueden usar este comando", ephemeral=True)
+        return
+    
+    if vias not in ["1", "2"]:
+        await interaction.response.send_message("⚠️ Vias: 1 o 2", ephemeral=True)
+        return
+    
+    if not velocidad_maxima.isdigit():
+        await interaction.response.send_message("⚠️ Velocidad: numero", ephemeral=True)
+        return
+    
+    if adelantamientos.lower() not in ["si", "no"]:
+        await interaction.response.send_message("⚠️ Solo puedes seleccionar `Si` o `No`", ephemeral=True)
+        return
+    
+    # Si elige "si", pedir velocidad de adelantamiento con un modal
+    if adelantamientos.lower() == "si":
+        class VelocidadAdelantoModal(discord.ui.Modal, title="🚗 Velocidad de Adelantamiento"):
+            velocidad_adelanto = discord.ui.TextInput(
+                label="Velocidad permitida para adelantar (mph)",
+                placeholder="Ej: 80",
+                max_length=10,
+                required=True
+            )
+            
+            async def on_submit(self, modal_interaction: discord.Interaction):
+                if not self.velocidad_adelanto.value.isdigit():
+                    await modal_interaction.response.send_message("⚠️ Velocidad invalida. Debe ser un numero", ephemeral=True)
+                    return
+                
+                velocidad_adelanto = int(self.velocidad_adelanto.value)
+                
+                escenas = cargar(ESCENAS_FILE)
+                channel_id = str(modal_interaction.channel_id)
+                
+                if channel_id in escenas:
+                    await modal_interaction.response.send_message("⚠️ Ya hay sesion abierta", ephemeral=True)
+                    return
+                
+                escenas[channel_id] = {
+                    "vias": vias,
+                    "velocidad_maxima": velocidad_maxima,
+                    "adelantamientos": True,
+                    "velocidad_adelanto": velocidad_adelanto,
+                    "link_servidor": link,
+                    "host": str(modal_interaction.user),
+                    "host_id": str(modal_interaction.user.id),
+                    "inicio": datetime.now(timezone.utc).isoformat(),
+                }
+                guardar(ESCENAS_FILE, escenas)
+                
+                embed = discord.Embed(
+                    title="🏁 **SESIÓN ABIERTA**",
+                    description=f"**{NOMBRE_SERVIDOR}**",
+                    color=discord.Color.gold()
+                )
+                embed.add_field(
+                    name="📋 **DETALLES DE LA SESIÓN**",
+                    value=(
+                        f"🛣️ **Vías:** {vias} vías\n"
+                        f"🚗 **Velocidad Máx:** {velocidad_maxima} mph\n"
+                        f"🏁 **Adelantamientos:** ✅ Permitidos\n"
+                        f"🚀 **Vel. Adelanto:** {velocidad_adelanto} mph\n"
+                        f"👑 **Host:** {modal_interaction.user.mention}\n"
+                        f"🔗 **Link:** [🌐 Haz clic aquí]({link})"
+                    ),
+                    inline=False
+                )
+                embed.add_field(
+                    name="📢",
+                    value="**¡Todos con DNI listo para el rol! 🪪**",
+                    inline=False
+                )
+                embed.set_image(url=URL_SESION)
+                if vias == "1":
+                    embed.set_thumbnail(url=URL_1_VIA)
+                elif vias == "2":
+                    embed.set_thumbnail(url=URL_2_VIAS)
+                embed.set_footer(text=f"Sesión iniciada por {modal_interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
+                
+                await modal_interaction.response.send_message(embed=embed)
+                await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión en {modal_interaction.channel.mention} (Vías: {vias}, Vel: {velocidad_maxima} mph)", discord.Color.gold())
+        
+        await interaction.response.send_modal(VelocidadAdelantoModal())
+        return
+    
+    # Si elige "no", abrir sesión directamente
+    escenas = cargar(ESCENAS_FILE)
+    channel_id = str(interaction.channel_id)
+    
+    if channel_id in escenas:
+        await interaction.response.send_message("⚠️ Ya hay sesion abierta", ephemeral=True)
+        return
+    
+    escenas[channel_id] = {
+        "vias": vias,
+        "velocidad_maxima": velocidad_maxima,
+        "adelantamientos": False,
+        "link_servidor": link,
+        "host": str(interaction.user),
+        "host_id": str(interaction.user.id),
+        "inicio": datetime.now(timezone.utc).isoformat(),
+    }
+    guardar(ESCENAS_FILE, escenas)
+    
+    embed = discord.Embed(
+        title="🏁 **SESIÓN ABIERTA**",
+        description=f"**{NOMBRE_SERVIDOR}**",
+        color=discord.Color.gold()
+    )
+    embed.add_field(
+        name="📋 **DETALLES DE LA SESIÓN**",
+        value=(
+            f"🛣️ **Vías:** {vias} vías\n"
+            f"🚗 **Velocidad Máx:** {velocidad_maxima} mph\n"
+            f"🏁 **Adelantamientos:** ❌ No permitidos\n"
+            f"👑 **Host:** {interaction.user.mention}\n"
+            f"🔗 **Link:** [🌐 Haz clic aquí]({link})"
+        ),
+        inline=False
+    )
+    embed.add_field(
+        name="📢",
+        value="**¡Todos con DNI listo para el rol! 🪪**",
+        inline=False
+    )
+    embed.set_image(url=URL_SESION)
+    if vias == "1":
+        embed.set_thumbnail(url=URL_1_VIA)
+    elif vias == "2":
+        embed.set_thumbnail(url=URL_2_VIAS)
+    embed.set_footer(text=f"Sesión iniciada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
+    
+    await interaction.response.send_message(embed=embed)
+    await enviar_log(f"🎬 **{interaction.user.mention}** abrió sesión en {interaction.channel.mention} (Vías: {vias}, Vel: {velocidad_maxima} mph)", discord.Color.gold())
 
-    @discord.ui.button(label="🛣️ 1 VÍA", style=discord.ButtonStyle.primary, custom_id="vias_1")
-    async def via_1(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.vias = "1"
-        await interaction.response.send_message("✅ Seleccionaste: **1 VÍA**", ephemeral=True)
-        await self.mostrar_estado(interaction)
+# ==================== CERRAR ESCENA ====================
+@bot.tree.command(name="cerrar_escena", description="🔒 Cerrar sesion - SOLO HOSTS")
+async def cerrar_escena(interaction: discord.Interaction):
+    if not es_host(interaction.user):
+        await interaction.response.send_message("⛔ Solo HOSTS pueden usar este comando", ephemeral=True)
+        return
+    
+    escenas = cargar(ESCENAS_FILE)
+    channel_id = str(interaction.channel_id)
+    
+    if channel_id not in escenas:
+        await interaction.response.send_message("❌ No hay sesion activa", ephemeral=True)
+        return
+    
+    escena = escenas[channel_id]
+    inicio = datetime.fromisoformat(escena["inicio"])
+    duracion = datetime.now(timezone.utc) - inicio
+    horas, resto = divmod(int(duracion.total_seconds()), 3600)
+    minutos = resto // 60
+    
+    del escenas[channel_id]
+    guardar(ESCENAS_FILE, escenas)
+    
+    embed = discord.Embed(
+        title="🔒 **SESIÓN CERRADA**",
+        description=f"**¡Buen rol!** 👏\n⏱️ Duración: {horas}h {minutos}m",
+        color=discord.Color.red()
+    )
+    embed.add_field(
+        name="⭐",
+        value="No olvides evaluar al staff con `/evaluar_staff`",
+        inline=False
+    )
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
+    embed.set_footer(text=f"Sesión cerrada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
+    
+    await interaction.response.send_message(embed=embed)
+    await enviar_log(f"🔒 **{interaction.user.mention}** cerró sesión en {interaction.channel.mention} (Duración: {horas}h {minutos}m)", discord.Color.red())
 
-    @discord.ui.button(label="🛣️ 2 VÍAS", style=discord.ButtonStyle.primary, custom_id="vias_2")
-    async def via_2(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.vias = "2"
-        await interaction.response.send_message("✅ Seleccionaste: **2 VÍAS**", ephemeral=True)
-        await self.mostrar_estado(interaction)
+# ==================== VOTACIONES ====================
+class VotoView(discord.ui.View):
+    def __init__(self, channel_id: str):
+        super().__init__(timeout=None)
+        self.channel_id = channel_id
 
-    @discord.ui.button(label="✅ SI", style=discord.ButtonStyle.success, custom_id="adelanto_si")
-    async def adelanto_si(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.adelantamientos = "si"
-        await interaction.response.send_message("✅ Adelantamientos: **PERMITIDOS**", ephemeral=True)
-        await interaction.followup.send(
-            "📝 **Escribe la velocidad de adelantamiento (mph) en el chat.**\nEjemplo: `80`",
-            ephemeral=True
-        )
-        self.user_id = interaction.user.id
-        self.channel_id = interaction.channel.id
-        await self.mostrar_estado(interaction)
+    @discord.ui.button(label="✅ Asistir", style=discord.ButtonStyle.success)
+    async def asistir(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._votar(interaction, "asistentes")
 
-    @discord.ui.button(label="❌ NO", style=discord.ButtonStyle.danger, custom_id="adelanto_no")
-    async def adelanto_no(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.adelantamientos = "no"
-        self.velocidad_adelanto = "N/A"
-        await interaction.response.send_message("❌ Adelantamientos: **NO PERMITIDOS**", ephemeral=True)
-        await self.mostrar_estado(interaction)
+    @discord.ui.button(label="❌ No asistir", style=discord.ButtonStyle.danger)
+    async def no_asistir(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._votar(interaction, "no_asistentes")
 
-    @discord.ui.button(label="📎 LINK", style=discord.ButtonStyle.secondary, custom_id="link_btn")
-    async def link_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(
-            "📝 **Escribe el link del servidor en el chat.**\nEjemplo: `https://www.roblox.com/games/...`",
-            ephemeral=True
-        )
-        self.user_id = interaction.user.id
-        self.channel_id = interaction.channel.id
-
-    @discord.ui.button(label="🏁 ABRIR SESIÓN", style=discord.ButtonStyle.success, custom_id="abrir_sesion")
-    async def abrir_sesion(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not self.vias:
-            await interaction.response.send_message("⚠️ **Falta seleccionar el número de vías.**", ephemeral=True)
-            return
-        if not self.velocidad_maxima:
-            await interaction.response.send_message("⚠️ **Falta escribir la velocidad máxima.**", ephemeral=True)
-            return
-        if self.adelantamientos is None:
-            await interaction.response.send_message("⚠️ **Falta seleccionar si se permiten adelantamientos.**", ephemeral=True)
-            return
-        if self.adelantamientos == "si" and (not self.velocidad_adelanto or self.velocidad_adelanto == "N/A"):
-            await interaction.response.send_message("⚠️ **Falta escribir la velocidad de adelantamiento.**", ephemeral=True)
-            return
-        if not self.link:
-            await interaction.response.send_message("⚠️ **Falta escribir el link del servidor.**", ephemeral=True)
+    async def _votar(self, interaction: discord.Interaction, voto_tipo: str):
+        votaciones = cargar(VOTACIONES_FILE)
+        votacion = votaciones.get(str(self.channel_id))
+        
+        if not votacion:
+            await interaction.response.send_message("⛔ Votacion expirada", ephemeral=True)
             return
         
-        await self.abrir_sesion_final(interaction)
-
-    async def mostrar_estado(self, interaction):
-        """Muestra el estado actual de la configuración"""
+        user_id = str(interaction.user.id)
+        votacion["asistentes"] = [u for u in votacion.get("asistentes", []) if u != user_id]
+        votacion["no_asistentes"] = [u for u in votacion.get("no_asistentes", []) if u != user_id]
+        votacion[voto_tipo].append(user_id)
+        
+        votaciones[str(self.channel_id)] = votacion
+        guardar(VOTACIONES_FILE, votaciones)
+        
+        asist = votacion.get("asistentes", [])
+        no_asist = votacion.get("no_asistentes", [])
+        
         embed = discord.Embed(
-            title="🏁 **CONFIGURANDO SESIÓN**",
-            description=(
-                f"✅ **Vías:** {self.vias if self.vias else '⬜ Pendiente'}\n"
-                f"✅ **Velocidad Máx:** {self.velocidad_maxima if self.velocidad_maxima else '⬜ Pendiente'}\n"
-                f"✅ **Adelantamientos:** {self.adelantamientos if self.adelantamientos else '⬜ Pendiente'}\n"
-                f"✅ **Link:** {self.link if self.link else '⬜ Pendiente'}"
-            ),
-            color=discord.Color.blue()
+            title="🗳️ **VOTACIÓN**",
+            description=f"✅ Asistirán: {len(asist)}/{votacion['votos_requeridos']}\n❌ No asistirán: {len(no_asist)}",
+            color=discord.Color.orange()
         )
-        embed.set_footer(text="Completa todas las opciones y presiona ABRIR SESIÓN")
-        await interaction.edit_original_response(embed=embed)
+        embed.add_field(name="✅", value="\n".join(f"<@{u}>" for u in asist) or "Nadie", inline=False)
+        embed.add_field(name="❌", value="\n".join(f"<@{u}>" for u in no_asist) or "Nadie", inline=False)
+        embed.set_thumbnail(url=LOGO_SERVIDOR)
+        
+        await interaction.response.edit_message(embed=embed, view=self)
+        
+        if len(asist) == votacion["votos_requeridos"]:
+            await interaction.channel.send(f"🎉 <@{votacion['host_id']}> ¡Meta alcanzada! Abre con `/abrir_escena`")
 
-    async def abrir_sesion_final(self, interaction):
-        """Abre la sesión con todos los datos"""
-        # Guardar escena
-        escenas = cargar(ESCENAS_FILE)
-        channel_id = str(interaction.channel_id)
-        
-        if channel_id in escenas:
-            await interaction.response.send_message("⚠️ **Ya hay una sesión abierta en este canal.**", ephemeral=True)
-            return
-        
-        escenas[channel_id] = {
-            "vias": self.vias,
-            "velocidad_maxima": self.velocidad_maxima,
-            "adelantamientos": self.adelantamientos == "si",
-            "velocidad_adelanto": self.velocidad_adelanto if self.adelantamientos == "si" else None,
-            "link_servidor": self.link,
-            "host": str(interaction.user),
-            "host_id": str(interaction.user.id),
-            "inicio": datetime.now(timezone.utc).isoformat(),
-        }
-        guardar(ESCENAS_FILE, escenas)
-        
-        embed = discord.Embed(
-            title="🏁 **SESIÓN ABIERTA**",
-            description=f"**{NOMBRE_SERVIDOR}**",
-            color=discord.Color.gold()
-        )
-        embed.add_field(
-            name="📋 **DETALLES DE LA SESIÓN**",
-            value=(
-                f"🛣️ **Vías:** {self.vias} vías\n"
-                f"🚗 **Velocidad Máx:** {self.velocidad_maxima} mph\n"
-                f"🏁 **Adelantamientos:** {'✅ Permitidos' if self.adelantamientos == 'si' else '❌ No permitidos'}\n"
-                f"🚀 **Vel. Adelanto:** {self.velocidad_adelanto if self.adelantamientos == 'si' else 'N/A'} mph\n"
-                f"👑 **Host:** {interaction.user.mention}\n"
-                f"🔗 **Link:** [🌐 Haz clic aquí]({self.link})"
-            ),
-            inline=False
-        )
-        embed.add_field(
-            name="📢",
-            value="**¡Todos con DNI listo para el rol! 🪪**",
-            inline=False
-        )
-        embed.set_image(url=URL_SESION)
-        if self.vias == "1":
-            embed.set_thumbnail(url=URL_1_VIA)
-        elif self.vias == "2":
-            embed.set_thumbnail(url=URL_2_VIAS)
-        embed.set_footer(text=f"Sesión iniciada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
-        
-        await interaction.response.send_message(embed=embed)
-        await enviar_log(f"🎬 **{interaction.user.mention}** abrió sesión en {interaction.channel.mention} (Vías: {self.vias}, Vel: {self.velocidad_maxima} mph)", discord.Color.gold())
+@bot.tree.command(name="votacion_sesion", description="🗳️ Votacion - SOLO HOSTS")
+@app_commands.describe(votos_requeridos="1-20")
+async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: int):
+    if not es_host(interaction.user):
+        await interaction.response.send_message("⛔ Solo HOSTS pueden usar este comando", ephemeral=True)
+        return
+    
+    if not 1 <= votos_requeridos <= 20:
+        await interaction.response.send_message("⚠️ 1-20 votos", ephemeral=True)
+        return
+    
+    votaciones = cargar(VOTACIONES_FILE)
+    channel_id = str(interaction.channel_id)
+    
+    if channel_id in votaciones:
+        await interaction.response.send_message("⚠️ Ya hay votacion activa", ephemeral=True)
+        return
+    
+    votacion = {
+        "votos_requeridos": votos_requeridos,
+        "host": str(interaction.user),
+        "host_id": str(interaction.user.id),
+        "asistentes": [],
+        "no_asistentes": [],
+    }
+    votaciones[channel_id] = votacion
+    guardar(VOTACIONES_FILE, votaciones)
+    
+    embed = discord.Embed(
+        title="🗳️ **¿ABRIMOS SESIÓN?**",
+        description=f"Necesitan {votos_requeridos} votos",
+        color=discord.Color.orange()
+    )
+    embed.add_field(name="✅ **Asistentes**", value="Nadie", inline=False)
+    embed.add_field(name="❌ **No asistentes**", value="Nadie", inline=False)
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
+    embed.set_footer(text=f"Host: {interaction.user.name}")
+    
+    await interaction.response.send_message(embed=embed, view=VotoView(interaction.channel_id))
+    await enviar_log(f"🗳️ **{interaction.user.mention}** creó votación (Meta: {votos_requeridos} votos)", discord.Color.orange())
+
+@bot.tree.command(name="cerrar_votacion", description="🔒 Cerrar votacion - SOLO HOSTS")
+async def cerrar_votacion(interaction: discord.Interaction):
+    if not es_host(interaction.user):
+        await interaction.response.send_message("⛔ Solo HOSTS pueden usar este comando", ephemeral=True)
+        return
+    
+    votaciones = cargar(VOTACIONES_FILE)
+    channel_id = str(interaction.channel_id)
+    
+    if channel_id not in votaciones:
+        await interaction.response.send_message("❌ No hay votacion activa", ephemeral=True)
+        return
+    
+    del votaciones[channel_id]
+    guardar(VOTACIONES_FILE, votaciones)
+    
+    await interaction.response.send_message("🔒 Votación cerrada")
 
 # ==================== COMANDO /abrir_escena (CON BOTONES) ====================
 @bot.tree.command(name="abrir_escena", description="🎬 Abrir sesión - SOLO HOSTS")
