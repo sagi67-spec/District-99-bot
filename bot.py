@@ -1440,20 +1440,22 @@ async def on_message(message):
             print(f"🔍 Pago detectado: {user_name} pagó ${monto}")
             
             # ========== ESPERAR RESPUESTA DE UNBELIEVABOAT ==========
-            # Esperar 1 segundo para que UnbelievaBoat tenga tiempo de responder
-            await asyncio.sleep(1)
+            # Esperar 1.5 segundos para que UnbelievaBoat tenga tiempo de responder
+            await asyncio.sleep(1.5)
             
             def check(m):
-                # Verificar que el mensaje sea de UnbelievaBoat
-                es_unbelieva = m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)
-                if not es_unbelieva:
-                    return False
-                
+                # Verificar que el mensaje sea de UnbelievaBoat (por nombre o por contenido)
                 contenido = m.content.lower()
-                # Verificar que tenga "has received" y el monto (con o sin espacio)
+                
+                # UnbelievaBoat responde con "has received your $XXX"
                 tiene_has_received = "has received" in contenido
                 tiene_monto = f"${monto}" in contenido or f"$ {monto}" in contenido
                 
+                # También verificamos que el mensaje NO sea del propio bot
+                if m.author.id == bot.user.id:
+                    return False
+                
+                # Si el mensaje tiene "has received" y el monto, es de UnbelievaBoat
                 return tiene_has_received and tiene_monto
             
             try:
@@ -1481,10 +1483,10 @@ async def on_message(message):
                     await bot.process_commands(message)
                     return
                 
-                # Si no se detectó la respuesta, pero el pago fue exitoso, el usuario puede escribir /confirmar_pago
+                # Mostrar mensaje de error
                 await message.channel.send(
                     f"{user_mention} ⚠️ No pude verificar tu pago automáticamente.\n"
-                    f"Si el pago fue exitoso, un oficial puede usar `/confirmar_pago {user_name} {monto}`"
+                    f"Si el pago fue exitoso, un oficial puede usar `/confirmar_pago @{user_name} {monto}`"
                 )
                 await bot.process_commands(message)
                 return
@@ -1583,7 +1585,7 @@ async def on_message(message):
                 )
     
     await bot.process_commands(message)
-
+                
 # ==================== INICIAR ====================
 print("🚀 Intentando conectar a Discord...")
 try:
