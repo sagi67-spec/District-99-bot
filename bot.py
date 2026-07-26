@@ -466,11 +466,13 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
                     value="**¡Todos con DNI listo para el rol! 🪪**",
                     inline=False
                 )
+                # Imagen de fondo principal
                 embed.set_image(url=URL_SESION)
+                # Imagen de vías (se superpone a la de sesión)
                 if vias == "1":
-                    embed.set_thumbnail(url=URL_1_VIA)
+                    embed.set_image(url=URL_1_VIA)
                 elif vias == "2":
-                    embed.set_thumbnail(url=URL_2_VIAS)
+                    embed.set_image(url=URL_2_VIAS)
                 embed.set_footer(text=f"Sesión iniciada por {modal_interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
                 
                 await modal_interaction.response.send_message(embed=embed)
@@ -521,9 +523,9 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
     )
     embed.set_image(url=URL_SESION)
     if vias == "1":
-        embed.set_thumbnail(url=URL_1_VIA)
+        embed.set_image(url=URL_1_VIA)
     elif vias == "2":
-        embed.set_thumbnail(url=URL_2_VIAS)
+        embed.set_image(url=URL_2_VIAS)
     embed.set_footer(text=f"Sesión iniciada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
@@ -678,8 +680,7 @@ async def cerrar_votacion(interaction: discord.Interaction):
         description=f"**Votación finalizada.**",
         color=discord.Color.red()
     )
-    embed.set_thumbnail(url=LOGO_SERVIDOR)
-    embed.set_image(url=URL_VOTACION_CERRADA)
+    embed.set_image(url=URL_VOTACION_CERRADA)  # Solo imagen grande, sin thumbnail
     embed.set_footer(text=f"Cerrada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
