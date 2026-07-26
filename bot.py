@@ -87,7 +87,7 @@ def validar_fecha(fecha):
     except:
         return False
 
-# ==================== GENERAR LICENCIA (VERSIÓN SIMPLIFICADA - SIN IMAGEN) ====================
+# ==================== GENERAR LICENCIA (VERSIÓN SIMPLIFICADA) ====================
 def generar_imagen_licencia(datos_usuario, foto_roblox_url):
     return None
 
@@ -100,7 +100,7 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
             color=color,
             timestamp=datetime.now(timezone.utc)
         )
-        content = f"<@{mencionar}>" if mencionar else None  # <--- CORREGIDO
+        content = f"<@{mencionar}>" if mencionar else None
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
@@ -256,8 +256,6 @@ async def on_ready():
             mensaje_buenos_dias.start()
         
         print("✅ Tareas programadas iniciadas")
-        
-        # Prueba de logs
         await enviar_log("✅ Bot iniciado correctamente", discord.Color.green())
     except Exception as e:
         print(f"❌ Error al sincronizar: {e}")
@@ -737,7 +735,7 @@ async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó un vehículo (Placa: {auto_eliminado.get('placa', 'N/A')})", discord.Color.red())
 
-# ==================== REGISTRAR MULTA CON FOTO Y TESTIGOS ====================
+# ==================== REGISTRAR MULTA ====================
 @bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
 @app_commands.describe(
     infractor="Usuario infractor",
@@ -925,6 +923,82 @@ async def mis_multas(interaction: discord.Interaction):
     embed.add_field(name="💸 TOTAL ADEUDADO", value=f"**${total}**", inline=False)
     embed.set_footer(text="Mostrando ultimas 10 multas")
     await interaction.response.send_message(embed=embed)
+
+# ==================== CONFIRMAR PAGO (SOLO POLICIA) ====================
+@bot.tree.command(name="confirmar_pago", description="👮 Confirmar pago de un ciudadano - SOLO POLICIA")
+@app_commands.describe(
+    usuario="Usuario que pagó (nombre de usuario)",
+    monto="Monto que pagó"
+)
+async def confirmar_pago(
+    interaction: discord.Interaction,
+    usuario: str,
+    monto: int
+):
+    if not es_policia(interaction.user):
+        await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
+        return
+    
+    # Buscar al usuario por nombre
+    miembro = None
+    for member in interaction.guild.members:
+        if member.name.lower() == usuario.lower() or member.display_name.lower() == usuario.lower():
+            miembro = member
+            break
+    
+    if not miembro:
+        await interaction.response.send_message(f"⚠️ No encontré al usuario `{usuario}`. Usa el nombre exacto.", ephemeral=True)
+        return
+    
+    user_id = str(miembro.id)
+    user_mention = miembro.mention
+    
+    multas = cargar(MULTAS_FILE)
+    historial = multas.get("historial", [])
+    
+    # Buscar multa no pagada con ese monto
+    multa_encontrada = False
+    oficial_id = None
+    infraccion = None
+    foto_url = None
+    
+    for i, multa in enumerate(historial):
+        if multa.get('infractor_id') == user_id and not multa.get('pagada', False) and multa.get('precio') == monto:
+            historial[i]['pagada'] = True
+            historial[i]['fecha_pago'] = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
+            multa_encontrada = True
+            oficial_id = multa.get('oficial_id')
+            infraccion = multa.get('infraccion')
+            foto_url = multa.get('foto')
+            break
+    
+    if not multa_encontrada:
+        await interaction.response.send_message(f"⚠️ No encontré una multa de **${monto}** para {user_mention}", ephemeral=True)
+        return
+    
+    guardar(MULTAS_FILE, multas)
+    
+    embed = discord.Embed(
+        title="💰 ¡PAGO CONFIRMADO POR OFICIAL!",
+        description=f"{user_mention} ha pagado su multa.",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="💰 Monto", value=f"**${monto}**", inline=True)
+    embed.add_field(name="⚖️ Infracción", value=infraccion, inline=True)
+    embed.add_field(name="👮 Confirmado por", value=interaction.user.mention, inline=True)
+    embed.add_field(name="📅 Fecha de pago", value=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"), inline=True)
+    if foto_url:
+        embed.set_image(url=foto_url)
+    embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
+    
+    await interaction.response.send_message(embed=embed)
+    
+    # Notificar al usuario que su pago fue confirmado
+    await interaction.channel.send(
+        f"{user_mention} ✅ Tu pago de **${monto}** ha sido confirmado por {interaction.user.mention}."
+    )
+    
+    await enviar_log(f"💰 **{user_mention}** pagó su multa de ${monto} (Confirmado por {interaction.user.mention})", discord.Color.green())
 
 # ==================== COMANDO /STATS (SOLO ADMINS) ====================
 @bot.tree.command(name="stats", description="📊 Estadísticas del bot - SOLO ADMINS")
@@ -1188,7 +1262,7 @@ async def eliminar_licencia(
     
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó la licencia de **{usuario.mention}** (Motivo: {motivo if motivo else 'No especificado'})", discord.Color.red())
 
-# ==================== PANEL DE TURNOS DE POLICÍA (CORREGIDO - EPHEMERAL) ====================
+# ==================== PANEL DE TURNOS DE POLICÍA ====================
 class PanelTurnosView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1407,7 +1481,8 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== EVENTO ON_MESSAGE (DETECTAR !pay) ====================
+
+# ==================== EVENTO ON_MESSAGE (DETECTAR !pay) ====================
 @bot.event
 async def on_message(message):
     if message.author.id == bot.user.id:
@@ -1437,68 +1512,22 @@ async def on_message(message):
             user_mention = message.author.mention
             user_name = message.author.name
             
-            print(f"🔍 Pago detectado: {user_name} pagó ${monto}")
+            print(f"🔍 Pago detectado: {user_name} intentó pagar ${monto}")
             
-            # ========== BUSCAR RESPUESTA DE UNBELIEVABOAT EN EL HISTORIAL ==========
-            # Esperar 2 segundos para que UnbelievaBoat tenga tiempo de responder
-            await asyncio.sleep(2)
-            
-            # Buscar en los últimos mensajes del canal
-            respuesta_encontrada = False
-            async for msg in message.channel.history(limit=10):
-                # Verificar si el mensaje contiene "has received" y el monto
-                if "has received" in msg.content.lower() and (f"${monto}" in msg.content or f"$ {monto}" in msg.content):
-                    # Verificar que el mensaje sea de UnbelievaBoat (por el contenido)
-                    if "unbelieva" in msg.author.name.lower() or "unbelieva" in str(msg.author).lower():
-                        respuesta_encontrada = True
-                        print(f"✅ Respuesta de UnbelievaBoat encontrada en historial: {msg.content}")
-                        break
-            
-            # Esperar 2 segundos más si no se encontró la respuesta
-            if not respuesta_encontrada:
-                await asyncio.sleep(2)
-                async for msg in message.channel.history(limit=15):
-                    if "has received" in msg.content.lower() and (f"${monto}" in msg.content or f"$ {monto}" in msg.content):
-                        if "unbelieva" in msg.author.name.lower() or "unbelieva" in str(msg.author).lower():
-                            respuesta_encontrada = True
-                            print(f"✅ Respuesta de UnbelievaBoat encontrada en historial (2da pasada): {msg.content}")
-                            break
-            
-            if not respuesta_encontrada:
-                print("⏰ No se encontró respuesta de UnbelievaBoat en el historial.")
-                
-                # Verificar si el usuario tiene multas pendientes
-                multas = cargar(MULTAS_FILE)
-                historial = multas.get("historial", [])
-                tiene_pendientes = False
-                for multa in historial:
-                    if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
-                        tiene_pendientes = True
-                        break
-                
-                if not tiene_pendientes:
-                    await message.channel.send(
-                        f"{user_mention} ✅ No tienes multas pendientes. ¡Estás al día!"
-                    )
-                    await bot.process_commands(message)
-                    return
-                
-                await message.channel.send(
-                    f"{user_mention} ⚠️ No pude verificar tu pago automáticamente.\n"
-                    f"Si el pago fue exitoso, un oficial puede usar `/confirmar_pago @{user_name} {monto}`"
-                )
-                await bot.process_commands(message)
-                return
-            
-            # ========== PROCESAR EL PAGO ==========
+            # Verificar si el usuario tiene multas pendientes
             multas = cargar(MULTAS_FILE)
             historial = multas.get("historial", [])
             
-            # Verificar si el usuario tiene multas pendientes
             tiene_pendientes = False
+            oficial_id = None
+            infraccion = None
+            
             for multa in historial:
                 if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
                     tiene_pendientes = True
+                    if multa.get('precio') == monto:
+                        oficial_id = multa.get('oficial_id')
+                        infraccion = multa.get('infraccion')
                     break
             
             if not tiene_pendientes:
@@ -1508,76 +1537,36 @@ async def on_message(message):
                 await bot.process_commands(message)
                 return
             
-            # Buscar multa no pagada con ese monto exacto
-            multa_encontrada = False
-            oficial_id = None
-            infraccion = None
-            foto_url = None
-            
-            for i, multa in enumerate(historial):
-                if multa.get('infractor_id') == user_id and not multa.get('pagada', False) and multa.get('precio') == monto:
-                    historial[i]['pagada'] = True
-                    historial[i]['fecha_pago'] = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
-                    multa_encontrada = True
-                    oficial_id = multa.get('oficial_id')
-                    infraccion = multa.get('infraccion')
-                    foto_url = multa.get('foto')
-                    print(f"✅ Multa encontrada y pagada: {infraccion} - ${monto}")
-                    break
-            
-            if not multa_encontrada:
-                # Buscar en pendientes si alguna coincide
-                pendientes = []
-                for i, multa in enumerate(historial):
-                    if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
-                        pendientes.append(i)
-                
-                for i in pendientes:
-                    if historial[i].get('precio') == monto:
-                        historial[i]['pagada'] = True
-                        historial[i]['fecha_pago'] = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
-                        multa_encontrada = True
-                        oficial_id = historial[i].get('oficial_id')
-                        infraccion = historial[i].get('infraccion')
-                        foto_url = historial[i].get('foto')
-                        print(f"✅ Multa encontrada y pagada: {infraccion} - ${monto}")
+            # Buscar el oficial que puso la multa
+            if not oficial_id:
+                for multa in historial:
+                    if multa.get('infractor_id') == user_id and not multa.get('pagada', False) and multa.get('precio') == monto:
+                        oficial_id = multa.get('oficial_id')
+                        infraccion = multa.get('infraccion')
                         break
             
-            guardar(MULTAS_FILE, multas)
+            # Mensaje al usuario
+            await message.channel.send(
+                f"{user_mention} ✅ He detectado tu pago de **${monto}**.\n"
+                f"⏳ Espera a que un oficial verifique y confirme el pago."
+            )
             
-            if multa_encontrada:
-                embed = discord.Embed(
-                    title="💰 ¡MULTA PAGADA!",
-                    description=f"{user_mention} ha pagado su multa.",
-                    color=discord.Color.green()
-                )
-                embed.add_field(name="💰 Monto", value=f"**${monto}**", inline=True)
-                embed.add_field(name="⚖️ Infracción", value=infraccion, inline=True)
-                embed.add_field(name="📅 Fecha de pago", value=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"), inline=True)
-                if foto_url:
-                    embed.set_image(url=foto_url)
-                embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
-                
-                await message.channel.send(embed=embed)
-                
-                if oficial_id:
-                    await message.channel.send(
-                        f"👮 <@{oficial_id}> El ciudadano {user_mention} ha pagado su multa de **${monto}**."
-                    )
-                
-                await enviar_log(f"💰 **{user_mention}** pagó su multa de ${monto} (Infracción: {infraccion})", discord.Color.green())
-            else:
-                # Mostrar multas pendientes del usuario
-                pendientes_texto = ""
-                for multa in historial:
-                    if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
-                        pendientes_texto += f"• ${multa['precio']} - {multa['infraccion']}\n"
-                
+            # Notificar al oficial
+            if oficial_id:
                 await message.channel.send(
-                    f"{user_mention} ⚠️ **No encontré una multa de ${monto}.**\n"
-                    f"📋 **Tus multas pendientes:**\n{pendientes_texto}\n"
-                    f"💡 **Sugerencia:** Usa `/mis_multas` para ver todas tus multas."
+                    f"👮 <@{oficial_id}> El ciudadano {user_mention} dice que pagó su multa de **${monto}**.\n"
+                    f"📌 **Infracción:** {infraccion}\n"
+                    f"✅ Verifica en UnbelievaBoat y usa `/confirmar_pago {user_name} {monto}`"
                 )
+            else:
+                # Si no se encontró el oficial, notificar a todos los policías
+                await message.channel.send(
+                    f"📢 **ATENCIÓN POLICÍAS:** {user_mention} dice que pagó **${monto}**.\n"
+                    f"Verifiquen en UnbelievaBoat y usen `/confirmar_pago {user_name} {monto}`"
+                )
+            
+            await bot.process_commands(message)
+            return
     
     await bot.process_commands(message)
 
