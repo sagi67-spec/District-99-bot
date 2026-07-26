@@ -37,8 +37,7 @@ FECHA_CREACION = datetime(2026, 7, 7)
 
 # ==================== URLs DE IMÁGENES ====================
 URL_SESION = "https://cdn.discordapp.com/attachments/1530830750310596618/1531040035552366592/1785098676803.png?ex=6a67c3a5&is=6a667225&hm=f6a7491ca085f5e2cbb89f0892ff6be638242f65b0785311df8a9dae181c1b76&"
-URL_1_VIA = "https://cdn.discordapp.com/attachments/1525650233910886421/1526039294429364495/1_via.png?ex=6a675e98&is=6a660d18&hm=13d164eb5f8642044b3e223fe35bae2b2cabdc63716a50938c5ddc0dd7d7cbcd&"
-URL_2_VIAS = "https://cdn.discordapp.com/attachments/1525650233910886421/1526039465745973318/2_vias.png?ex=6a675ec1&is=6a660d41&hm=7568a14941fd9d4f27d1aec5c4ea13c2abdcc98dc4effcbde285e48691f87eee&"
+URL_SESION_CERRADA = "https://cdn.discordapp.com/attachments/1530830750310596618/1531077254862475419/1785107374573.png?ex=6a67e64f&is=6a6694cf&hm=2874cbcafaaa8d20a2c8790f333aa4ebb3a5397d0c5b975fd838e4f93657dbf5&"
 URL_VOTACION_ABIERTA = "https://cdn.discordapp.com/attachments/1530830750310596618/1531051469783044339/17851013550952.png?ex=6a67ce4b&is=6a667ccb&hm=aeb75fbbd6517e9b757c1f5f7c49ec919f823c0f9a9a35d226c7bff7746caa8d&"
 URL_VOTACION_CERRADA = "https://cdn.discordapp.com/attachments/1530830750310596618/1531051478922559638/17851013857782.png?ex=6a67ce4e&is=6a667cce&hm=e959c873a7934248c6c080cdddb4f72b12387b564de42feeb0e5e47f9322c9ab&"
 URL_TURNOS = "https://cdn.discordapp.com/attachments/1530830750310596618/1531055540514455572/17851021019872.png?ex=6a67d216&is=6a668096&hm=3bddae490796415f8448684f03e7932e64264750921009730b84f3ecfbd4f75a&"
@@ -383,7 +382,7 @@ async def eliminar_dni(interaction: discord.Interaction):
     
     await interaction.response.send_message("🗑️ Tu DNI ha sido eliminado", ephemeral=True)
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó su DNI", discord.Color.red())
-    # ==================== ESCENAS (SISTEMA SIMPLE) ====================
+    # ==================== ESCENAS ====================
 @bot.tree.command(name="abrir_escena", description="🎬 Abrir sesion - SOLO HOSTS")
 @app_commands.describe(
     vias="1 o 2",
@@ -408,7 +407,6 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         await interaction.response.send_message("⚠️ Solo puedes seleccionar `Si` o `No`", ephemeral=True)
         return
     
-    # Si elige "si", pedir velocidad de adelantamiento con un modal
     if adelantamientos.lower() == "si":
         class VelocidadAdelantoModal(discord.ui.Modal, title="🚗 Velocidad de Adelantamiento"):
             velocidad_adelanto = discord.ui.TextInput(
@@ -466,13 +464,7 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
                     value="**¡Todos con DNI listo para el rol! 🪪**",
                     inline=False
                 )
-                # Imagen de fondo principal
                 embed.set_image(url=URL_SESION)
-                # Imagen de vías (se superpone a la de sesión)
-                if vias == "1":
-                    embed.set_image(url=URL_1_VIA)
-                elif vias == "2":
-                    embed.set_image(url=URL_2_VIAS)
                 embed.set_footer(text=f"Sesión iniciada por {modal_interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
                 
                 await modal_interaction.response.send_message(embed=embed)
@@ -481,7 +473,6 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         await interaction.response.send_modal(VelocidadAdelantoModal())
         return
     
-    # Si elige "no", abrir sesión directamente
     escenas = cargar(ESCENAS_FILE)
     channel_id = str(interaction.channel_id)
     
@@ -522,16 +513,11 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
         inline=False
     )
     embed.set_image(url=URL_SESION)
-    if vias == "1":
-        embed.set_image(url=URL_1_VIA)
-    elif vias == "2":
-        embed.set_image(url=URL_2_VIAS)
     embed.set_footer(text=f"Sesión iniciada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🎬 **{interaction.user.mention}** abrió sesión en {interaction.channel.mention} (Vías: {vias}, Vel: {velocidad_maxima} mph)", discord.Color.gold())
 
-# ==================== CERRAR ESCENA ====================
 @bot.tree.command(name="cerrar_escena", description="🔒 Cerrar sesion - SOLO HOSTS")
 async def cerrar_escena(interaction: discord.Interaction):
     if not es_host(interaction.user):
@@ -564,12 +550,13 @@ async def cerrar_escena(interaction: discord.Interaction):
         value="No olvides evaluar al staff con `/evaluar_staff`",
         inline=False
     )
-    embed.set_thumbnail(url=LOGO_SERVIDOR)
+    embed.set_image(url=URL_SESION_CERRADA)
     embed.set_footer(text=f"Sesión cerrada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🔒 **{interaction.user.mention}** cerró sesión en {interaction.channel.mention} (Duración: {horas}h {minutos}m)", discord.Color.red())
-    # ==================== VOTACIONES ====================
+
+# ==================== VOTACIONES ====================
 class VotoView(discord.ui.View):
     def __init__(self, channel_id: str):
         super().__init__(timeout=None)
@@ -680,13 +667,12 @@ async def cerrar_votacion(interaction: discord.Interaction):
         description=f"**Votación finalizada.**",
         color=discord.Color.red()
     )
-    embed.set_image(url=URL_VOTACION_CERRADA)  # Solo imagen grande, sin thumbnail
+    embed.set_image(url=URL_VOTACION_CERRADA)
     embed.set_footer(text=f"Cerrada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🔒 **{interaction.user.mention}** cerró votación", discord.Color.red())
-
-# ==================== AUTOS ====================
+    # ==================== AUTOS ====================
 @bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehiculo con foto")
 @app_commands.describe(
     usuario_roblox="Tu usuario de Roblox",
@@ -806,7 +792,8 @@ async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó un vehículo (Placa: {auto_eliminado.get('placa', 'N/A')})", discord.Color.red())
-    # ==================== REGISTRAR MULTA ====================
+
+# ==================== REGISTRAR MULTA ====================
 @bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
 @app_commands.describe(
     infractor="Usuario infractor",
@@ -905,8 +892,7 @@ async def registrar_multa(
                 f"📢 Para recuperarla, paga todas tus multas y usa `/solicitar_licencia` de nuevo."
             )
             await enviar_log(f"🚨 Licencia revocada a **{infractor.mention}** por {len(multas_usuario)} multas sin pagar", discord.Color.red())
-
-# ==================== HISTORIAL MULTAS (SOLO POLICIA) ====================
+            # ==================== HISTORIAL MULTAS (SOLO POLICIA) ====================
 @bot.tree.command(name="historial_multas", description="📋 Ver historial de multas - SOLO POLICIA")
 @app_commands.describe(usuario="Usuario (opcional)")
 async def historial_multas(interaction: discord.Interaction, usuario: discord.Member = None):
@@ -1001,7 +987,8 @@ async def mis_multas(interaction: discord.Interaction):
     embed.set_footer(text="Mostrando últimas 10 multas")
     
     await interaction.response.send_message(embed=embed)
-    # ==================== CONFIRMAR PAGO (SOLO POLICIA) ====================
+
+# ==================== CONFIRMAR PAGO (SOLO POLICIA) ====================
 @bot.tree.command(name="confirmar_pago", description="👮 Confirmar pago de un ciudadano - SOLO POLICIA")
 @app_commands.describe(
     usuario="Usuario que pagó (menciona o escribe el nombre)",
@@ -1127,8 +1114,7 @@ async def stats(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"📊 **{interaction.user.mention}** usó /stats", discord.Color.blue())
-
-# ==================== PANEL DE LICENCIAS ====================
+    # ==================== PANEL DE LICENCIAS ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1204,7 +1190,6 @@ class PanelLicenciasView(discord.ui.View):
                 embed.add_field(name="📅 **Expiración**", value=(datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"), inline=True)
                 embed.add_field(name="📌 **Estado**", value="🟢 ACTIVA", inline=True)
                 embed.set_thumbnail(url=foto_roblox)
-                embed.set_image(url=LOGO_SERVIDOR)
                 embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
 
                 canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
@@ -1252,7 +1237,8 @@ async def panel_licencias(interaction: discord.Interaction):
     
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
-    # ==================== VER LICENCIA ====================
+
+# ==================== VER LICENCIA ====================
 @bot.tree.command(name="ver_licencia", description="🪪 Ver la licencia de un usuario")
 @app_commands.describe(usuario="Usuario (opcional)")
 async def ver_licencia(interaction: discord.Interaction, usuario: discord.Member = None):
@@ -1354,8 +1340,7 @@ async def eliminar_licencia(
         )
     
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó la licencia de **{usuario.mention}** (Motivo: {motivo if motivo else 'No especificado'})", discord.Color.red())
-
-# ==================== PANEL DE TURNOS DE POLICÍA ====================
+    # ==================== PANEL DE TURNOS DE POLICÍA ====================
 class PanelTurnosView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
