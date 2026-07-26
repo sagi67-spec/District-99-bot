@@ -1440,27 +1440,32 @@ async def on_message(message):
             print(f"🔍 Pago detectado: {user_name} pagó ${monto}")
             
             # ========== ESPERAR RESPUESTA DE UNBELIEVABOAT ==========
+            # Esperar 1 segundo para que UnbelievaBoat tenga tiempo de responder
+            await asyncio.sleep(1)
+            
             def check(m):
-                # UnbelievaBoat responde con "has received your $ XXX" o "has received your $XXX"
-                contenido = m.content.lower()
+                # Verificar que el mensaje sea de UnbelievaBoat
                 es_unbelieva = m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)
+                if not es_unbelieva:
+                    return False
+                
+                contenido = m.content.lower()
+                # Verificar que tenga "has received" y el monto (con o sin espacio)
                 tiene_has_received = "has received" in contenido
-                # Buscar el monto en el contenido (con o sin espacio después del $)
                 tiene_monto = f"${monto}" in contenido or f"$ {monto}" in contenido
-                return es_unbelieva and tiene_has_received and tiene_monto
+                
+                return tiene_has_received and tiene_monto
             
             try:
                 respuesta = await bot.wait_for('message', timeout=15.0, check=check)
                 contenido = respuesta.content.lower()
                 print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
-                
-                # Si llega aquí, UnbelievaBoat confirmó el pago
                 print(f"✅ Pago confirmado por UnbelievaBoat: {user_name} pagó ${monto}")
                 
             except TimeoutError:
                 print("⏰ No se recibió respuesta de UnbelievaBoat.")
                 
-                # Verificar si el usuario tiene multas pendientes para dar info
+                # Verificar si el usuario tiene multas pendientes
                 multas = cargar(MULTAS_FILE)
                 historial = multas.get("historial", [])
                 tiene_pendientes = False
@@ -1476,9 +1481,10 @@ async def on_message(message):
                     await bot.process_commands(message)
                     return
                 
+                # Si no se detectó la respuesta, pero el pago fue exitoso, el usuario puede escribir /confirmar_pago
                 await message.channel.send(
                     f"{user_mention} ⚠️ No pude verificar tu pago automáticamente.\n"
-                    f"Si el pago fue exitoso, espera unos segundos y el sistema lo detectará."
+                    f"Si el pago fue exitoso, un oficial puede usar `/confirmar_pago {user_name} {monto}`"
                 )
                 await bot.process_commands(message)
                 return
