@@ -32,6 +32,7 @@ LICENCIAS_FILE = "licencias.json"
 TURNOS_FILE = "turnos.json"
 
 NOMBRE_SERVIDOR = "DISTRICT 99"
+LOGO_SERVIDOR = "https://cdn.discordapp.com/attachments/1530830750310596618/1531024197864784083/17837386704682.png?ex=6a67b4e5&is=6a666365&hm=70939049ead49d63645ec8fe086403c70aa1cc907f19b6e0be44ed2cf358e006&"
 FECHA_CREACION = datetime(2026, 7, 7)
 
 # ==================== CONFIGURACIÓN DE CANALES ====================
@@ -140,13 +141,14 @@ async def recordatorio_multas():
             if user:
                 total = sum(m.get('precio', 0) for m in multas_user)
                 embed = discord.Embed(
-                    title="📢 RECORDATORIO DE MULTAS",
+                    title="📢 **RECORDATORIO DE MULTAS**",
                     description=f"Tienes {len(multas_user)} multas sin pagar.",
                     color=discord.Color.orange()
                 )
-                embed.add_field(name="💸 Total adeudado", value=f"**${total}**", inline=True)
-                embed.add_field(name="📌 Multas pendientes", value=str(len(multas_user)), inline=True)
-                embed.add_field(name="📢 ¿Cómo pagar?", value=f"Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District 99 Bot [monto]`", inline=False)
+                embed.add_field(name="💸 **Total adeudado**", value=f"**${total}**", inline=True)
+                embed.add_field(name="📌 **Multas pendientes**", value=str(len(multas_user)), inline=True)
+                embed.add_field(name="📢 **¿Cómo pagar?**", value=f"Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District 99 Bot [monto]`", inline=False)
+                embed.set_thumbnail(url=LOGO_SERVIDOR)
                 embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
                 await user.send(embed=embed)
         except:
@@ -184,12 +186,13 @@ async def verificar_morosidad():
                                 await member.remove_roles(rol)
                     
                     embed = discord.Embed(
-                        title="🚨 LICENCIA REVOCADA",
+                        title="🚨 **LICENCIA REVOCADA**",
                         description=f"**{user.name}** has perdido tu licencia de conducir.",
                         color=discord.Color.red()
                     )
-                    embed.add_field(name="📌 Motivo", value=f"Tienes {count} multas sin pagar", inline=False)
-                    embed.add_field(name="📢 ¿Cómo recuperarla?", value="Paga todas tus multas y usa `/solicitar_licencia` de nuevo", inline=False)
+                    embed.add_field(name="📌 **Motivo**", value=f"Tienes {count} multas sin pagar", inline=False)
+                    embed.add_field(name="📢 **¿Cómo recuperarla?**", value="Paga todas tus multas y usa `/solicitar_licencia` de nuevo", inline=False)
+                    embed.set_thumbnail(url=LOGO_SERVIDOR)
                     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
                     await user.send(embed=embed)
                     await enviar_log(f"🚨 Licencia revocada a **{user.mention}** por {count} multas sin pagar", discord.Color.red())
@@ -204,12 +207,12 @@ async def verificar_cumpleanos():
         canal = bot.get_channel(CANAL_ANUNCIOS_ID)
         if canal:
             embed = discord.Embed(
-                title=f"🎉 ¡FELIZ ANIVERSARIO {NOMBRE_SERVIDOR}!",
+                title="🎉 **¡FELIZ ANIVERSARIO DISTRICT 99!**",
                 description=f"Hoy cumplimos **{anios} años** de rol, multas, escenas y buenos momentos.\n\nGracias a todos los ciudadanos, policías y hosts que hacen de este servidor un lugar increíble.\n\n¡Que vengan muchos años más! 🥳🚔",
                 color=discord.Color.gold()
             )
-            embed.set_footer(text=f"{NOMBRE_SERVIDOR} © 202{anios}")
-            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1515163303100420156/1530450164458983515/17849514822062.png?ex=6a659e49&is=6a644cc9&hm=db40bab0b5b90d7ca851264614e6e7427c5d5be1a5873c5ba4fd1127aa146450&")
+            embed.set_thumbnail(url=LOGO_SERVIDOR)
+            embed.set_footer(text=f"DISTRICT 99 - GVRP © 2026")
             await canal.send("@everyone", embed=embed)
 
 @tasks.loop(hours=24)
@@ -220,10 +223,11 @@ async def mensaje_buenos_dias():
         canal = bot.get_channel(CANAL_GENERAL_ID)
         if canal:
             embed = discord.Embed(
-                title="🌅 ¡Buenos días, ciudadanos de DISTRICT 99!",
+                title="🌅 **¡Buenos días, ciudadanos de DISTRICT 99!**",
                 description="Un nuevo día comienza en la ciudad. Recuerden respetar las normas de tránsito y disfrutar del rol.",
                 color=discord.Color.orange()
             )
+            embed.set_thumbnail(url=LOGO_SERVIDOR)
             embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
             await canal.send(embed=embed)
 
@@ -294,16 +298,16 @@ async def crear_dni(interaction: discord.Interaction, nombre: str, apellidos: st
     guardar(DNI_FILE, dnis)
     
     embed = discord.Embed(
-        title="🪪 DNI CREADO",
-        description=f"**{interaction.user.mention}** tu DNI ha sido creado exitosamente.",
+        title="🪪 **DNI CREADO**",
+        description=f"{interaction.user.mention} tu DNI ha sido creado exitosamente.",
         color=discord.Color.green()
     )
-    embed.add_field(name="👤 Nombre", value=nombre, inline=True)
-    embed.add_field(name="👥 Apellidos", value=apellidos, inline=True)
-    embed.add_field(name="🎂 Edad", value=str(edad), inline=True)
-    embed.add_field(name="📅 Nacimiento", value=fecha_nacimiento, inline=True)
-    embed.add_field(name="🔢 Número DNI", value=numero_dni, inline=True)
-    embed.add_field(name="📆 Expedición", value=dnis[user_id]["fecha_expedicion"], inline=True)
+    embed.add_field(name="👤 **Nombre**", value=nombre, inline=True)
+    embed.add_field(name="👥 **Apellidos**", value=apellidos, inline=True)
+    embed.add_field(name="🎂 **Edad**", value=str(edad), inline=True)
+    embed.add_field(name="📅 **Nacimiento**", value=fecha_nacimiento, inline=True)
+    embed.add_field(name="🔢 **Número DNI**", value=numero_dni, inline=True)
+    embed.add_field(name="📆 **Expedición**", value=dnis[user_id]["fecha_expedicion"], inline=True)
     embed.set_thumbnail(url=interaction.user.display_avatar.url)
     embed.set_footer(text=f"DNI registrado en {NOMBRE_SERVIDOR}")
     
@@ -312,13 +316,13 @@ async def crear_dni(interaction: discord.Interaction, nombre: str, apellidos: st
         if rol:
             if interaction.guild.me.guild_permissions.manage_roles:
                 await interaction.user.add_roles(rol)
-                embed.add_field(name="✅ Rol", value=f"Rol {ROL_DNI_NOMBRE} asignado", inline=False)
+                embed.add_field(name="✅ **Rol**", value=f"Rol {ROL_DNI_NOMBRE} asignado", inline=False)
             else:
-                embed.add_field(name="⚠️ Rol", value="No tengo permisos para asignar el rol", inline=False)
+                embed.add_field(name="⚠️ **Rol**", value="No tengo permisos para asignar el rol", inline=False)
         else:
-            embed.add_field(name="⚠️ Rol", value=f"No encontré el rol '{ROL_DNI_NOMBRE}'", inline=False)
+            embed.add_field(name="⚠️ **Rol**", value=f"No encontré el rol '{ROL_DNI_NOMBRE}'", inline=False)
     except Exception as e:
-        embed.add_field(name="⚠️ Rol", value=f"Error al asignar: {e}", inline=False)
+        embed.add_field(name="⚠️ **Rol**", value=f"Error al asignar: {e}", inline=False)
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🪪 **{interaction.user.mention}** creó su DNI (Nº {numero_dni})", discord.Color.green())
@@ -335,15 +339,15 @@ async def ver_dni(interaction: discord.Interaction, usuario: discord.Member = No
         return
     
     embed = discord.Embed(
-        title=f"🪪 DNI DE {objetivo.name.upper()}",
+        title=f"🪪 **DNI DE {objetivo.name.upper()}**",
         color=discord.Color.blue()
     )
-    embed.add_field(name="👤 Nombre", value=datos["nombre"], inline=True)
-    embed.add_field(name="👥 Apellidos", value=datos["apellidos"], inline=True)
-    embed.add_field(name="🎂 Edad", value=str(datos["edad"]), inline=True)
-    embed.add_field(name="📅 Nacimiento", value=datos["fecha_nacimiento"], inline=True)
-    embed.add_field(name="🔢 Número DNI", value=datos["numero_dni"], inline=True)
-    embed.add_field(name="📆 Expedición", value=datos.get("fecha_expedicion", "Desconocida"), inline=True)
+    embed.add_field(name="👤 **Nombre**", value=datos["nombre"], inline=True)
+    embed.add_field(name="👥 **Apellidos**", value=datos["apellidos"], inline=True)
+    embed.add_field(name="🎂 **Edad**", value=str(datos["edad"]), inline=True)
+    embed.add_field(name="📅 **Nacimiento**", value=datos["fecha_nacimiento"], inline=True)
+    embed.add_field(name="🔢 **Número DNI**", value=datos["numero_dni"], inline=True)
+    embed.add_field(name="📆 **Expedición**", value=datos.get("fecha_expedicion", "Desconocida"), inline=True)
     embed.set_thumbnail(url=objetivo.display_avatar.url)
     embed.set_footer(text=f"Solicitado por {interaction.user.name}")
     
@@ -431,19 +435,31 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
                 guardar(ESCENAS_FILE, escenas)
                 
                 embed = discord.Embed(
-                    title="🚦 **SESIÓN ABIERTA**",
+                    title="🎬 **SESIÓN ABIERTA**",
                     description=f"**{NOMBRE_SERVIDOR}**",
                     color=discord.Color.gold()
                 )
-                embed.add_field(name="🛣️ **Vías**", value=f"`{vias} vías`", inline=True)
-                embed.add_field(name="🚗 **Velocidad Máx**", value=f"`{velocidad_maxima} mph`", inline=True)
-                embed.add_field(name="🏁 **Adelantamientos**", value="`✅ Permitidos`", inline=True)
-                embed.add_field(name="🚀 **Vel. Adelanto**", value=f"`{velocidad_adelanto} mph`", inline=True)
-                embed.add_field(name="👑 **Host**", value=modal_interaction.user.mention, inline=False)
-                embed.add_field(name="🔗 **Link**", value=f"[🌐 Haz clic aquí]({link})", inline=False)
-                embed.add_field(name="📢", value="**`¡Todos con DNI listo para el rol! 🪪`**", inline=False)
+                embed.add_field(
+                    name="📋 **DETALLES DE LA SESIÓN**",
+                    value=(
+                        f"||"
+                        f"🛣️ **Vías:** {vias} vías\n"
+                        f"🚗 **Velocidad Máx:** {velocidad_maxima} mph\n"
+                        f"🏁 **Adelantamientos:** ✅ Permitidos\n"
+                        f"🚀 **Vel. Adelanto:** {velocidad_adelanto} mph\n"
+                        f"👑 **Host:** {modal_interaction.user.mention}\n"
+                        f"🔗 **Link:** [🌐 Haz clic aquí]({link})"
+                        f"||"
+                    ),
+                    inline=False
+                )
+                embed.add_field(
+                    name="📢",
+                    value="**¡Todos con DNI listo para el rol! 🪪**",
+                    inline=False
+                )
+                embed.set_thumbnail(url=LOGO_SERVIDOR)
                 embed.set_footer(text=f"Sesión iniciada por {modal_interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
-                embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1515163303100420156/1530450164458983515/17849514822062.png?ex=6a659e49&is=6a644cc9&hm=db40bab0b5b90d7ca851264614e6e7427c5d5be1a5873c5ba4fd1127aa146450&")
                 
                 await modal_interaction.response.send_message(embed=embed)
                 await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión en {modal_interaction.channel.mention} (Vías: {vias}, Vel: {velocidad_maxima} mph)", discord.Color.gold())
@@ -470,18 +486,30 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
     guardar(ESCENAS_FILE, escenas)
     
     embed = discord.Embed(
-        title="🚦 **SESIÓN ABIERTA**",
+        title="🎬 **SESIÓN ABIERTA**",
         description=f"**{NOMBRE_SERVIDOR}**",
         color=discord.Color.gold()
     )
-    embed.add_field(name="🛣️ **Vías**", value=f"`{vias} vías`", inline=True)
-    embed.add_field(name="🚗 **Velocidad Máx**", value=f"`{velocidad_maxima} mph`", inline=True)
-    embed.add_field(name="🏁 **Adelantamientos**", value="`❌ No permitidos`", inline=True)
-    embed.add_field(name="👑 **Host**", value=interaction.user.mention, inline=False)
-    embed.add_field(name="🔗 **Link**", value=f"[🌐 Haz clic aquí]({link})", inline=False)
-    embed.add_field(name="📢", value="**`¡Todos con DNI listo para el rol! 🪪`**", inline=False)
+    embed.add_field(
+        name="📋 **DETALLES DE LA SESIÓN**",
+        value=(
+            f"||"
+            f"🛣️ **Vías:** {vias} vías\n"
+            f"🚗 **Velocidad Máx:** {velocidad_maxima} mph\n"
+            f"🏁 **Adelantamientos:** ❌ No permitidos\n"
+            f"👑 **Host:** {interaction.user.mention}\n"
+            f"🔗 **Link:** [🌐 Haz clic aquí]({link})"
+            f"||"
+        ),
+        inline=False
+    )
+    embed.add_field(
+        name="📢",
+        value="**¡Todos con DNI listo para el rol! 🪪**",
+        inline=False
+    )
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     embed.set_footer(text=f"Sesión iniciada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
-    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1515163303100420156/1530450164458983515/17849514822062.png?ex=6a659e49&is=6a644cc9&hm=db40bab0b5b90d7ca851264614e6e7427c5d5be1a5873c5ba4fd1127aa146450&")
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🎬 **{interaction.user.mention}** abrió sesión en {interaction.channel.mention} (Vías: {vias}, Vel: {velocidad_maxima} mph)", discord.Color.gold())
@@ -509,11 +537,17 @@ async def cerrar_escena(interaction: discord.Interaction):
     guardar(ESCENAS_FILE, escenas)
     
     embed = discord.Embed(
-        title="🔒 SESION CERRADA",
-        description=f"¡Buen rol! Duracion: {horas}h {minutos}m",
+        title="🔒 **SESIÓN CERRADA**",
+        description=f"**¡Buen rol!** 👏\n⏱️ Duración: {horas}h {minutos}m",
         color=discord.Color.red()
     )
-    embed.add_field(name="⭐", value="No olvides evaluar al staff con `/evaluar_staff`", inline=False)
+    embed.add_field(
+        name="⭐",
+        value="No olvides evaluar al staff con `/evaluar_staff`",
+        inline=False
+    )
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
+    embed.set_footer(text=f"Sesión cerrada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🔒 **{interaction.user.mention}** cerró sesión en {interaction.channel.mention} (Duración: {horas}h {minutos}m)", discord.Color.red())
@@ -552,12 +586,13 @@ class VotoView(discord.ui.View):
         no_asist = votacion.get("no_asistentes", [])
         
         embed = discord.Embed(
-            title="🗳️ VOTACION",
-            description=f"✅ Asistiran: {len(asist)}/{votacion['votos_requeridos']}\n❌ No asistiran: {len(no_asist)}",
+            title="🗳️ **VOTACIÓN**",
+            description=f"✅ Asistirán: {len(asist)}/{votacion['votos_requeridos']}\n❌ No asistirán: {len(no_asist)}",
             color=discord.Color.orange()
         )
         embed.add_field(name="✅", value="\n".join(f"<@{u}>" for u in asist) or "Nadie", inline=False)
         embed.add_field(name="❌", value="\n".join(f"<@{u}>" for u in no_asist) or "Nadie", inline=False)
+        embed.set_thumbnail(url=LOGO_SERVIDOR)
         
         await interaction.response.edit_message(embed=embed, view=self)
         
@@ -593,12 +628,13 @@ async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: in
     guardar(VOTACIONES_FILE, votaciones)
     
     embed = discord.Embed(
-        title="🗳️ ¿ABRIMOS SESION?",
+        title="🗳️ **¿ABRIMOS SESIÓN?**",
         description=f"Necesitan {votos_requeridos} votos",
         color=discord.Color.orange()
     )
-    embed.add_field(name="✅ Asistentes", value="Nadie", inline=False)
-    embed.add_field(name="❌ No asistentes", value="Nadie", inline=False)
+    embed.add_field(name="✅ **Asistentes**", value="Nadie", inline=False)
+    embed.add_field(name="❌ **No asistentes**", value="Nadie", inline=False)
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     embed.set_footer(text=f"Host: {interaction.user.name}")
     
     await interaction.response.send_message(embed=embed, view=VotoView(interaction.channel_id))
@@ -620,7 +656,7 @@ async def cerrar_votacion(interaction: discord.Interaction):
     del votaciones[channel_id]
     guardar(VOTACIONES_FILE, votaciones)
     
-    await interaction.response.send_message("🔒 Votacion cerrada")
+    await interaction.response.send_message("🔒 Votación cerrada")
     # ==================== AUTOS ====================
 @bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehiculo con foto")
 @app_commands.describe(
@@ -658,15 +694,16 @@ async def registrar_auto(
     guardar(AUTOS_FILE, autos)
     
     embed = discord.Embed(
-        title="🚗 ¡VEHICULO REGISTRADO!",
+        title="🚗 **VEHÍCULO REGISTRADO**",
         color=discord.Color.green()
     )
-    embed.add_field(name="👤 Usuario Discord", value=interaction.user.mention, inline=False)
-    embed.add_field(name="🎮 Usuario Roblox", value=usuario_roblox, inline=False)
-    embed.add_field(name="📋 Modelo", value=modelo, inline=True)
-    embed.add_field(name="🎨 Color", value=color, inline=True)
-    embed.add_field(name="🅿️ Placa", value=placa, inline=True)
+    embed.add_field(name="👤 **Usuario Discord**", value=interaction.user.mention, inline=False)
+    embed.add_field(name="🎮 **Usuario Roblox**", value=usuario_roblox, inline=False)
+    embed.add_field(name="📋 **Modelo**", value=modelo, inline=True)
+    embed.add_field(name="🎨 **Color**", value=color, inline=True)
+    embed.add_field(name="🅿️ **Placa**", value=placa, inline=True)
     embed.set_image(url=foto.url)
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     embed.set_footer(text=f"Registrado por {interaction.user.name}")
     
     await interaction.response.send_message(embed=embed)
@@ -684,13 +721,13 @@ async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = 
         return
     
     embed = discord.Embed(
-        title=f"🚗 AUTOS DE {objetivo.name.upper()}",
+        title=f"🚗 **AUTOS DE {objetivo.name.upper()}**",
         color=discord.Color.blue()
     )
     
     for i, auto in enumerate(user_autos, 1):
         embed.add_field(
-            name=f"🚘 Auto #{i}",
+            name=f"🚘 **Auto #{i}**",
             value=(
                 f"👤 **Discord:** {auto['usuario_discord']}\n"
                 f"🎮 **Roblox:** {auto['usuario_roblox']}\n"
@@ -704,6 +741,7 @@ async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = 
         if auto.get('foto'):
             embed.set_image(url=auto['foto'])
     
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     await interaction.response.send_message(embed=embed)
 
 # ==================== ELIMINAR AUTO ====================
@@ -727,13 +765,14 @@ async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
     guardar(AUTOS_FILE, autos)
     
     embed = discord.Embed(
-        title="🗑️ AUTO ELIMINADO",
-        description=f"**{interaction.user.mention}** has eliminado tu auto.",
+        title="🗑️ **AUTO ELIMINADO**",
+        description=f"{interaction.user.mention} has eliminado tu auto.",
         color=discord.Color.red()
     )
-    embed.add_field(name="📋 Modelo", value=auto_eliminado.get('modelo', 'Desconocido'), inline=True)
-    embed.add_field(name="🅿️ Placa", value=auto_eliminado.get('placa', 'Desconocida'), inline=True)
-    embed.add_field(name="🎨 Color", value=auto_eliminado.get('color', 'Desconocido'), inline=True)
+    embed.add_field(name="📋 **Modelo**", value=auto_eliminado.get('modelo', 'Desconocido'), inline=True)
+    embed.add_field(name="🅿️ **Placa**", value=auto_eliminado.get('placa', 'Desconocida'), inline=True)
+    embed.add_field(name="🎨 **Color**", value=auto_eliminado.get('color', 'Desconocido'), inline=True)
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     embed.set_footer(text=f"Auto eliminado el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
@@ -791,18 +830,19 @@ async def registrar_multa(
     guardar(MULTAS_FILE, multas)
     
     embed = discord.Embed(
-        title="🚨 ¡MULTA REGISTRADA!",
+        title="🚨 **MULTA REGISTRADA**",
         color=discord.Color.red()
     )
-    embed.add_field(name="👮 Oficial", value=interaction.user.mention, inline=False)
-    embed.add_field(name="👤 Infractor", value=infractor.mention, inline=False)
-    embed.add_field(name="⚖️ Infraccion", value=infraccion, inline=False)
-    embed.add_field(name="💰 Monto", value=f"**${precio}**", inline=True)
+    embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
+    embed.add_field(name="👤 **Infractor**", value=infractor.mention, inline=False)
+    embed.add_field(name="⚖️ **Infracción**", value=infraccion, inline=False)
+    embed.add_field(name="💰 **Monto**", value=f"**${precio}**", inline=True)
     if testigos_mentions:
-        embed.add_field(name="👀 Testigos", value=", ".join(testigos_mentions), inline=False)
-    embed.add_field(name="📌 Estado", value="❌ Sin pagar", inline=True)
+        embed.add_field(name="👀 **Testigos**", value=", ".join(testigos_mentions), inline=False)
+    embed.add_field(name="📌 **Estado**", value="❌ Sin pagar", inline=True)
     if foto:
         embed.set_image(url=foto.url)
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     embed.set_footer(text=f"Registrada el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     mensaje = f"{infractor.mention} ¡Has recibido una multa!\n"
@@ -814,7 +854,7 @@ async def registrar_multa(
     await interaction.response.send_message(content=mensaje, embed=embed)
     await enviar_log(f"🚨 **{interaction.user.mention}** multó a **{infractor.mention}** por ${precio} (Infracción: {infraccion})", discord.Color.red())
     
-    # Verificar morosidad (3 multas sin pagar)
+    # Verificar morosidad
     historial = multas.get("historial", [])
     multas_usuario = [m for m in historial if m.get('infractor_id') == str(infractor.id) and not m.get('pagada', False)]
     if len(multas_usuario) >= 3:
@@ -855,9 +895,9 @@ async def historial_multas(interaction: discord.Interaction, usuario: discord.Me
         if not historial:
             await interaction.response.send_message(f"📋 {usuario.name} no tiene multas registradas", ephemeral=True)
             return
-        titulo = f"🚨 MULTAS DE {usuario.name.upper()}"
+        titulo = f"🚨 **MULTAS DE {usuario.name.upper()}**"
     else:
-        titulo = "🚨 HISTORIAL DE MULTAS (TODOS)"
+        titulo = "🚨 **HISTORIAL DE MULTAS (TODOS)**"
     
     embed = discord.Embed(title=titulo, color=discord.Color.red())
     
@@ -866,11 +906,11 @@ async def historial_multas(interaction: discord.Interaction, usuario: discord.Me
         testigos = multa.get('testigos', [])
         testigos_texto = ", ".join(testigos) if testigos else "Ninguno"
         embed.add_field(
-            name=f"📌 Multa #{i}",
+            name=f"📌 **Multa #{i}**",
             value=(
                 f"👮 **Oficial:** {multa['oficial']}\n"
                 f"👤 **Infractor:** {multa['infractor']}\n"
-                f"⚖️ **Infraccion:** {multa['infraccion']}\n"
+                f"⚖️ **Infracción:** {multa['infraccion']}\n"
                 f"💰 **Monto:** ${multa['precio']}\n"
                 f"👀 **Testigos:** {testigos_texto}\n"
                 f"📌 **Estado:** {estado}\n"
@@ -881,7 +921,8 @@ async def historial_multas(interaction: discord.Interaction, usuario: discord.Me
         if multa.get('foto'):
             embed.set_image(url=multa['foto'])
     
-    embed.set_footer(text="Mostrando ultimas 10 multas")
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
+    embed.set_footer(text="Mostrando últimas 10 multas")
     await interaction.response.send_message(embed=embed)
 
 # ==================== MIS MULTAS (CIUDADANOS) ====================
@@ -898,7 +939,7 @@ async def mis_multas(interaction: discord.Interaction):
         return
     
     embed = discord.Embed(
-        title=f"🚨 TUS MULTAS",
+        title=f"🚨 **TUS MULTAS**",
         description=f"Total: {len(mis_multas)} multas",
         color=discord.Color.orange()
     )
@@ -910,10 +951,10 @@ async def mis_multas(interaction: discord.Interaction):
         testigos = multa.get('testigos', [])
         testigos_texto = ", ".join(testigos) if testigos else "Ninguno"
         embed.add_field(
-            name=f"📌 Multa #{i}",
+            name=f"📌 **Multa #{i}**",
             value=(
                 f"👮 **Oficial:** {multa['oficial']}\n"
-                f"⚖️ **Infraccion:** {multa['infraccion']}\n"
+                f"⚖️ **Infracción:** {multa['infraccion']}\n"
                 f"💰 **Monto:** ${multa['precio']}\n"
                 f"👀 **Testigos:** {testigos_texto}\n"
                 f"📌 **Estado:** {estado}\n"
@@ -924,10 +965,13 @@ async def mis_multas(interaction: discord.Interaction):
         if multa.get('foto'):
             embed.set_image(url=multa['foto'])
     
-    embed.add_field(name="💸 TOTAL ADEUDADO", value=f"**${total}**", inline=False)
-    embed.set_footer(text="Mostrando ultimas 10 multas")
+    embed.add_field(name="💸 **TOTAL ADEUDADO**", value=f"**${total}**", inline=False)
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
+    embed.set_footer(text="Mostrando últimas 10 multas")
+    
     await interaction.response.send_message(embed=embed)
-    # ==================== CONFIRMAR PAGO (SOLO POLICIA) ====================
+
+# ==================== CONFIRMAR PAGO (SOLO POLICIA) ====================
 @bot.tree.command(name="confirmar_pago", description="👮 Confirmar pago de un ciudadano - SOLO POLICIA")
 @app_commands.describe(
     usuario="Usuario que pagó (menciona o escribe el nombre)",
@@ -992,16 +1036,17 @@ async def confirmar_pago(
     guardar(MULTAS_FILE, multas)
 
     embed = discord.Embed(
-        title="💰 ¡PAGO CONFIRMADO POR OFICIAL!",
+        title="💰 **PAGO CONFIRMADO POR OFICIAL**",
         description=f"{user_mention} ha pagado su multa.",
         color=discord.Color.green()
     )
-    embed.add_field(name="💰 Monto", value=f"**${monto}**", inline=True)
-    embed.add_field(name="⚖️ Infracción", value=infraccion, inline=True)
-    embed.add_field(name="👮 Confirmado por", value=interaction.user.mention, inline=True)
-    embed.add_field(name="📅 Fecha de pago", value=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"), inline=True)
+    embed.add_field(name="💰 **Monto**", value=f"**${monto}**", inline=True)
+    embed.add_field(name="⚖️ **Infracción**", value=infraccion, inline=True)
+    embed.add_field(name="👮 **Confirmado por**", value=interaction.user.mention, inline=True)
+    embed.add_field(name="📅 **Fecha de pago**", value=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"), inline=True)
     if foto_url:
         embed.set_image(url=foto_url)
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
 
     await interaction.response.send_message(embed=embed)
@@ -1035,18 +1080,19 @@ async def stats(interaction: discord.Interaction):
     total_autos = sum(len(v) for v in autos.values())
     
     embed = discord.Embed(
-        title="📊 ESTADÍSTICAS DEL BOT",
+        title="📊 **ESTADÍSTICAS DEL BOT**",
         description=f"**{NOMBRE_SERVIDOR}**",
         color=discord.Color.blue()
     )
-    embed.add_field(name="🪪 DNIs creados", value=str(len(dnis)), inline=True)
-    embed.add_field(name="🪪 Licencias activas", value=str(len(licencias)), inline=True)
-    embed.add_field(name="🚗 Autos registrados", value=str(total_autos), inline=True)
-    embed.add_field(name="🚨 Multas totales", value=str(total_multas), inline=True)
-    embed.add_field(name="✅ Multas pagadas", value=str(pagadas), inline=True)
-    embed.add_field(name="❌ Multas pendientes", value=str(no_pagadas), inline=True)
-    embed.add_field(name="🎬 Escenas abiertas", value=str(len(escenas)), inline=True)
-    embed.add_field(name="⭐ Evaluaciones", value=str(len(evaluaciones)), inline=True)
+    embed.add_field(name="🪪 **DNIs creados**", value=str(len(dnis)), inline=True)
+    embed.add_field(name="🪪 **Licencias activas**", value=str(len(licencias)), inline=True)
+    embed.add_field(name="🚗 **Autos registrados**", value=str(total_autos), inline=True)
+    embed.add_field(name="🚨 **Multas totales**", value=str(total_multas), inline=True)
+    embed.add_field(name="✅ **Multas pagadas**", value=str(pagadas), inline=True)
+    embed.add_field(name="❌ **Multas pendientes**", value=str(no_pagadas), inline=True)
+    embed.add_field(name="🎬 **Escenas abiertas**", value=str(len(escenas)), inline=True)
+    embed.add_field(name="⭐ **Evaluaciones**", value=str(len(evaluaciones)), inline=True)
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     embed.set_footer(text=f"Actualizado: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
@@ -1113,21 +1159,22 @@ class PanelLicenciasView(discord.ui.View):
                     pass
 
                 embed = discord.Embed(
-                    title="🪪 NUEVA LICENCIA GENERADA",
-                    description=f"**{modal_interaction.user.mention}**",
+                    title="🪪 **NUEVA LICENCIA GENERADA**",
+                    description=f"{modal_interaction.user.mention}",
                     color=discord.Color.gold()
                 )
-                embed.add_field(name="📋 Licencia", value=f"**{licencia_id}**", inline=False)
-                embed.add_field(name="👤 Nombre", value=self.nombre.value, inline=True)
-                embed.add_field(name="👥 Apellidos", value=self.apellidos.value, inline=True)
-                embed.add_field(name="🎂 Edad", value=f"{self.edad.value} años", inline=True)
-                embed.add_field(name="💼 Oficio", value=self.oficio.value, inline=True)
-                embed.add_field(name="🎮 Roblox", value=self.user_roblox.value, inline=True)
-                embed.add_field(name="🔢 DNI", value=dnis[user_id]["numero_dni"], inline=True)
-                embed.add_field(name="📅 Expedición", value=datetime.now(timezone.utc).strftime("%d/%m/%Y"), inline=True)
-                embed.add_field(name="📅 Expiración", value=(datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"), inline=True)
-                embed.add_field(name="📌 Estado", value="🟢 ACTIVA", inline=True)
+                embed.add_field(name="📋 **Licencia**", value=f"**{licencia_id}**", inline=False)
+                embed.add_field(name="👤 **Nombre**", value=self.nombre.value, inline=True)
+                embed.add_field(name="👥 **Apellidos**", value=self.apellidos.value, inline=True)
+                embed.add_field(name="🎂 **Edad**", value=f"{self.edad.value} años", inline=True)
+                embed.add_field(name="💼 **Oficio**", value=self.oficio.value, inline=True)
+                embed.add_field(name="🎮 **Roblox**", value=self.user_roblox.value, inline=True)
+                embed.add_field(name="🔢 **DNI**", value=dnis[user_id]["numero_dni"], inline=True)
+                embed.add_field(name="📅 **Expedición**", value=datetime.now(timezone.utc).strftime("%d/%m/%Y"), inline=True)
+                embed.add_field(name="📅 **Expiración**", value=(datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"), inline=True)
+                embed.add_field(name="📌 **Estado**", value="🟢 ACTIVA", inline=True)
                 embed.set_thumbnail(url=foto_roblox)
+                embed.set_image(url=LOGO_SERVIDOR)
                 embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
 
                 canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
@@ -1155,7 +1202,7 @@ async def panel_licencias(interaction: discord.Interaction):
         return
     
     embed = discord.Embed(
-        title="📋 PANEL DE LICENCIAS DE CONDUCIR",
+        title="📋 **PANEL DE LICENCIAS**",
         description=(
             "Presiona el botón para completar tus datos y generar tu licencia de conducir de **DISTRICT 99 - GVRP**.\n\n"
             "📌 **Datos solicitados:**\n"
@@ -1170,6 +1217,7 @@ async def panel_licencias(interaction: discord.Interaction):
         ),
         color=discord.Color.gold()
     )
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     
     view = PanelLicenciasView()
@@ -1187,20 +1235,20 @@ async def ver_licencia(interaction: discord.Interaction, usuario: discord.Member
         return
     
     embed = discord.Embed(
-        title="🪪 LICENCIA DE CONDUCIR",
-        description=f"**{objetivo.mention}**",
+        title="🪪 **LICENCIA DE CONDUCIR**",
+        description=f"{objetivo.mention}",
         color=discord.Color.gold()
     )
-    embed.add_field(name="📋 Licencia", value=datos.get("licencia_id", "N/A"), inline=False)
-    embed.add_field(name="👤 Nombre", value=datos.get("nombre", "N/A"), inline=True)
-    embed.add_field(name="👥 Apellidos", value=datos.get("apellidos", "N/A"), inline=True)
-    embed.add_field(name="🎂 Edad", value=datos.get("edad", "N/A"), inline=True)
-    embed.add_field(name="💼 Oficio", value=datos.get("oficio", "N/A"), inline=True)
-    embed.add_field(name="🎮 Roblox", value=datos.get("user_roblox", "N/A"), inline=True)
-    embed.add_field(name="🔢 DNI", value=datos.get("dni", "N/A"), inline=True)
-    embed.add_field(name="📅 Expedición", value=datos.get("fecha_expedicion", "N/A"), inline=True)
-    embed.add_field(name="📅 Expiración", value=datos.get("fecha_expiracion", "N/A"), inline=True)
-    embed.add_field(name="📌 Estado", value="🟢 ACTIVA", inline=True)
+    embed.add_field(name="📋 **Licencia**", value=datos.get("licencia_id", "N/A"), inline=False)
+    embed.add_field(name="👤 **Nombre**", value=datos.get("nombre", "N/A"), inline=True)
+    embed.add_field(name="👥 **Apellidos**", value=datos.get("apellidos", "N/A"), inline=True)
+    embed.add_field(name="🎂 **Edad**", value=datos.get("edad", "N/A"), inline=True)
+    embed.add_field(name="💼 **Oficio**", value=datos.get("oficio", "N/A"), inline=True)
+    embed.add_field(name="🎮 **Roblox**", value=datos.get("user_roblox", "N/A"), inline=True)
+    embed.add_field(name="🔢 **DNI**", value=datos.get("dni", "N/A"), inline=True)
+    embed.add_field(name="📅 **Expedición**", value=datos.get("fecha_expedicion", "N/A"), inline=True)
+    embed.add_field(name="📅 **Expiración**", value=datos.get("fecha_expiracion", "N/A"), inline=True)
+    embed.add_field(name="📌 **Estado**", value="🟢 ACTIVA", inline=True)
     
     foto_roblox = datos.get("foto_roblox")
     if foto_roblox:
@@ -1208,6 +1256,7 @@ async def ver_licencia(interaction: discord.Interaction, usuario: discord.Member
     else:
         embed.set_thumbnail(url=objetivo.display_avatar.url)
     
+    embed.set_image(url=LOGO_SERVIDOR)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     await interaction.response.send_message(embed=embed)
 
@@ -1249,16 +1298,17 @@ async def eliminar_licencia(
         pass
     
     embed = discord.Embed(
-        title="🗑️ LICENCIA ELIMINADA",
-        description=f"**{usuario.mention}** ya no tiene licencia de conducir.",
+        title="🗑️ **LICENCIA ELIMINADA**",
+        description=f"{usuario.mention} ya no tiene licencia de conducir.",
         color=discord.Color.red()
     )
-    embed.add_field(name="📋 Licencia", value=licencia_id, inline=True)
-    embed.add_field(name="👤 Nombre", value=f"{nombre} {apellidos}", inline=True)
-    embed.add_field(name="👮 Eliminado por", value=interaction.user.mention, inline=False)
+    embed.add_field(name="📋 **Licencia**", value=licencia_id, inline=True)
+    embed.add_field(name="👤 **Nombre**", value=f"{nombre} {apellidos}", inline=True)
+    embed.add_field(name="👮 **Eliminado por**", value=interaction.user.mention, inline=False)
     if motivo:
-        embed.add_field(name="📌 Motivo", value=motivo, inline=False)
+        embed.add_field(name="📌 **Motivo**", value=motivo, inline=False)
     embed.set_thumbnail(url=usuario.display_avatar.url)
+    embed.set_image(url=LOGO_SERVIDOR)
     embed.set_footer(text=f"Eliminado el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
@@ -1302,13 +1352,14 @@ class PanelTurnosView(discord.ui.View):
         guardar(TURNOS_FILE, turnos)
         
         embed = discord.Embed(
-            title="🚔 ¡TURNO INICIADO!",
-            description=f"**{interaction.user.mention}** ha comenzado su patrullaje.",
+            title="🚔 **TURNO INICIADO**",
+            description=f"{interaction.user.mention} ha comenzado su patrullaje.",
             color=discord.Color.green()
         )
-        embed.add_field(name="👮 Oficial", value=interaction.user.mention, inline=False)
-        embed.add_field(name="🕐 Inicio", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
-        embed.add_field(name="📋 Estado", value="🟢 EN SERVICIO", inline=True)
+        embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
+        embed.add_field(name="🕐 **Inicio**", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
+        embed.add_field(name="📋 **Estado**", value="🟢 EN SERVICIO", inline=True)
+        embed.set_thumbnail(url=LOGO_SERVIDOR)
         embed.set_footer(text="¡Buena suerte en tu patrullaje! 🚓")
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -1343,16 +1394,17 @@ class PanelTurnosView(discord.ui.View):
         guardar(TURNOS_FILE, turnos)
         
         embed = discord.Embed(
-            title="🚔 ¡TURNO FINALIZADO!",
-            description=f"**{interaction.user.mention}** ha terminado su patrullaje.",
+            title="🚔 **TURNO FINALIZADO**",
+            description=f"{interaction.user.mention} ha terminado su patrullaje.",
             color=discord.Color.red()
         )
-        embed.add_field(name="👮 Oficial", value=interaction.user.mention, inline=False)
-        embed.add_field(name="🕐 Inicio", value=inicio.strftime("%H:%M hs"), inline=True)
-        embed.add_field(name="🕐 Fin", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
-        embed.add_field(name="⏱️ Duración", value=f"{horas}h {minutos}m", inline=False)
-        embed.add_field(name="🚨 Multas puestas", value=str(len(multas_turno)), inline=True)
-        embed.add_field(name="📋 Estado", value="🔴 FUERA DE SERVICIO", inline=True)
+        embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
+        embed.add_field(name="🕐 **Inicio**", value=inicio.strftime("%H:%M hs"), inline=True)
+        embed.add_field(name="🕐 **Fin**", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
+        embed.add_field(name="⏱️ **Duración**", value=f"{horas}h {minutos}m", inline=False)
+        embed.add_field(name="🚨 **Multas puestas**", value=str(len(multas_turno)), inline=True)
+        embed.add_field(name="📋 **Estado**", value="🔴 FUERA DE SERVICIO", inline=True)
+        embed.set_thumbnail(url=LOGO_SERVIDOR)
         embed.set_footer(text="¡Buen trabajo oficial! 🌟")
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -1385,7 +1437,7 @@ class PanelTurnosView(discord.ui.View):
             return
         
         embed = discord.Embed(
-            title="🚓 POLICIAS EN SERVICIO",
+            title="🚓 **POLICIAS EN SERVICIO**",
             description=f"Total: {len(activos)} oficiales",
             color=discord.Color.blue()
         )
@@ -1397,6 +1449,7 @@ class PanelTurnosView(discord.ui.View):
                 inline=False
             )
         
+        embed.set_thumbnail(url=LOGO_SERVIDOR)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="panel_turnos", description="📋 Panel de turnos de policía - SOLO ADMIN/HOST")
@@ -1406,7 +1459,7 @@ async def panel_turnos(interaction: discord.Interaction):
         return
     
     embed = discord.Embed(
-        title="📋 PANEL DE TURNOS DE POLICÍA",
+        title="📋 **PANEL DE TURNOS**",
         description=(
             "Selecciona una opción para gestionar los turnos de patrullaje.\n\n"
             "🚔 **Iniciar Turno** → Comienza tu patrullaje\n"
@@ -1415,6 +1468,7 @@ async def panel_turnos(interaction: discord.Interaction):
         ),
         color=discord.Color.blue()
     )
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     
     view = PanelTurnosView()
@@ -1422,18 +1476,18 @@ async def panel_turnos(interaction: discord.Interaction):
     # ==================== EVALUAR STAFF ====================
 class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
     que_hizo = discord.ui.TextInput(
-        label="Que hizo el staff?",
-        placeholder="Ej: Ayudo con el rol, fue muy atento...",
+        label="¿Qué hizo el staff?",
+        placeholder="Ej: Ayudó con el rol, fue muy atento...",
         max_length=200
     )
     calificacion = discord.ui.TextInput(
-        label="Calificacion (1-10)",
+        label="Calificación (1-10)",
         placeholder="Ej: 8",
         max_length=2
     )
     amable = discord.ui.TextInput(
-        label="Fue amable?",
-        placeholder="Ej: Si, muy amable",
+        label="¿Fue amable?",
+        placeholder="Ej: Sí, muy amable",
         max_length=150
     )
     queja = discord.ui.TextInput(
@@ -1452,7 +1506,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
             if not 1 <= nota <= 10:
                 raise ValueError
         except:
-            await interaction.response.send_message("⚠️ Calificacion invalida. Usa un numero del 1 al 10", ephemeral=True)
+            await interaction.response.send_message("⚠️ Calificación inválida. Usa un número del 1 al 10", ephemeral=True)
             return
         
         evaluaciones = cargar(EVALUACIONES_FILE)
@@ -1474,18 +1528,19 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
         estrellas = "⭐" * round(nota / 2)
         
         embed = discord.Embed(
-            title="📝 ¡EVALUACION REGISTRADA!",
+            title="📝 **EVALUACIÓN REGISTRADA**",
             description=f"**Staff evaluado:** {self.staff.mention}",
             color=discord.Color.purple()
         )
-        embed.add_field(name="⭐ Calificacion", value=f"{estrellas} ({nota}/10)", inline=False)
-        embed.add_field(name="🤝 Amabilidad", value=self.amable.value, inline=False)
-        embed.add_field(name="📌 Accion", value=self.que_hizo.value, inline=False)
-        embed.add_field(name="💬 Sugerencias", value=self.queja.value or "Ninguna", inline=False)
+        embed.add_field(name="⭐ **Calificación**", value=f"{estrellas} ({nota}/10)", inline=False)
+        embed.add_field(name="🤝 **Amabilidad**", value=self.amable.value, inline=False)
+        embed.add_field(name="📌 **Acción**", value=self.que_hizo.value, inline=False)
+        embed.add_field(name="💬 **Sugerencias**", value=self.queja.value or "Ninguna", inline=False)
+        embed.set_thumbnail(url=LOGO_SERVIDOR)
         embed.set_footer(text=f"Evaluado por {interaction.user.name}")
         
         await interaction.response.send_message(
-            content=f"{self.staff.mention} ¡Has recibido una evaluacion! ⭐",
+            content=f"{self.staff.mention} ¡Has recibido una evaluación! ⭐",
             embed=embed
         )
         await enviar_log(f"⭐ **{interaction.user.mention}** evaluó a **{self.staff.mention}** con nota {nota}/10", discord.Color.purple())
