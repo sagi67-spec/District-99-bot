@@ -1441,67 +1441,39 @@ async def on_message(message):
             
             # ========== ESPERAR RESPUESTA DE UNBELIEVABOAT ==========
             def check(m):
-                return (m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)) and user_mention in m.content
+                # UnbelievaBoat responde con el nombre del bot y el monto
+                return (m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)) and "has received" in m.content.lower() and str(monto) in m.content
             
             try:
                 respuesta = await bot.wait_for('message', timeout=5.0, check=check)
                 contenido = respuesta.content.lower()
                 print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
                 
-                # Palabras clave de rechazo
-                rechazo = [
-                    "don't have that much money",
-                    "insufficient",
-                    "not enough",
-                    "you don't have",
-                    "you have insufficient",
-                    "you currently have",
-                    "you only have",
-                    "don't have enough",
-                    "you do not have"
-                ]
-                
-                # Palabras clave de éxito
-                exito = [
-                    "has received",
-                    "sent",
-                    "paid",
-                    "success",
-                    "transferred",
-                    "gave",
-                    "✅",
-                    "successfully",
-                    "completed"
-                ]
-                
-                # Verificar si fue rechazado
-                if any(word in contenido for word in rechazo):
-                    await message.channel.send(
-                        f"{user_mention} ❌ **PAGO RECHAZADO POR UNBELIEVABOAT**\n"
-                        f"No tienes suficiente dinero en mano para pagar **${monto}**.\n"
-                        f"💰 **Alternativas:** Retira dinero del banco con `!withdraw [cantidad]`"
-                    )
-                    await bot.process_commands(message)
-                    return
-                
-                # Verificar si fue exitoso
-                if not any(word in contenido for word in exito):
-                    # Si no detectamos ni éxito ni rechazo, preguntamos
-                    await message.channel.send(
-                        f"{user_mention} ⚠️ No pude verificar el estado de tu pago automáticamente.\n"
-                        f"Si el pago fue exitoso, escribe `/confirmar_pago {monto}`"
-                    )
-                    await bot.process_commands(message)
-                    return
-                
-                # Si llegamos aquí, el pago fue exitoso
-                print(f"✅ Pago exitoso confirmado por UnbelievaBoat: {user_name} pagó ${monto}")
+                # Si llega aquí, UnbelievaBoat confirmó el pago
+                print(f"✅ Pago confirmado por UnbelievaBoat: {user_name} pagó ${monto}")
                 
             except TimeoutError:
                 print("⏰ No se recibió respuesta de UnbelievaBoat.")
+                
+                # Verificar si el usuario tiene multas pendientes para dar info
+                multas = cargar(MULTAS_FILE)
+                historial = multas.get("historial", [])
+                tiene_pendientes = False
+                for multa in historial:
+                    if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
+                        tiene_pendientes = True
+                        break
+                
+                if not tiene_pendientes:
+                    await message.channel.send(
+                        f"{user_mention} ✅ No tienes multas pendientes. ¡Estás al día!"
+                    )
+                    await bot.process_commands(message)
+                    return
+                
                 await message.channel.send(
                     f"{user_mention} ⚠️ No pude verificar tu pago automáticamente.\n"
-                    f"Si el pago fue exitoso, escribe `/confirmar_pago {monto}`"
+                    f"Si el pago fue exitoso, espera unos segundos y el sistema lo detectará."
                 )
                 await bot.process_commands(message)
                 return
