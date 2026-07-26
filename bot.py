@@ -100,7 +100,7 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
             color=color,
             timestamp=datetime.now(timezone.utc)
         )
-        content = f"<@{mencion}>" if mencion else None
+        content = f"<@{mencionar}>" if mencionar else None  # <--- CORREGIDO
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
