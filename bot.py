@@ -1407,7 +1407,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== EVENTO ON_MESSAGE (DETECTAR !pay Y VERIFICAR UNBELIEVABOAT) ====================
+    # ==================== EVENTO ON_MESSAGE (DETECTAR !pay) ====================
 @bot.event
 async def on_message(message):
     if message.author.id == bot.user.id:
@@ -1439,33 +1439,33 @@ async def on_message(message):
             
             print(f"🔍 Pago detectado: {user_name} pagó ${monto}")
             
-            # ========== ESPERAR RESPUESTA DE UNBELIEVABOAT ==========
-            # Esperar 1.5 segundos para que UnbelievaBoat tenga tiempo de responder
-            await asyncio.sleep(1.5)
+            # ========== BUSCAR RESPUESTA DE UNBELIEVABOAT EN EL HISTORIAL ==========
+            # Esperar 2 segundos para que UnbelievaBoat tenga tiempo de responder
+            await asyncio.sleep(2)
             
-            def check(m):
-                # Verificar que el mensaje sea de UnbelievaBoat (por nombre o por contenido)
-                contenido = m.content.lower()
-                
-                # UnbelievaBoat responde con "has received your $XXX"
-                tiene_has_received = "has received" in contenido
-                tiene_monto = f"${monto}" in contenido or f"$ {monto}" in contenido
-                
-                # También verificamos que el mensaje NO sea del propio bot
-                if m.author.id == bot.user.id:
-                    return False
-                
-                # Si el mensaje tiene "has received" y el monto, es de UnbelievaBoat
-                return tiene_has_received and tiene_monto
+            # Buscar en los últimos mensajes del canal
+            respuesta_encontrada = False
+            async for msg in message.channel.history(limit=10):
+                # Verificar si el mensaje contiene "has received" y el monto
+                if "has received" in msg.content.lower() and (f"${monto}" in msg.content or f"$ {monto}" in msg.content):
+                    # Verificar que el mensaje sea de UnbelievaBoat (por el contenido)
+                    if "unbelieva" in msg.author.name.lower() or "unbelieva" in str(msg.author).lower():
+                        respuesta_encontrada = True
+                        print(f"✅ Respuesta de UnbelievaBoat encontrada en historial: {msg.content}")
+                        break
             
-            try:
-                respuesta = await bot.wait_for('message', timeout=15.0, check=check)
-                contenido = respuesta.content.lower()
-                print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
-                print(f"✅ Pago confirmado por UnbelievaBoat: {user_name} pagó ${monto}")
-                
-            except TimeoutError:
-                print("⏰ No se recibió respuesta de UnbelievaBoat.")
+            # Esperar 2 segundos más si no se encontró la respuesta
+            if not respuesta_encontrada:
+                await asyncio.sleep(2)
+                async for msg in message.channel.history(limit=15):
+                    if "has received" in msg.content.lower() and (f"${monto}" in msg.content or f"$ {monto}" in msg.content):
+                        if "unbelieva" in msg.author.name.lower() or "unbelieva" in str(msg.author).lower():
+                            respuesta_encontrada = True
+                            print(f"✅ Respuesta de UnbelievaBoat encontrada en historial (2da pasada): {msg.content}")
+                            break
+            
+            if not respuesta_encontrada:
+                print("⏰ No se encontró respuesta de UnbelievaBoat en el historial.")
                 
                 # Verificar si el usuario tiene multas pendientes
                 multas = cargar(MULTAS_FILE)
@@ -1483,19 +1483,14 @@ async def on_message(message):
                     await bot.process_commands(message)
                     return
                 
-                # Mostrar mensaje de error
                 await message.channel.send(
                     f"{user_mention} ⚠️ No pude verificar tu pago automáticamente.\n"
                     f"Si el pago fue exitoso, un oficial puede usar `/confirmar_pago @{user_name} {monto}`"
                 )
                 await bot.process_commands(message)
                 return
-            except Exception as e:
-                print(f"❌ Error al procesar pago: {e}")
-                await bot.process_commands(message)
-                return
             
-            # ========== PROCESAR EL PAGO (SOLO SI UNBELIEVABOAT LO CONFIRMÓ) ==========
+            # ========== PROCESAR EL PAGO ==========
             multas = cargar(MULTAS_FILE)
             historial = multas.get("historial", [])
             
@@ -1585,7 +1580,7 @@ async def on_message(message):
                 )
     
     await bot.process_commands(message)
-                
+
 # ==================== INICIAR ====================
 print("🚀 Intentando conectar a Discord...")
 try:
