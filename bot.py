@@ -1407,7 +1407,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== EVENTO ON_MESSAGE (DETECTAR !pay) ====================
+    # ==================== EVENTO ON_MESSAGE (DETECTAR !pay Y VERIFICAR UNBELIEVABOAT) ====================
 @bot.event
 async def on_message(message):
     if message.author.id == bot.user.id:
@@ -1439,6 +1439,78 @@ async def on_message(message):
             
             print(f"🔍 Pago detectado: {user_name} pagó ${monto}")
             
+            # ========== ESPERAR RESPUESTA DE UNBELIEVABOAT ==========
+            def check(m):
+                return (m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)) and user_mention in m.content
+            
+            try:
+                respuesta = await bot.wait_for('message', timeout=5.0, check=check)
+                contenido = respuesta.content.lower()
+                print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
+                
+                # Palabras clave de rechazo
+                rechazo = [
+                    "don't have that much money",
+                    "insufficient",
+                    "not enough",
+                    "you don't have",
+                    "you have insufficient",
+                    "you currently have",
+                    "you only have",
+                    "don't have enough",
+                    "you do not have"
+                ]
+                
+                # Palabras clave de éxito
+                exito = [
+                    "has received",
+                    "sent",
+                    "paid",
+                    "success",
+                    "transferred",
+                    "gave",
+                    "✅",
+                    "successfully",
+                    "completed"
+                ]
+                
+                # Verificar si fue rechazado
+                if any(word in contenido for word in rechazo):
+                    await message.channel.send(
+                        f"{user_mention} ❌ **PAGO RECHAZADO POR UNBELIEVABOAT**\n"
+                        f"No tienes suficiente dinero en mano para pagar **${monto}**.\n"
+                        f"💰 **Alternativas:** Retira dinero del banco con `!withdraw [cantidad]`"
+                    )
+                    await bot.process_commands(message)
+                    return
+                
+                # Verificar si fue exitoso
+                if not any(word in contenido for word in exito):
+                    # Si no detectamos ni éxito ni rechazo, preguntamos
+                    await message.channel.send(
+                        f"{user_mention} ⚠️ No pude verificar el estado de tu pago automáticamente.\n"
+                        f"Si el pago fue exitoso, escribe `/confirmar_pago {monto}`"
+                    )
+                    await bot.process_commands(message)
+                    return
+                
+                # Si llegamos aquí, el pago fue exitoso
+                print(f"✅ Pago exitoso confirmado por UnbelievaBoat: {user_name} pagó ${monto}")
+                
+            except TimeoutError:
+                print("⏰ No se recibió respuesta de UnbelievaBoat.")
+                await message.channel.send(
+                    f"{user_mention} ⚠️ No pude verificar tu pago automáticamente.\n"
+                    f"Si el pago fue exitoso, escribe `/confirmar_pago {monto}`"
+                )
+                await bot.process_commands(message)
+                return
+            except Exception as e:
+                print(f"❌ Error al procesar pago: {e}")
+                await bot.process_commands(message)
+                return
+            
+            # ========== PROCESAR EL PAGO (SOLO SI UNBELIEVABOAT LO CONFIRMÓ) ==========
             multas = cargar(MULTAS_FILE)
             historial = multas.get("historial", [])
             
