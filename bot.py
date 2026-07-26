@@ -1441,11 +1441,16 @@ async def on_message(message):
             
             # ========== ESPERAR RESPUESTA DE UNBELIEVABOAT ==========
             def check(m):
-                # UnbelievaBoat responde con el nombre del bot y el monto
-                return (m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)) and "has received" in m.content.lower() and str(monto) in m.content
+                # UnbelievaBoat responde con "has received your $ XXX" o "has received your $XXX"
+                contenido = m.content.lower()
+                es_unbelieva = m.author.name == "UnbelievaBoat" or "UnbelievaBoat" in str(m.author)
+                tiene_has_received = "has received" in contenido
+                # Buscar el monto en el contenido (con o sin espacio después del $)
+                tiene_monto = f"${monto}" in contenido or f"$ {monto}" in contenido
+                return es_unbelieva and tiene_has_received and tiene_monto
             
             try:
-                respuesta = await bot.wait_for('message', timeout=5.0, check=check)
+                respuesta = await bot.wait_for('message', timeout=15.0, check=check)
                 contenido = respuesta.content.lower()
                 print(f"📊 Respuesta de UnbelievaBoat: {contenido}")
                 
@@ -1572,7 +1577,7 @@ async def on_message(message):
                 )
     
     await bot.process_commands(message)
-    
+
 # ==================== INICIAR ====================
 print("🚀 Intentando conectar a Discord...")
 try:
