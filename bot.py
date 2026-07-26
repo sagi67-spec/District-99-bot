@@ -102,6 +102,8 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         )
         content = f"<@{mencion}>" if mencion else None
         await canal.send(content=content, embed=embed)
+    else:
+        print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
 
 # ==================== BOT ====================
 intents = discord.Intents.default()
@@ -254,6 +256,9 @@ async def on_ready():
             mensaje_buenos_dias.start()
         
         print("✅ Tareas programadas iniciadas")
+        
+        # Prueba de logs
+        await enviar_log("✅ Bot iniciado correctamente", discord.Color.green())
     except Exception as e:
         print(f"❌ Error al sincronizar: {e}")
 
@@ -1183,7 +1188,7 @@ async def eliminar_licencia(
     
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó la licencia de **{usuario.mention}** (Motivo: {motivo if motivo else 'No especificado'})", discord.Color.red())
 
-# ==================== PANEL DE TURNOS DE POLICÍA ====================
+# ==================== PANEL DE TURNOS DE POLICÍA (CORREGIDO - EPHEMERAL) ====================
 class PanelTurnosView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1219,7 +1224,7 @@ class PanelTurnosView(discord.ui.View):
         embed.add_field(name="📋 Estado", value="🟢 EN SERVICIO", inline=True)
         embed.set_footer(text="¡Buena suerte en tu patrullaje! 🚓")
         
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
         await enviar_log(f"🚔 **{interaction.user.mention}** inició turno de patrullaje", discord.Color.green())
 
     @discord.ui.button(label="🛑 Finalizar Turno", style=discord.ButtonStyle.danger, custom_id="finalizar_turno")
@@ -1263,7 +1268,7 @@ class PanelTurnosView(discord.ui.View):
         embed.add_field(name="📋 Estado", value="🔴 FUERA DE SERVICIO", inline=True)
         embed.set_footer(text="¡Buen trabajo oficial! 🌟")
         
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
         await enviar_log(f"🚔 **{interaction.user.mention}** finalizó turno (Duración: {horas}h {minutos}m, Multas: {len(multas_turno)})", discord.Color.red())
 
     @discord.ui.button(label="📋 Turnos Activos", style=discord.ButtonStyle.primary, custom_id="turnos_activos")
@@ -1305,7 +1310,7 @@ class PanelTurnosView(discord.ui.View):
                 inline=False
             )
         
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="panel_turnos", description="📋 Panel de turnos de policía - SOLO ADMIN/HOST")
 async def panel_turnos(interaction: discord.Interaction):
