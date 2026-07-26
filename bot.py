@@ -926,7 +926,7 @@ async def mis_multas(interaction: discord.Interaction):
     # ==================== CONFIRMAR PAGO (SOLO POLICIA) ====================
 @bot.tree.command(name="confirmar_pago", description="👮 Confirmar pago de un ciudadano - SOLO POLICIA")
 @app_commands.describe(
-    usuario="Usuario que pagó (nombre de usuario)",
+    usuario="Usuario que pagó (menciona o escribe el nombre)",
     monto="Monto que pagó"
 )
 async def confirmar_pago(
@@ -938,15 +938,26 @@ async def confirmar_pago(
         await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
         return
 
-    # Buscar al usuario por nombre
+    # Buscar al usuario
     miembro = None
-    for member in interaction.guild.members:
-        if member.name.lower() == usuario.lower() or member.display_name.lower() == usuario.lower():
-            miembro = member
-            break
+    
+    # Si es una mención (ej: <@123456789>)
+    if usuario.startswith('<@') and usuario.endswith('>'):
+        user_id = usuario.replace('<@', '').replace('>', '').replace('!', '')
+        miembro = interaction.guild.get_member(int(user_id))
+    
+    # Si no se encontró por mención, buscar por nombre
+    if not miembro:
+        for member in interaction.guild.members:
+            if member.name.lower() == usuario.lower() or member.display_name.lower() == usuario.lower():
+                miembro = member
+                break
+            if member.nick and member.nick.lower() == usuario.lower():
+                miembro = member
+                break
 
     if not miembro:
-        await interaction.response.send_message(f"⚠️ No encontré al usuario `{usuario}`. Usa el nombre exacto.", ephemeral=True)
+        await interaction.response.send_message(f"⚠️ No encontré al usuario `{usuario}`. Usa el nombre exacto (sin punto) o la mención.", ephemeral=True)
         return
 
     user_id = str(miembro.id)
@@ -955,7 +966,6 @@ async def confirmar_pago(
     multas = cargar(MULTAS_FILE)
     historial = multas.get("historial", [])
 
-    # Buscar multa no pagada con ese monto
     multa_encontrada = False
     oficial_id = None
     infraccion = None
