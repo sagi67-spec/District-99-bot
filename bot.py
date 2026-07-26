@@ -35,6 +35,7 @@ NOMBRE_SERVIDOR = "DISTRICT 99"
 CANAL_PAGOS_ID = 1529957306198917200
 CANAL_CREAR_LICENCIAS_ID = 1530408543784669256
 CANAL_REGISTRO_LICENCIAS_ID = 1530408361802334341
+CANAL_LOGS_ID = 1530408361802334341  # CAMBIAR: pon el ID del canal donde quieras los logs
 
 # ==================== ROLES ====================
 ROL_HOST_NOMBRE = "Host│🎮"
@@ -86,6 +87,18 @@ def generar_imagen_licencia(datos_usuario, foto_roblox_url):
     """Versión simplificada - no genera imagen, solo devuelve None"""
     return None
 
+# ==================== FUNCIÓN PARA LOGS ====================
+async def enviar_log(mensaje, color=discord.Color.blue()):
+    """Envía un mensaje al canal de logs"""
+    canal = bot.get_channel(CANAL_LOGS_ID)
+    if canal:
+        embed = discord.Embed(
+            description=mensaje,
+            color=color,
+            timestamp=datetime.now(timezone.utc)
+        )
+        await canal.send(embed=embed)
+
 # ==================== BOT ====================
 intents = discord.Intents.default()
 intents.members = True
@@ -115,6 +128,7 @@ async def on_ready():
         print(f"   🔹 Pagos: {CANAL_PAGOS_ID}")
         print(f"   🔹 Crear Licencias: {CANAL_CREAR_LICENCIAS_ID}")
         print(f"   🔹 Registro Licencias: {CANAL_REGISTRO_LICENCIAS_ID}")
+        print(f"   🔹 Logs: {CANAL_LOGS_ID}")
     except Exception as e:
         print(f"❌ Error al sincronizar: {e}")
 
@@ -180,6 +194,9 @@ async def crear_dni(interaction: discord.Interaction, nombre: str, apellidos: st
         embed.add_field(name="⚠️ Rol", value=f"Error al asignar: {e}", inline=False)
     
     await interaction.response.send_message(embed=embed)
+    
+    # Log
+    await enviar_log(f"🪪 **{interaction.user.mention}** creó su DNI (Nº {numero_dni})", discord.Color.green())
 
 @bot.tree.command(name="ver_dni", description="🔍 Ver DNI")
 @app_commands.describe(usuario="Usuario (opcional)")
@@ -227,6 +244,9 @@ async def eliminar_dni(interaction: discord.Interaction):
         pass
     
     await interaction.response.send_message("🗑️ Tu DNI ha sido eliminado", ephemeral=True)
+    
+    # Log
+    await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó su DNI", discord.Color.red())
     # ==================== ESCENAS ====================
 @bot.tree.command(name="abrir_escena", description="🎬 Abrir sesion - SOLO HOSTS")
 @app_commands.describe(
@@ -301,6 +321,9 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
                 embed.set_footer(text="¡Todos con DNI listo para el rol! 🪪")
                 
                 await modal_interaction.response.send_message(embed=embed)
+                
+                # Log
+                await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión en {modal_interaction.channel.mention} (Vías: {vias}, Vel: {velocidad_maxima} mph)", discord.Color.gold())
         
         await interaction.response.send_modal(VelocidadAdelantoModal())
         return
@@ -336,6 +359,9 @@ async def abrir_escena(interaction: discord.Interaction, vias: str, velocidad_ma
     embed.set_footer(text="¡Todos con DNI listo para el rol! 🪪")
     
     await interaction.response.send_message(embed=embed)
+    
+    # Log
+    await enviar_log(f"🎬 **{interaction.user.mention}** abrió sesión en {interaction.channel.mention} (Vías: {vias}, Vel: {velocidad_maxima} mph)", discord.Color.gold())
 
 @bot.tree.command(name="cerrar_escena", description="🔒 Cerrar sesion - SOLO HOSTS")
 async def cerrar_escena(interaction: discord.Interaction):
@@ -367,6 +393,9 @@ async def cerrar_escena(interaction: discord.Interaction):
     embed.add_field(name="⭐", value="No olvides evaluar al staff con `/evaluar_staff`", inline=False)
     
     await interaction.response.send_message(embed=embed)
+    
+    # Log
+    await enviar_log(f"🔒 **{interaction.user.mention}** cerró sesión en {interaction.channel.mention} (Duración: {horas}h {minutos}m)", discord.Color.red())
 
 # ==================== VOTACIONES ====================
 class VotoView(discord.ui.View):
@@ -522,6 +551,9 @@ async def registrar_auto(
     embed.set_footer(text=f"Registrado por {interaction.user.name}")
     
     await interaction.response.send_message(embed=embed)
+    
+    # Log
+    await enviar_log(f"🚗 **{interaction.user.mention}** registró un vehículo (Placa: {placa}, Modelo: {modelo})", discord.Color.green())
 
 @bot.tree.command(name="ver_autos", description="🚗 Ver autos de un usuario")
 @app_commands.describe(usuario="Usuario (opcional)")
@@ -590,19 +622,24 @@ async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
     embed.set_footer(text=f"Auto eliminado el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
+    
+    # Log
+    await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó un vehículo (Placa: {auto_eliminado.get('placa', 'N/A')})", discord.Color.red())
 
-# ==================== REGISTRAR MULTA ====================
+# ==================== REGISTRAR MULTA CON TESTIGOS ====================
 @bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
 @app_commands.describe(
     infractor="Usuario infractor",
     infraccion="Infraccion cometida",
-    precio="Monto de la multa ($)"
+    precio="Monto de la multa ($)",
+    testigos="Testigos de la infracción (opcional - menciona a los usuarios)"
 )
 async def registrar_multa(
     interaction: discord.Interaction,
     infractor: discord.Member,
     infraccion: str,
-    precio: str
+    precio: str,
+    testigos: str = None
 ):
     if not es_policia(interaction.user):
         await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
@@ -611,6 +648,19 @@ async def registrar_multa(
     if not precio.isdigit():
         await interaction.response.send_message("⚠️ Monto: numero", ephemeral=True)
         return
+    
+    # Procesar testigos
+    testigos_mentions = []
+    if testigos:
+        # Buscar menciones en el texto
+        import re
+        mentions = re.findall(r'<@!?(\d+)>', testigos)
+        for user_id in mentions:
+            try:
+                user = await bot.fetch_user(int(user_id))
+                testigos_mentions.append(user.mention)
+            except:
+                pass
     
     multas = cargar(MULTAS_FILE)
     multas.setdefault("historial", []).append({
@@ -621,6 +671,7 @@ async def registrar_multa(
         "infraccion": infraccion,
         "precio": int(precio),
         "pagada": False,
+        "testigos": testigos_mentions,
         "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"),
     })
     guardar(MULTAS_FILE, multas)
@@ -633,14 +684,24 @@ async def registrar_multa(
     embed.add_field(name="👤 Infractor", value=infractor.mention, inline=False)
     embed.add_field(name="⚖️ Infraccion", value=infraccion, inline=False)
     embed.add_field(name="💰 Monto", value=f"**${precio}**", inline=True)
+    if testigos_mentions:
+        embed.add_field(name="👀 Testigos", value=", ".join(testigos_mentions), inline=False)
     embed.add_field(name="📌 Estado", value="❌ Sin pagar", inline=True)
     embed.set_footer(text=f"Registrada el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
+    mensaje = f"{infractor.mention} ¡Has recibido una multa!\n"
+    mensaje += f"📢 **Para pagar:** Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District 99 Bot {precio}`"
+    
+    if testigos_mentions:
+        mensaje += f"\n👀 **Testigos:** {', '.join(testigos_mentions)}"
+    
     await interaction.response.send_message(
-        content=f"{infractor.mention} ¡Has recibido una multa!\n"
-                f"📢 **Para pagar:** Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District 99 Bot {precio}`",
+        content=mensaje,
         embed=embed
-                                               )
+    )
+    
+    # Log
+    await enviar_log(f"🚨 **{interaction.user.mention}** multó a **{infractor.mention}** por ${precio} (Infracción: {infraccion})", discord.Color.red())
     # ==================== HISTORIAL MULTAS (SOLO POLICIA) ====================
 @bot.tree.command(name="historial_multas", description="📋 Ver historial de multas - SOLO POLICIA")
 @app_commands.describe(usuario="Usuario (opcional)")
@@ -669,6 +730,8 @@ async def historial_multas(interaction: discord.Interaction, usuario: discord.Me
     
     for i, multa in enumerate(historial[-10:], 1):
         estado = "✅ Pagada" if multa.get('pagada', False) else "❌ Sin pagar"
+        testigos = multa.get('testigos', [])
+        testigos_texto = ", ".join(testigos) if testigos else "Ninguno"
         embed.add_field(
             name=f"📌 Multa #{i}",
             value=(
@@ -676,6 +739,7 @@ async def historial_multas(interaction: discord.Interaction, usuario: discord.Me
                 f"👤 **Infractor:** {multa['infractor']}\n"
                 f"⚖️ **Infraccion:** {multa['infraccion']}\n"
                 f"💰 **Monto:** ${multa['precio']}\n"
+                f"👀 **Testigos:** {testigos_texto}\n"
                 f"📌 **Estado:** {estado}\n"
                 f"📅 **Fecha:** {multa['fecha']}"
             ),
@@ -709,12 +773,15 @@ async def mis_multas(interaction: discord.Interaction):
     for i, multa in enumerate(mis_multas[-10:], 1):
         total += multa.get('precio', 0)
         estado = "✅ Pagada" if multa.get('pagada', False) else "❌ Sin pagar"
+        testigos = multa.get('testigos', [])
+        testigos_texto = ", ".join(testigos) if testigos else "Ninguno"
         embed.add_field(
             name=f"📌 Multa #{i}",
             value=(
                 f"👮 **Oficial:** {multa['oficial']}\n"
                 f"⚖️ **Infraccion:** {multa['infraccion']}\n"
                 f"💰 **Monto:** ${multa['precio']}\n"
+                f"👀 **Testigos:** {testigos_texto}\n"
                 f"📌 **Estado:** {estado}\n"
                 f"📅 **Fecha:** {multa['fecha']}"
             ),
@@ -723,6 +790,48 @@ async def mis_multas(interaction: discord.Interaction):
     
     embed.add_field(name="💸 TOTAL ADEUDADO", value=f"**${total}**", inline=False)
     embed.set_footer(text="Mostrando ultimas 10 multas")
+    
+    await interaction.response.send_message(embed=embed)
+
+# ==================== COMANDO /STATS (SOLO ADMINS) ====================
+@bot.tree.command(name="stats", description="📊 Estadísticas del bot - SOLO ADMINS")
+async def stats(interaction: discord.Interaction):
+    """Muestra estadísticas del bot y el servidor (solo admins)"""
+    
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("⛔ Solo **Admins** pueden usar este comando.", ephemeral=True)
+        return
+    
+    # Contar datos
+    dnis = cargar(DNI_FILE)
+    licencias = cargar(LICENCIAS_FILE)
+    multas = cargar(MULTAS_FILE)
+    autos = cargar(AUTOS_FILE)
+    escenas = cargar(ESCENAS_FILE)
+    evaluaciones = cargar(EVALUACIONES_FILE)
+    
+    historial = multas.get("historial", [])
+    total_multas = len(historial)
+    pagadas = sum(1 for m in historial if m.get('pagada', False))
+    no_pagadas = total_multas - pagadas
+    
+    total_autos = sum(len(v) for v in autos.values())
+    
+    embed = discord.Embed(
+        title="📊 ESTADÍSTICAS DEL BOT",
+        description=f"**{NOMBRE_SERVIDOR}**",
+        color=discord.Color.blue()
+    )
+    embed.add_field(name="🪪 DNIs creados", value=str(len(dnis)), inline=True)
+    embed.add_field(name="🪪 Licencias activas", value=str(len(licencias)), inline=True)
+    embed.add_field(name="🚗 Autos registrados", value=str(total_autos), inline=True)
+    embed.add_field(name="🚨 Multas totales", value=str(total_multas), inline=True)
+    embed.add_field(name="✅ Multas pagadas", value=str(pagadas), inline=True)
+    embed.add_field(name="❌ Multas pendientes", value=str(no_pagadas), inline=True)
+    embed.add_field(name="🎬 Escenas abiertas", value=str(len(escenas)), inline=True)
+    embed.add_field(name="⭐ Evaluaciones", value=str(len(evaluaciones)), inline=True)
+    embed.add_field(name="📅 Comandos", value="N/A (próximamente)", inline=True)
+    embed.set_footer(text=f"Actualizado: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
 
@@ -822,6 +931,9 @@ class PanelLicenciasView(discord.ui.View):
                     await modal_interaction.response.send_message("❌ No se encontró el canal de registro de licencias.", ephemeral=True)
 
                 await modal_interaction.response.send_message("✅ **¡Licencia creada exitosamente!**", ephemeral=True)
+                
+                # Log
+                await enviar_log(f"🪪 **{modal_interaction.user.mention}** creó su licencia (Nº {licencia_id})", discord.Color.gold())
 
         await interaction.response.send_modal(LicenciaModal())
 
@@ -955,8 +1067,11 @@ async def eliminar_licencia(
             f"📋 Licencia: {licencia_id}\n"
             f"👮 Eliminado por: {interaction.user.mention}\n"
             f"📌 Motivo: {motivo if motivo else 'No especificado'}"
-                                           )
-        # ==================== EVALUAR STAFF ====================
+        )
+    
+    # Log
+    await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó la licencia de **{usuario.mention}** (Motivo: {motivo if motivo else 'No especificado'})", discord.Color.red())
+    # ==================== EVALUAR STAFF ====================
 class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
     que_hizo = discord.ui.TextInput(
         label="Que hizo el staff?",
@@ -1025,6 +1140,9 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
             content=f"{self.staff.mention} ¡Has recibido una evaluacion! ⭐",
             embed=embed
         )
+        
+        # Log
+        await enviar_log(f"⭐ **{interaction.user.mention}** evaluó a **{self.staff.mention}** con nota {nota}/10", discord.Color.purple())
 
 @bot.tree.command(name="evaluar_staff", description="⭐ Evaluar al staff")
 @app_commands.describe(staff="Staff a evaluar")
@@ -1115,6 +1233,9 @@ async def on_message(message):
                         await message.channel.send(
                             f"👮 <@{oficial_id}> El ciudadano {user_mention} ha pagado su multa de **${monto}**."
                         )
+                    
+                    # Log
+                    await enviar_log(f"💰 **{user_mention}** pagó su multa de ${monto} (Infracción: {infraccion})", discord.Color.green())
                 else:
                     pendientes_texto = ""
                     for multa in historial:
