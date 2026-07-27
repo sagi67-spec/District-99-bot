@@ -1,6 +1,6 @@
 """
 Bot de Discord para servidor de rol (RP) — DISTRICT 99
-PARTE 1: CONFIGURACIÓN Y VARIABLES GLOBALES
+CÓDIGO COMPLETO - PARTE 1/7
 """
 
 import json
@@ -105,30 +105,6 @@ def validar_fecha(fecha):
         return 1 <= month <= 12 and 1 <= day <= 31
     except:
         return False
-        """
-Bot de Discord para servidor de rol (RP) — DISTRICT 99
-PARTE 2: BOT PRINCIPAL Y TAREAS PROGRAMADAS
-"""
-
-import discord
-from discord import app_commands
-from discord.ext import commands, tasks
-from datetime import datetime, timezone, timedelta
-from config import *
-
-# ==================== BOT ====================
-intents = discord.Intents.default()
-intents.members = True
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-# Crear archivos
-ARCHIVOS_JSON = [DNI_FILE, ESCENAS_FILE, EVALUACIONES_FILE, VOTACIONES_FILE, AUTOS_FILE, MULTAS_FILE, LICENCIAS_FILE, TURNOS_FILE]
-for archivo in ARCHIVOS_JSON:
-    if not os.path.exists(archivo):
-        with open(archivo, "w", encoding="utf-8") as f:
-            json.dump({}, f)
-        print(f"✅ Creado: {archivo}")
 
 # ==================== FUNCIÓN PARA LOGS ====================
 async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
@@ -143,6 +119,19 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
+        # ==================== BOT ====================
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# Crear archivos
+ARCHIVOS_JSON = [DNI_FILE, ESCENAS_FILE, EVALUACIONES_FILE, VOTACIONES_FILE, AUTOS_FILE, MULTAS_FILE, LICENCIAS_FILE, TURNOS_FILE]
+for archivo in ARCHIVOS_JSON:
+    if not os.path.exists(archivo):
+        with open(archivo, "w", encoding="utf-8") as f:
+            json.dump({}, f)
+        print(f"✅ Creado: {archivo}")
 
 # ==================== TAREAS PROGRAMADAS ====================
 @tasks.loop(hours=24)
@@ -254,18 +243,7 @@ async def mensaje_buenos_dias():
             embed.set_thumbnail(url=LOGO_SERVIDOR)
             embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
             await canal.send(embed=embed)
-            """
-Bot de Discord para servidor de rol (RP) — DISTRICT 99
-PARTE 3: EVENTO ON_READY Y COMANDOS DE DNI
-"""
-
-import discord
-from discord import app_commands
-from datetime import datetime, timezone
-from config import *
-from bot_base import bot, enviar_log
-
-# ==================== EVENTO ON_READY ====================
+            # ==================== EVENTO ON_READY ====================
 @bot.event
 async def on_ready():
     try:
@@ -409,18 +387,7 @@ async def eliminar_dni(interaction: discord.Interaction):
     
     await interaction.response.send_message("🗑️ Tu DNI ha sido eliminado", ephemeral=True)
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó su DNI", discord.Color.red())
-    """
-Bot de Discord para servidor de rol (RP) — DISTRICT 99
-PARTE 4: COMANDOS DE ESCENAS CON IMÁGENES NUEVAS
-"""
-
-import discord
-from discord import app_commands
-from datetime import datetime, timezone
-from config import *
-from bot_base import bot, enviar_log
-
-# ==================== ESCENAS CON IMÁGENES NUEVAS ====================
+    # ==================== ESCENAS CON IMÁGENES NUEVAS ====================
 @bot.tree.command(name="abrir_escena", description="🎬 Abrir sesion - SOLO HOSTS")
 @app_commands.describe(
     ciudad="Elige la ciudad",
@@ -560,18 +527,7 @@ async def cerrar_escena(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🔒 **{interaction.user.mention}** cerró sesión en {interaction.channel.mention} (Duración: {horas}h {minutos}m)", discord.Color.red())
-    """
-Bot de Discord para servidor de rol (RP) — DISTRICT 99
-PARTE 5: COMANDOS DE VOTACIONES
-"""
-
-import discord
-from discord import app_commands
-from datetime import datetime, timezone
-from config import *
-from bot_base import bot, cargar, guardar, enviar_log, es_host
-
-# ==================== VOTACIONES ====================
+    # ==================== VOTACIONES ====================
 class VotoView(discord.ui.View):
     def __init__(self, channel_id: str):
         super().__init__(timeout=None)
@@ -687,19 +643,7 @@ async def cerrar_votacion(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🔒 **{interaction.user.mention}** cerró votación", discord.Color.red())
-    """
-Bot de Discord para servidor de rol (RP) — DISTRICT 99
-PARTE 6: COMANDOS DE AUTOS Y MULTAS
-"""
-
-import discord
-from discord import app_commands
-import re
-from datetime import datetime, timezone
-from config import *
-from bot_base import bot, cargar, guardar, enviar_log, es_policia
-
-# ==================== AUTOS ====================
+    # ==================== AUTOS ====================
 @bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehiculo con foto")
 @app_commands.describe(
     usuario_roblox="Tu usuario de Roblox",
@@ -818,8 +762,7 @@ async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó un vehículo (Placa: {auto_eliminado.get('placa', 'N/A')})", discord.Color.red())
-
-# ==================== MULTAS ====================
+    # ==================== MULTAS ====================
 @bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
 @app_commands.describe(
     infractor="Usuario infractor",
@@ -1095,27 +1038,48 @@ async def confirmar_pago(
     )
 
     await enviar_log(f"💰 **{user_mention}** pagó su multa de ${monto} (Confirmado por {interaction.user.mention})", discord.Color.green())
-    """
-Bot de Discord para servidor de rol (RP) — DISTRICT 99
-PARTE 7: ARCHIVO PRINCIPAL PARA INICIAR EL BOT
-"""
 
-import os
-import sys
-from config import TOKEN
-from bot_base import bot
+# ==================== STATS ====================
+@bot.tree.command(name="stats", description="📊 Estadísticas del bot - SOLO ADMINS")
+async def stats(interaction: discord.Interaction):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("⛔ Solo **Admins** pueden usar este comando.", ephemeral=True)
+        return
+    
+    dnis = cargar(DNI_FILE)
+    licencias = cargar(LICENCIAS_FILE)
+    multas = cargar(MULTAS_FILE)
+    autos = cargar(AUTOS_FILE)
+    escenas = cargar(ESCENAS_FILE)
+    evaluaciones = cargar(EVALUACIONES_FILE)
+    
+    historial = multas.get("historial", [])
+    total_multas = len(historial)
+    pagadas = sum(1 for m in historial if m.get('pagada', False))
+    no_pagadas = total_multas - pagadas
+    
+    total_autos = sum(len(v) for v in autos.values())
+    
+    embed = discord.Embed(
+        title="📊 **ESTADÍSTICAS DEL BOT**",
+        description=f"**{NOMBRE_SERVIDOR}**",
+        color=discord.Color.blue()
+    )
+    embed.add_field(name="🪪 **DNIs creados**", value=str(len(dnis)), inline=True)
+    embed.add_field(name="🪪 **Licencias activas**", value=str(len(licencias)), inline=True)
+    embed.add_field(name="🚗 **Autos registrados**", value=str(total_autos), inline=True)
+    embed.add_field(name="🚨 **Multas totales**", value=str(total_multas), inline=True)
+    embed.add_field(name="✅ **Multas pagadas**", value=str(pagadas), inline=True)
+    embed.add_field(name="❌ **Multas pendientes**", value=str(no_pagadas), inline=True)
+    embed.add_field(name="🎬 **Escenas abiertas**", value=str(len(escenas)), inline=True)
+    embed.add_field(name="⭐ **Evaluaciones**", value=str(len(evaluaciones)), inline=True)
+    embed.set_thumbnail(url=LOGO_SERVIDOR)
+    embed.set_footer(text=f"Actualizado: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
+    
+    await interaction.response.send_message(embed=embed)
+    await enviar_log(f"📊 **{interaction.user.mention}** usó /stats", discord.Color.blue())
 
-# Verificar que el token exista
-if not TOKEN:
-    print("❌ TOKEN NO ENCONTRADO")
-    sys.exit(1)
-
-# Importar todos los comandos (esto registra los comandos en el bot)
-import eventos_dni
-import escenas
-import votaciones
-import autos_multas
-
+# ==================== INICIAR BOT ====================
 print("🚀 Intentando conectar a Discord...")
 try:
     bot.run(TOKEN)
