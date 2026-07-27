@@ -1356,8 +1356,6 @@ class PanelSesionesView(discord.ui.View):
         self.ciudad = None
         self.vias = None
         self.adelantamientos = None
-        self.velocidad = None
-        self.link = None
 
     @discord.ui.select(
         placeholder="🌆 Elige una ciudad",
@@ -1408,18 +1406,25 @@ class PanelSesionesView(discord.ui.View):
                     await modal_interaction.response.send_message("⚠️ La velocidad debe ser un número.", ephemeral=True)
                     return
 
-                view = self
-                view.velocidad = self.velocidad.value
-                view.link = self.link.value
+                view = modal_interaction.message.components[0].view
+                if not view or not hasattr(view, 'ciudad'):
+                    await modal_interaction.response.send_message("❌ Error: No se encontraron los datos de la sesión. Vuelve a abrir el panel.", ephemeral=True)
+                    return
 
-                if view.ciudad == "greenville":
+                ciudad = view.ciudad
+                vias = view.vias
+                adelantamientos = view.adelantamientos
+                velocidad = self.velocidad.value
+                link = self.link.value
+
+                if ciudad == "greenville":
                     img_ciudad = URL_GREENVILLE
-                elif view.ciudad == "horton":
+                elif ciudad == "horton":
                     img_ciudad = URL_HORTON
                 else:
                     img_ciudad = URL_BROOKMERE
 
-                if view.vias == "1":
+                if vias == "1":
                     img_vias = URL_1VIA
                 else:
                     img_vias = URL_2VIAS
@@ -1432,11 +1437,11 @@ class PanelSesionesView(discord.ui.View):
                     return
                 
                 escenas[channel_id] = {
-                    "ciudad": view.ciudad,
-                    "vias": view.vias,
-                    "velocidad_maxima": view.velocidad,
-                    "adelantamientos": view.adelantamientos == "si",
-                    "link_servidor": view.link,
+                    "ciudad": ciudad,
+                    "vias": vias,
+                    "velocidad_maxima": velocidad,
+                    "adelantamientos": adelantamientos == "si",
+                    "link_servidor": link,
                     "host": str(modal_interaction.user),
                     "host_id": str(modal_interaction.user.id),
                     "inicio": datetime.now(timezone.utc).isoformat(),
@@ -1449,18 +1454,17 @@ class PanelSesionesView(discord.ui.View):
                     color=discord.Color.gold()
                 )
                 embed.set_image(url=img_ciudad)
-                embed.set_thumbnail(url=img_vias)
 
-                adelanto_texto = "✅ Permitidos" if view.adelantamientos == "si" else "❌ No permitidos"
+                adelanto_texto = "✅ Permitidos" if adelantamientos == "si" else "❌ No permitidos"
                 embed.add_field(
                     name="📋 **DETALLES**",
                     value=(
-                        f"🌆 **Ciudad:** {view.ciudad.capitalize()}\n"
-                        f"🛣️ **Vías:** {view.vias} vías\n"
-                        f"🚗 **Velocidad Máx:** {view.velocidad} mph\n"
+                        f"🌆 **Ciudad:** {ciudad.capitalize()}\n"
+                        f"🛣️ **Vías:** {vias} vías\n"
+                        f"🚗 **Velocidad Máx:** {velocidad} mph\n"
                         f"🏁 **Adelantamientos:** {adelanto_texto}\n"
                         f"👑 **Host:** {modal_interaction.user.mention}\n"
-                        f"🔗 **Link:** [🌐 Haz clic aquí]({view.link})"
+                        f"🔗 **Link:** [🌐 Haz clic aquí]({link})"
                     ),
                     inline=False
                 )
@@ -1476,7 +1480,7 @@ class PanelSesionesView(discord.ui.View):
                 else:
                     await modal_interaction.response.send_message("❌ No encontré el canal general.", ephemeral=True)
 
-                await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión (Ciudad: {view.ciudad.capitalize()}, Vías: {view.vias})", discord.Color.gold())
+                await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión (Ciudad: {ciudad.capitalize()}, Vías: {vias})", discord.Color.gold())
 
         await interaction.response.send_modal(SesionModal())
 
