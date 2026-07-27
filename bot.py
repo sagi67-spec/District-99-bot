@@ -8,6 +8,9 @@ import os
 import re
 import asyncio
 from datetime import datetime, timezone, timedelta
+from PIL import Image, ImageDraw, ImageFont
+import requests
+from io import BytesIO
 
 import discord
 from discord import app_commands
@@ -122,7 +125,38 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
-      # ==================== BOT ====================
+        # ==================== FUNCIÓN PARA GENERAR LICENCIA ====================
+async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
+    URL_BASE = "https://cdn.discordapp.com/attachments/1530830750310596618/1531390643384094830/17849514822062.png?ex=6a690a2d&is=6a67b8ad&hm=dac6894563acdb8e1220d4f132329731e8bfe819502881f9d1f1044f2d9e279a&"
+    
+    try:
+        response = requests.get(URL_BASE, timeout=10)
+        img = Image.open(BytesIO(response.content))
+        draw = ImageDraw.Draw(img)
+        
+        try:
+            font_datos = ImageFont.truetype("arial.ttf", 18)
+        except:
+            font_datos = ImageFont.load_default()
+        
+        draw.text((150, 120), datos_licencia['nombre'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 160), datos_licencia['apellidos'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 200), datos_licencia['fecha_nacimiento'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 240), datos_licencia['dni'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 280), datos_licencia['licencia_id'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 320), datos_licencia['fecha_expedicion'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 360), datos_licencia['fecha_expiracion'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 400), usuario.name, fill=(255, 255, 255), font=font_datos)
+        
+        img_bytes = BytesIO()
+        img.save(img_bytes, format='PNG')
+        img_bytes.seek(0)
+        return discord.File(img_bytes, filename="licencia.png")
+        
+    except Exception as e:
+        print(f"❌ Error al generar la licencia: {e}")
+        return None
+        # ==================== BOT ====================
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
@@ -246,7 +280,7 @@ async def mensaje_buenos_dias():
             embed.set_thumbnail(url=LOGO_SERVIDOR)
             embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
             await canal.send(embed=embed)
-          # ==================== EVENTO ON_READY ====================
+            # ==================== EVENTO ON_READY ====================
 @bot.event
 async def on_ready():
     try:
@@ -391,7 +425,7 @@ async def eliminar_dni(interaction: discord.Interaction):
     
     await interaction.response.send_message("🗑️ Tu DNI ha sido eliminado", ephemeral=True)
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó su DNI", discord.Color.red())
-  # ==================== SESIONES (COMANDO CON IMÁGENES) ====================
+    # ==================== SESIONES ====================
 @bot.tree.command(name="abrir_sesion", description="🎬 Abrir sesión - SOLO HOSTS")
 @app_commands.describe(
     ciudad="Elige la ciudad",
@@ -583,7 +617,8 @@ async def cerrar_sesion(interaction: discord.Interaction):
         await interaction.response.send_message("❌ No encontré el canal de sesiones.", ephemeral=True)
 
     await enviar_log(f"🔒 **{interaction.user.mention}** cerró sesión (Duración: {horas}h {minutos}m)", discord.Color.red())
-  # ==================== VOTACIONES (SIN MINIATURA) ====================
+
+# ==================== VOTACIONES ====================
 class VotoView(discord.ui.View):
     def __init__(self, channel_id: str):
         super().__init__(timeout=None)
@@ -623,7 +658,7 @@ class VotoView(discord.ui.View):
         )
         embed.add_field(name="✅", value="\n".join(f"<@{u}>" for u in asist) or "Nadie", inline=False)
         embed.add_field(name="❌", value="\n".join(f"<@{u}>" for u in no_asist) or "Nadie", inline=False)
-        embed.set_image(url=URL_VOTACION_ABIERTA)  # ✅ SOLO IMAGEN PRINCIPAL, SIN MINIATURA
+        embed.set_image(url=URL_VOTACION_ABIERTA)
         
         await interaction.response.edit_message(embed=embed, view=self)
         
@@ -665,7 +700,7 @@ async def votacion_sesion(interaction: discord.Interaction, votos_requeridos: in
     )
     embed.add_field(name="✅ **Asistentes**", value="Nadie", inline=False)
     embed.add_field(name="❌ **No asistentes**", value="Nadie", inline=False)
-    embed.set_image(url=URL_VOTACION_ABIERTA)  # ✅ SOLO IMAGEN PRINCIPAL, SIN MINIATURA
+    embed.set_image(url=URL_VOTACION_ABIERTA)
     embed.set_footer(text=f"Host: {interaction.user.name}")
     
     await interaction.response.send_message(embed=embed, view=VotoView(interaction.channel_id))
@@ -692,13 +727,12 @@ async def cerrar_votacion(interaction: discord.Interaction):
         description=f"**Votación finalizada.**",
         color=discord.Color.red()
     )
-    embed.set_image(url=URL_VOTACION_CERRADA)  # ✅ SOLO IMAGEN PRINCIPAL, SIN MINIATURA
+    embed.set_image(url=URL_VOTACION_CERRADA)
     embed.set_footer(text=f"Cerrada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🔒 **{interaction.user.mention}** cerró votación", discord.Color.red())
-
-# ==================== AUTOS (SIN MINIATURA) ====================
+    # ==================== AUTOS ====================
 @bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehiculo con foto")
 @app_commands.describe(
     usuario_roblox="Tu usuario de Roblox",
@@ -743,7 +777,7 @@ async def registrar_auto(
     embed.add_field(name="📋 **Modelo**", value=modelo, inline=True)
     embed.add_field(name="🎨 **Color**", value=color, inline=True)
     embed.add_field(name="🅿️ **Placa**", value=placa, inline=True)
-    embed.set_image(url=foto.url)  # ✅ SOLO IMAGEN PRINCIPAL, SIN MINIATURA
+    embed.set_image(url=foto.url)
     embed.set_footer(text=f"Registrado por {interaction.user.name}")
     
     await interaction.response.send_message(embed=embed)
@@ -779,7 +813,7 @@ async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = 
             inline=False
         )
         if auto.get('foto'):
-            embed.set_image(url=auto['foto'])  # ✅ SOLO IMAGEN PRINCIPAL, SIN MINIATURA
+            embed.set_image(url=auto['foto'])
     
     embed.set_footer(text=f"Solicitado por {interaction.user.name}")
     await interaction.response.send_message(embed=embed)
@@ -815,7 +849,8 @@ async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó un vehículo (Placa: {auto_eliminado.get('placa', 'N/A')})", discord.Color.red())
-  # ==================== MULTAS ====================
+
+# ==================== MULTAS ====================
 @bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
 @app_commands.describe(
     infractor="Usuario infractor",
@@ -1163,7 +1198,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (CORREGIDO) ====================
+    # ==================== PANEL DE LICENCIAS ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1222,13 +1257,11 @@ class PanelLicenciasView(discord.ui.View):
                     except:
                         pass
 
-                    # Generar la imagen de la licencia
                     archivo_licencia = await generar_licencia(modal_interaction.user, datos_licencia)
                     if archivo_licencia is None:
                         await modal_interaction.response.send_message("❌ Error al generar la imagen de la licencia.", ephemeral=True)
                         return
 
-                    # Crear embed con la imagen generada
                     embed = discord.Embed(
                         title="🪪 **LICENCIA GENERADA**",
                         description=f"{modal_interaction.user.mention}",
@@ -1285,162 +1318,155 @@ async def panel_licencias(interaction: discord.Interaction):
     
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
-    async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
-    # URL de tu imagen base
-    URL_BASE = "https://cdn.discordapp.com/attachments/1530830750310596618/1531390643384094830/17849514822062.png?ex=6a690a2d&is=6a67b8ad&hm=dac6894563acdb8e1220d4f132329731e8bfe819502881f9d1f1044f2d9e279a&"
-    
-    try:
-        # Descargar la imagen base
-        response = requests.get(URL_BASE, timeout=10)
-        img = Image.open(BytesIO(response.content))
-        draw = ImageDraw.Draw(img)
-        
-        # ========== OBTENER FOTO DE PERFIL DE ROBLOX ==========
-        try:
-            user_roblox = datos_licencia['user_roblox']
-            search_url = f"https://users.roblox.com/v1/users/search?keyword={user_roblox}"
-            search_response = requests.get(search_url, timeout=5)
-            search_data = search_response.json()
-            
-            if search_data and search_data.get('data') and len(search_data['data']) > 0:
-                user_id = search_data['data'][0]['id']
-                foto_url = f"https://www.roblox.com/headshot-thumbnail/image?userId={user_id}&width=420&height=420"
-                foto_response = requests.get(foto_url, timeout=5)
-                foto_img = Image.open(BytesIO(foto_response.content))
-                foto_img = foto_img.resize((100, 100))
-                
-                mascara = Image.new('L', (100, 100), 0)
-                mascara_draw = ImageDraw.Draw(mascara)
-                mascara_draw.ellipse((0, 0, 100, 100), fill=255)
-                
-                foto_img_circular = Image.new('RGBA', (100, 100))
-                foto_img_circular.paste(foto_img, (0, 0), mascara)
-                
-                img.paste(foto_img_circular, (263, 110), foto_img_circular)
-            else:
-                print(f"❌ No se encontró el usuario de Roblox: {user_roblox}")
-        except Exception as e:
-            print(f"❌ Error al obtener la foto de Roblox: {e}")
-        
-        # ========== FUENTES ==========
-        try:
-            font_datos = ImageFont.truetype("arial.ttf", 18)
-        except:
-            font_datos = ImageFont.load_default()
-        
-        # ========== ESCRIBIR TEXTOS ==========
-        draw.text((150, 120), datos_licencia['nombre'], fill=(255, 255, 255), font=font_datos)
-        draw.text((150, 160), datos_licencia['apellidos'], fill=(255, 255, 255), font=font_datos)
-        draw.text((150, 200), datos_licencia['fecha_nacimiento'], fill=(255, 255, 255), font=font_datos)
-        draw.text((150, 240), datos_licencia['dni'], fill=(255, 255, 255), font=font_datos)
-        draw.text((150, 280), datos_licencia['licencia_id'], fill=(255, 255, 255), font=font_datos)
-        draw.text((150, 320), datos_licencia['fecha_expedicion'], fill=(255, 255, 255), font=font_datos)
-        draw.text((150, 360), datos_licencia['fecha_expiracion'], fill=(255, 255, 255), font=font_datos)
-        draw.text((150, 400), usuario.name, fill=(255, 255, 255), font=font_datos)
-        
-        # Guardar
-        img_bytes = BytesIO()
-        img.save(img_bytes, format='PNG')
-        img_bytes.seek(0)
-        return discord.File(img_bytes, filename="licencia.png")
-        
-    except Exception as e:
-        print(f"❌ Error al generar la licencia: {e}")
-        return None
+    # ==================== PANEL DE TURNOS ====================
+class PanelTurnosView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
 
-# ==================== VER LICENCIA ====================
-@bot.tree.command(name="ver_licencia", description="🪪 Ver la licencia de un usuario")
-@app_commands.describe(usuario="Usuario (opcional)")
-async def ver_licencia(interaction: discord.Interaction, usuario: discord.Member = None):
-    objetivo = usuario or interaction.user
-    licencias = cargar(LICENCIAS_FILE)
-    datos = licencias.get(str(objetivo.id))
-    
-    if not datos:
-        await interaction.response.send_message(f"❌ {objetivo.mention} no tiene licencia.", ephemeral=True)
-        return
-    
-    embed = discord.Embed(
-        title="🪪 **LICENCIA DE CONDUCIR**",
-        description=f"{objetivo.mention}",
-        color=discord.Color.gold()
-    )
-    embed.add_field(name="📋 **Licencia**", value=datos.get("licencia_id", "N/A"), inline=False)
-    embed.add_field(name="👤 **Nombre**", value=datos.get("nombre", "N/A"), inline=True)
-    embed.add_field(name="👥 **Apellidos**", value=datos.get("apellidos", "N/A"), inline=True)
-    embed.add_field(name="🎂 **Edad**", value=datos.get("edad", "N/A"), inline=True)
-    embed.add_field(name="💼 **Oficio**", value=datos.get("oficio", "N/A"), inline=True)
-    embed.add_field(name="🎮 **Roblox**", value=datos.get("user_roblox", "N/A"), inline=True)
-    embed.add_field(name="🔢 **DNI**", value=datos.get("dni", "N/A"), inline=True)
-    embed.add_field(name="📅 **Expedición**", value=datos.get("fecha_expedicion", "N/A"), inline=True)
-    embed.add_field(name="📅 **Expiración**", value=datos.get("fecha_expiracion", "N/A"), inline=True)
-    embed.add_field(name="📌 **Estado**", value="🟢 ACTIVA", inline=True)
-    embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
-    await interaction.response.send_message(embed=embed)
+    @discord.ui.button(label="🚔 Iniciar Turno", style=discord.ButtonStyle.success, custom_id="iniciar_turno")
+    async def iniciar_turno(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not es_policia(interaction.user):
+            await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
+            return
+        
+        turnos = cargar(TURNOS_FILE)
+        user_id = str(interaction.user.id)
+        
+        if user_id in turnos and turnos[user_id].get("activo", False):
+            await interaction.response.send_message("⚠️ Ya tienes un turno activo. Usa el botón **Finalizar Turno**.", ephemeral=True)
+            return
+        
+        turnos[user_id] = {
+            "policia_id": user_id,
+            "policia_nombre": str(interaction.user),
+            "inicio": datetime.now(timezone.utc).isoformat(),
+            "activo": True
+        }
+        guardar(TURNOS_FILE, turnos)
+        
+        embed = discord.Embed(
+            title="🚔 **TURNO INICIADO**",
+            description=f"{interaction.user.mention} ha comenzado su patrullaje.",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
+        embed.add_field(name="🕐 **Inicio**", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
+        embed.add_field(name="📋 **Estado**", value="🟢 EN SERVICIO", inline=True)
+        embed.set_image(url=URL_TURNOS)
+        embed.set_footer(text="¡Buena suerte en tu patrullaje! 🚓")
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await enviar_log(f"🚔 **{interaction.user.mention}** inició turno de patrullaje", discord.Color.green())
 
-# ==================== ELIMINAR LICENCIA ====================
-@bot.tree.command(name="eliminar_licencia", description="🗑️ Eliminar licencia de un usuario - SOLO ADMIN/HOST")
-@app_commands.describe(
-    usuario="Usuario a eliminar licencia",
-    motivo="Motivo de la eliminación (opcional)"
-)
-async def eliminar_licencia(
-    interaction: discord.Interaction,
-    usuario: discord.Member,
-    motivo: str = None
-):
+    @discord.ui.button(label="🛑 Finalizar Turno", style=discord.ButtonStyle.danger, custom_id="finalizar_turno")
+    async def finalizar_turno(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not es_policia(interaction.user):
+            await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
+            return
+        
+        turnos = cargar(TURNOS_FILE)
+        user_id = str(interaction.user.id)
+        
+        if user_id not in turnos or not turnos[user_id].get("activo", False):
+            await interaction.response.send_message("❌ No tienes un turno activo. Usa el botón **Iniciar Turno**.", ephemeral=True)
+            return
+        
+        turno = turnos[user_id]
+        inicio = datetime.fromisoformat(turno["inicio"])
+        duracion = datetime.now(timezone.utc) - inicio
+        horas, resto = divmod(int(duracion.total_seconds()), 3600)
+        minutos = resto // 60
+        
+        multas = cargar(MULTAS_FILE)
+        historial = multas.get("historial", [])
+        multas_turno = [m for m in historial if m.get('oficial_id') == user_id]
+        multas_turno = [m for m in multas_turno if datetime.strptime(m['fecha'], "%d/%m/%Y %H:%M") >= inicio]
+        
+        turnos[user_id]["activo"] = False
+        turnos[user_id]["fin"] = datetime.now(timezone.utc).isoformat()
+        guardar(TURNOS_FILE, turnos)
+        
+        embed = discord.Embed(
+            title="🚔 **TURNO FINALIZADO**",
+            description=f"{interaction.user.mention} ha terminado su patrullaje.",
+            color=discord.Color.red()
+        )
+        embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
+        embed.add_field(name="🕐 **Inicio**", value=inicio.strftime("%H:%M hs"), inline=True)
+        embed.add_field(name="🕐 **Fin**", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
+        embed.add_field(name="⏱️ **Duración**", value=f"{horas}h {minutos}m", inline=False)
+        embed.add_field(name="🚨 **Multas puestas**", value=str(len(multas_turno)), inline=True)
+        embed.add_field(name="📋 **Estado**", value="🔴 FUERA DE SERVICIO", inline=True)
+        embed.set_image(url=URL_TURNOS)
+        embed.set_footer(text="¡Buen trabajo oficial! 🌟")
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await enviar_log(f"🚔 **{interaction.user.mention}** finalizó turno (Duración: {horas}h {minutos}m, Multas: {len(multas_turno)})", discord.Color.red())
+
+    @discord.ui.button(label="📋 Turnos Activos", style=discord.ButtonStyle.primary, custom_id="turnos_activos")
+    async def ver_turnos_activos(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not es_policia(interaction.user):
+            await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
+            return
+        
+        turnos = cargar(TURNOS_FILE)
+        activos = []
+        
+        for user_id, turno in turnos.items():
+            if turno.get("activo", False):
+                inicio = datetime.fromisoformat(turno["inicio"])
+                duracion = datetime.now(timezone.utc) - inicio
+                horas, resto = divmod(int(duracion.total_seconds()), 3600)
+                minutos = resto // 60
+                activos.append({
+                    "nombre": turno["policia_nombre"],
+                    "id": user_id,
+                    "horas": horas,
+                    "minutos": minutos
+                })
+        
+        if not activos:
+            await interaction.response.send_message("📋 No hay policias en servicio actualmente.", ephemeral=True)
+            return
+        
+        embed = discord.Embed(
+            title="🚓 **POLICIAS EN SERVICIO**",
+            description=f"Total: {len(activos)} oficiales",
+            color=discord.Color.blue()
+        )
+        
+        for policia in activos:
+            embed.add_field(
+                name=f"👮 {policia['nombre']}",
+                value=f"🕐 {policia['horas']}h {policia['minutos']}m activo",
+                inline=False
+            )
+        
+        embed.set_image(url=URL_TURNOS)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="panel_turnos", description="📋 Panel de turnos de policía - SOLO ADMIN/HOST")
+async def panel_turnos(interaction: discord.Interaction):
     if not es_host(interaction.user) and not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
         return
     
-    licencias = cargar(LICENCIAS_FILE)
-    user_id = str(usuario.id)
-    
-    if user_id not in licencias:
-        await interaction.response.send_message(f"❌ {usuario.mention} no tiene licencia activa.", ephemeral=True)
-        return
-    
-    datos_licencia = licencias[user_id]
-    licencia_id = datos_licencia.get("licencia_id", "N/A")
-    nombre = datos_licencia.get("nombre", "N/A")
-    apellidos = datos_licencia.get("apellidos", "N/A")
-    
-    del licencias[user_id]
-    guardar(LICENCIAS_FILE, licencias)
-    
-    try:
-        rol = discord.utils.get(interaction.guild.roles, name=ROL_LICENCIA_NOMBRE)
-        if rol and rol in usuario.roles:
-            await usuario.remove_roles(rol)
-    except:
-        pass
-    
     embed = discord.Embed(
-        title="🗑️ **LICENCIA ELIMINADA**",
-        description=f"{usuario.mention} ya no tiene licencia de conducir.",
-        color=discord.Color.red()
+        title="📋 **PANEL DE TURNOS**",
+        description=(
+            "Selecciona una opción para gestionar los turnos de patrullaje.\n\n"
+            "🚔 **Iniciar Turno** → Comienza tu patrullaje\n"
+            "🛑 **Finalizar Turno** → Termina tu patrullaje\n"
+            "📋 **Turnos Activos** → Ver policías en servicio"
+        ),
+        color=discord.Color.blue()
     )
-    embed.add_field(name="📋 **Licencia**", value=licencia_id, inline=True)
-    embed.add_field(name="👤 **Nombre**", value=f"{nombre} {apellidos}", inline=True)
-    embed.add_field(name="👮 **Eliminado por**", value=interaction.user.mention, inline=False)
-    if motivo:
-        embed.add_field(name="📌 **Motivo**", value=motivo, inline=False)
-    embed.set_footer(text=f"Eliminado el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
+    embed.set_image(url=URL_TURNOS)
+    embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     
-    await interaction.response.send_message(embed=embed)
-    
-    canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
-    if canal_registro:
-        await canal_registro.send(
-            f"📢 **Licencia eliminada**\n"
-            f"👤 Usuario: {usuario.mention}\n"
-            f"📋 Licencia: {licencia_id}\n"
-            f"👮 Eliminado por: {interaction.user.mention}\n"
-            f"📌 Motivo: {motivo if motivo else 'No especificado'}"
-        )
-    
-    await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó la licencia de **{usuario.mention}** (Motivo: {motivo if motivo else 'No especificado'})", discord.Color.red())
-  # ==================== STATS ====================
+    view = PanelTurnosView()
+    await interaction.response.send_message(embed=embed, view=view)
+    # ==================== STATS ====================
 @bot.tree.command(name="stats", description="📊 Estadísticas del bot - SOLO ADMINS")
 async def stats(interaction: discord.Interaction):
     if not interaction.user.guild_permissions.administrator:
