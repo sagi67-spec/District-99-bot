@@ -1520,7 +1520,7 @@ if canal_sesiones:
 else:
     await modal_interaction.response.send_message("❌ No encontré el canal de sesiones.", ephemeral=True)
 
-                await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión (Ciudad: {ciudad.capitalize()}, Vías: {vias})", discord.Color.gold())
+await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión (Ciudad: {ciudad.capitalize()}, Vías: {vias})", discord.Color.gold())
 
         await interaction.response.send_modal(SesionModal())
 
