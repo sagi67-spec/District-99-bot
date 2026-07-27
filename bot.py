@@ -1349,7 +1349,11 @@ async def panel_turnos(interaction: discord.Interaction):
     
     view = PanelTurnosView()
     await interaction.response.send_message(embed=embed, view=view)
-    # ==================== PANEL DE SESIONES (CORREGIDO) ====================
+    # ==================== PANEL DE SESIONES (CON PILLOW) ====================
+from PIL import Image
+import requests
+from io import BytesIO
+
 class PanelSesionesView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1393,12 +1397,10 @@ class PanelSesionesView(discord.ui.View):
 
     @discord.ui.button(label="🚀 ENVIAR SESIÓN", style=discord.ButtonStyle.success, custom_id="enviar_sesion")
     async def enviar_sesion(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Verificar que todos los datos estén completos
         if not self.ciudad or not self.vias or not self.adelantamientos:
             await interaction.response.send_message("⚠️ **Faltan datos.** Elige ciudad, vías y adelantamientos.", ephemeral=True)
             return
 
-        # Guardar el view en una variable para usarlo en el modal
         view = self
 
         class SesionModal(discord.ui.Modal, title="📋 Configurar Sesión"):
@@ -1406,24 +1408,21 @@ class PanelSesionesView(discord.ui.View):
             link = discord.ui.TextInput(label="🔗 Link del Servidor", placeholder="https://www.roblox.com/share?code=...", required=True, max_length=200)
 
             async def on_submit(self, modal_interaction: discord.Interaction):
-                # Validar velocidad
                 if not self.velocidad.value.isdigit():
                     await modal_interaction.response.send_message("⚠️ La velocidad debe ser un número.", ephemeral=True)
                     return
 
-                # Obtener los datos del view padre (usando la variable view)
                 ciudad = view.ciudad
                 vias = view.vias
                 adelantamientos = view.adelantamientos
                 velocidad = self.velocidad.value
                 link = self.link.value
 
-                # Validar que los datos existan
                 if not ciudad or not vias or not adelantamientos:
                     await modal_interaction.response.send_message("❌ Error: No se encontraron los datos de la sesión. Vuelve a abrir el panel.", ephemeral=True)
                     return
 
-                # Elegir imagen de ciudad
+                # Elegir imágenes
                 if ciudad == "greenville":
                     img_ciudad = URL_GREENVILLE
                 elif ciudad == "horton":
@@ -1431,11 +1430,39 @@ class PanelSesionesView(discord.ui.View):
                 else:
                     img_ciudad = URL_BROOKMERE
 
-                # Elegir imagen de vías (no se usa, pero lo dejamos por si acaso)
                 if vias == "1":
                     img_vias = URL_1VIA
                 else:
                     img_vias = URL_2VIAS
+
+                # ========== COMBINAR IMÁGENES CON PILLOW ==========
+                try:
+                    # Descargar imágenes
+                    response_ciudad = requests.get(img_ciudad)
+                    response_vias = requests.get(img_vias)
+                    
+                    # Abrir imágenes
+                    ciudad_img = Image.open(BytesIO(response_ciudad.content))
+                    vias_img = Image.open(BytesIO(response_vias.content))
+                    
+                    # Redimensionar vías al mismo tamaño que ciudad (si es necesario)
+                    if ciudad_img.size != vias_img.size:
+                        vias_img = vias_img.resize(ciudad_img.size)
+                    
+                    # Combinar: poner vías ENCIMA de ciudad
+                    combinada = ciudad_img.copy()
+                    combinada.paste(vias_img, (0, 0), vias_img if vias_img.mode == 'RGBA' else None)
+                    
+                    # Guardar en bytes
+                    img_bytes = BytesIO()
+                    combinada.save(img_bytes, format='PNG')
+                    img_bytes.seek(0)
+                    
+                    archivo = discord.File(img_bytes, filename="sesion.png")
+                    
+                except Exception as e:
+                    await modal_interaction.response.send_message(f"❌ Error al generar la imagen: {e}", ephemeral=True)
+                    return
 
                 # Guardar escena
                 escenas = cargar(ESCENAS_FILE)
@@ -1457,31 +1484,27 @@ class PanelSesionesView(discord.ui.View):
                 }
                 guardar(ESCENAS_FILE, escenas)
 
-                # Crear embed
+                # Crear embed con la imagen combinada
                 embed = discord.Embed(
                     title="🏁 **SESIÓN ABIERTA**",
                     description=f"**{NOMBRE_SERVIDOR}**",
                     color=discord.Color.gold()
                 )
                 
-                # Solo la imagen de la ciudad (sin miniatura)
-                embed.set_image(url=img_ciudad)
+                # Imagen combinada (ciudad + vías)
+                embed.set_image(url="attachment://sesion.png")
 
                 adelanto_texto = "✅ Permitidos" if adelantamientos == "si" else "❌ No permitidos"
-                
-                # Construir el valor de DETALLES
-                detalles = (
-                    f"🌆 **Ciudad:** {ciudad.capitalize()}\n"
-                    f"🛣️ **Vías:** {vias} vías\n"
-                    f"🚗 **Velocidad Máx:** {velocidad} mph\n"
-                    f"🏁 **Adelantamientos:** {adelanto_texto}\n"
-                    f"👑 **Host:** {modal_interaction.user.mention}\n"
-                    f"🔗 **Link:** [🌐 Haz clic aquí]({link})"
-                )
-                
                 embed.add_field(
                     name="📋 **DETALLES**",
-                    value=detalles,
+                    value=(
+                        f"🌆 **Ciudad:** {ciudad.capitalize()}\n"
+                        f"🛣️ **Vías:** {vias} vías\n"
+                        f"🚗 **Velocidad Máx:** {velocidad} mph\n"
+                        f"🏁 **Adelantamientos:** {adelanto_texto}\n"
+                        f"👑 **Host:** {modal_interaction.user.mention}\n"
+                        f"🔗 **Link:** [🌐 Haz clic aquí]({link})"
+                    ),
                     inline=False
                 )
                 embed.set_footer(
@@ -1489,10 +1512,10 @@ class PanelSesionesView(discord.ui.View):
                     icon_url=modal_interaction.user.display_avatar.url
                 )
 
-                # Enviar al canal general
+                # Enviar al canal general con el archivo adjunto
                 canal_general = bot.get_channel(CANAL_GENERAL_ID)
                 if canal_general:
-                    await canal_general.send("@everyone", embed=embed)
+                    await canal_general.send("@everyone", embed=embed, file=archivo)
                     await modal_interaction.response.send_message("✅ ¡Sesión enviada a #general!", ephemeral=True)
                 else:
                     await modal_interaction.response.send_message("❌ No encontré el canal general.", ephemeral=True)
