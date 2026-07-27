@@ -1213,7 +1213,6 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         except:
             font_datos = ImageFont.load_default()
             font_pequeno = ImageFont.load_default()
-
         # ========== COORDENADAS CORREGIDAS (PARA IMAGEN 800x500) ==========
 draw.text((150, 120), datos_licencia['nombre'], fill=(255, 255, 255), font=font_datos)
 draw.text((150, 160), datos_licencia['apellidos'], fill=(255, 255, 255), font=font_datos)
