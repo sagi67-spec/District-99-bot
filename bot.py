@@ -1213,16 +1213,16 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         except:
             font_datos = ImageFont.load_default()
             font_pequeno = ImageFont.load_default()
-        
-        # ========== ESCRIBIR TEXTOS CON LAS COORDENADAS CORRECTAS ==========
-        draw.text((312, 30), datos_licencia['nombre'], fill=(255, 255, 255), font=font_datos)
-        draw.text((269, 30), datos_licencia['apellidos'], fill=(255, 255, 255), font=font_datos)
-        draw.text((15, 31), datos_licencia['fecha_nacimiento'], fill=(255, 255, 255), font=font_datos)
-        draw.text((76, 28), datos_licencia['dni'], fill=(255, 255, 255), font=font_datos)
-        draw.text((82, 34), datos_licencia['licencia_id'], fill=(255, 255, 255), font=font_datos)
-        draw.text((135, 30), datos_licencia['fecha_expedicion'], fill=(255, 255, 255), font=font_datos)
-        draw.text((152, 56), datos_licencia['fecha_expiracion'], fill=(255, 255, 255), font=font_datos)
-        draw.text((128, 28), usuario.name, fill=(255, 255, 255), font=font_datos)
+
+        # ========== COORDENADAS CORREGIDAS (PARA IMAGEN 800x500) ==========
+draw.text((150, 120), datos_licencia['nombre'], fill=(255, 255, 255), font=font_datos)
+draw.text((150, 160), datos_licencia['apellidos'], fill=(255, 255, 255), font=font_datos)
+draw.text((150, 200), datos_licencia['fecha_nacimiento'], fill=(255, 255, 255), font=font_datos)
+draw.text((150, 240), datos_licencia['dni'], fill=(255, 255, 255), font=font_datos)
+draw.text((150, 280), datos_licencia['licencia_id'], fill=(255, 255, 255), font=font_datos)
+draw.text((150, 320), datos_licencia['fecha_expedicion'], fill=(255, 255, 255), font=font_datos)
+draw.text((150, 360), datos_licencia['fecha_expiracion'], fill=(255, 255, 255), font=font_datos)
+draw.text((150, 400), usuario.name, fill=(255, 255, 255), font=font_datos)
         
         # Guardar
         img_bytes = BytesIO()
