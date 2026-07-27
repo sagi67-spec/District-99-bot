@@ -139,15 +139,15 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         except:
             font_datos = ImageFont.load_default()
         
-        # ========== COORDENADAS CORRECTAS ==========
-        draw.text((80, 75), datos_licencia['nombre'], fill=(0, 0, 0), font=font_datos)
-        draw.text((80, 115), datos_licencia['apellidos'], fill=(0, 0, 0), font=font_datos)
-        draw.text((80, 155), datos_licencia['fecha_nacimiento'], fill=(0, 0, 0), font=font_datos)
-        draw.text((80, 195), datos_licencia['dni'], fill=(0, 0, 0), font=font_datos)
-        draw.text((80, 235), datos_licencia['licencia_id'], fill=(0, 0, 0), font=font_datos)
-        draw.text((80, 275), datos_licencia['fecha_expedicion'], fill=(0, 0, 0), font=font_datos)
-        draw.text((80, 315), datos_licencia['fecha_expiracion'], fill=(0, 0, 0), font=font_datos)
-        draw.text((80, 355), usuario.name, fill=(0, 0, 0), font=font_datos)
+        # ========== COORDENADAS CORRECTAS (basadas en tu imagen) ==========
+        draw.text((50, 180), datos_licencia['nombre'], fill=(0, 0, 0), font=font_datos)
+        draw.text((50, 215), datos_licencia['apellidos'], fill=(0, 0, 0), font=font_datos)
+        draw.text((50, 250), datos_licencia['fecha_nacimiento'], fill=(0, 0, 0), font=font_datos)
+        draw.text((50, 285), datos_licencia['dni'], fill=(0, 0, 0), font=font_datos)
+        draw.text((50, 320), datos_licencia['licencia_id'], fill=(0, 0, 0), font=font_datos)
+        draw.text((50, 355), datos_licencia['fecha_expedicion'], fill=(0, 0, 0), font=font_datos)
+        draw.text((50, 390), datos_licencia['fecha_expiracion'], fill=(0, 0, 0), font=font_datos)
+        draw.text((50, 425), usuario.name, fill=(0, 0, 0), font=font_datos)
         
         img_bytes = BytesIO()
         img.save(img_bytes, format='PNG')
