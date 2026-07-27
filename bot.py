@@ -1169,7 +1169,7 @@ import requests
 from io import BytesIO
 
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
-    # URL de tu imagen base (la que subiste a Discord)
+    # URL de tu imagen base
     URL_BASE = "https://cdn.discordapp.com/attachments/1530830750310596618/1531390643384094830/17849514822062.png?ex=6a690a2d&is=6a67b8ad&hm=dac6894563acdb8e1220d4f132329731e8bfe819502881f9d1f1044f2d9e279a&"
     
     try:
@@ -1199,7 +1199,6 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                 foto_img_circular = Image.new('RGBA', (100, 100))
                 foto_img_circular.paste(foto_img, (0, 0), mascara)
                 
-                # Coordenadas del círculo (de tu captura: X=263, Y=110)
                 img.paste(foto_img_circular, (263, 110), foto_img_circular)
             else:
                 print(f"❌ No se encontró el usuario de Roblox: {user_roblox}")
@@ -1213,15 +1212,16 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         except:
             font_datos = ImageFont.load_default()
             font_pequeno = ImageFont.load_default()
-        # ========== COORDENADAS CORREGIDAS (PARA IMAGEN 800x500) ==========
-draw.text((150, 120), datos_licencia['nombre'], fill=(255, 255, 255), font=font_datos)
-draw.text((150, 160), datos_licencia['apellidos'], fill=(255, 255, 255), font=font_datos)
-draw.text((150, 200), datos_licencia['fecha_nacimiento'], fill=(255, 255, 255), font=font_datos)
-draw.text((150, 240), datos_licencia['dni'], fill=(255, 255, 255), font=font_datos)
-draw.text((150, 280), datos_licencia['licencia_id'], fill=(255, 255, 255), font=font_datos)
-draw.text((150, 320), datos_licencia['fecha_expedicion'], fill=(255, 255, 255), font=font_datos)
-draw.text((150, 360), datos_licencia['fecha_expiracion'], fill=(255, 255, 255), font=font_datos)
-draw.text((150, 400), usuario.name, fill=(255, 255, 255), font=font_datos)
+        
+        # ========== ESCRIBIR TEXTOS (CON LAS COORDENADAS QUE YA TENÍAS) ==========
+        draw.text((150, 120), datos_licencia['nombre'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 160), datos_licencia['apellidos'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 200), datos_licencia['fecha_nacimiento'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 240), datos_licencia['dni'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 280), datos_licencia['licencia_id'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 320), datos_licencia['fecha_expedicion'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 360), datos_licencia['fecha_expiracion'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 400), usuario.name, fill=(255, 255, 255), font=font_datos)
         
         # Guardar
         img_bytes = BytesIO()
@@ -1232,8 +1232,6 @@ draw.text((150, 400), usuario.name, fill=(255, 255, 255), font=font_datos)
     except Exception as e:
         print(f"❌ Error al generar la licencia: {e}")
         return None
-
-class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
