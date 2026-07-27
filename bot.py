@@ -1522,7 +1522,7 @@ else:
 
 await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión (Ciudad: {ciudad.capitalize()}, Vías: {vias})", discord.Color.gold())
 
-        await interaction.response.send_modal(SesionModal())
+await interaction.response.send_modal(SesionModal())
 
 @bot.tree.command(name="panel_sesiones", description="📋 Panel para abrir sesiones - SOLO HOSTS")
 async def panel_sesiones(interaction: discord.Interaction):
