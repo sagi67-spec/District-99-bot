@@ -1512,13 +1512,13 @@ class PanelSesionesView(discord.ui.View):
                     icon_url=modal_interaction.user.display_avatar.url
                 )
 
-                # Enviar al canal general con el archivo adjunto
-                canal_general = bot.get_channel(CANAL_GENERAL_ID)
-                if canal_general:
-                    await canal_general.send("@everyone", embed=embed, file=archivo)
-                    await modal_interaction.response.send_message("✅ ¡Sesión enviada a #general!", ephemeral=True)
-                else:
-                    await modal_interaction.response.send_message("❌ No encontré el canal general.", ephemeral=True)
+                # Enviar al canal de sesiones
+canal_sesiones = bot.get_channel(1525377180622786701)
+if canal_sesiones:
+    await canal_sesiones.send(embed=embed, file=archivo)
+    await modal_interaction.response.send_message("✅ ¡Sesión enviada al canal de sesiones!", ephemeral=True)
+else:
+    await modal_interaction.response.send_message("❌ No encontré el canal de sesiones.", ephemeral=True)
 
                 await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión (Ciudad: {ciudad.capitalize()}, Vías: {vias})", discord.Color.gold())
 
