@@ -1285,6 +1285,68 @@ async def panel_licencias(interaction: discord.Interaction):
     
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
+    async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
+    # URL de tu imagen base
+    URL_BASE = "https://cdn.discordapp.com/attachments/1530830750310596618/1531390643384094830/17849514822062.png?ex=6a690a2d&is=6a67b8ad&hm=dac6894563acdb8e1220d4f132329731e8bfe819502881f9d1f1044f2d9e279a&"
+    
+    try:
+        # Descargar la imagen base
+        response = requests.get(URL_BASE, timeout=10)
+        img = Image.open(BytesIO(response.content))
+        draw = ImageDraw.Draw(img)
+        
+        # ========== OBTENER FOTO DE PERFIL DE ROBLOX ==========
+        try:
+            user_roblox = datos_licencia['user_roblox']
+            search_url = f"https://users.roblox.com/v1/users/search?keyword={user_roblox}"
+            search_response = requests.get(search_url, timeout=5)
+            search_data = search_response.json()
+            
+            if search_data and search_data.get('data') and len(search_data['data']) > 0:
+                user_id = search_data['data'][0]['id']
+                foto_url = f"https://www.roblox.com/headshot-thumbnail/image?userId={user_id}&width=420&height=420"
+                foto_response = requests.get(foto_url, timeout=5)
+                foto_img = Image.open(BytesIO(foto_response.content))
+                foto_img = foto_img.resize((100, 100))
+                
+                mascara = Image.new('L', (100, 100), 0)
+                mascara_draw = ImageDraw.Draw(mascara)
+                mascara_draw.ellipse((0, 0, 100, 100), fill=255)
+                
+                foto_img_circular = Image.new('RGBA', (100, 100))
+                foto_img_circular.paste(foto_img, (0, 0), mascara)
+                
+                img.paste(foto_img_circular, (263, 110), foto_img_circular)
+            else:
+                print(f"❌ No se encontró el usuario de Roblox: {user_roblox}")
+        except Exception as e:
+            print(f"❌ Error al obtener la foto de Roblox: {e}")
+        
+        # ========== FUENTES ==========
+        try:
+            font_datos = ImageFont.truetype("arial.ttf", 18)
+        except:
+            font_datos = ImageFont.load_default()
+        
+        # ========== ESCRIBIR TEXTOS ==========
+        draw.text((150, 120), datos_licencia['nombre'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 160), datos_licencia['apellidos'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 200), datos_licencia['fecha_nacimiento'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 240), datos_licencia['dni'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 280), datos_licencia['licencia_id'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 320), datos_licencia['fecha_expedicion'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 360), datos_licencia['fecha_expiracion'], fill=(255, 255, 255), font=font_datos)
+        draw.text((150, 400), usuario.name, fill=(255, 255, 255), font=font_datos)
+        
+        # Guardar
+        img_bytes = BytesIO()
+        img.save(img_bytes, format='PNG')
+        img_bytes.seek(0)
+        return discord.File(img_bytes, filename="licencia.png")
+        
+    except Exception as e:
+        print(f"❌ Error al generar la licencia: {e}")
+        return None
 
 # ==================== VER LICENCIA ====================
 @bot.tree.command(name="ver_licencia", description="🪪 Ver la licencia de un usuario")
