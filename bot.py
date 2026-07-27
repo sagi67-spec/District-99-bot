@@ -1349,7 +1349,7 @@ async def panel_turnos(interaction: discord.Interaction):
     
     view = PanelTurnosView()
     await interaction.response.send_message(embed=embed, view=view)
-    # ==================== PANEL DE SESIONES ====================
+    # ==================== PANEL DE SESIONES (CORREGIDO) ====================
 class PanelSesionesView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1393,30 +1393,37 @@ class PanelSesionesView(discord.ui.View):
 
     @discord.ui.button(label="🚀 ENVIAR SESIÓN", style=discord.ButtonStyle.success, custom_id="enviar_sesion")
     async def enviar_sesion(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Verificar que todos los datos estén completos
         if not self.ciudad or not self.vias or not self.adelantamientos:
             await interaction.response.send_message("⚠️ **Faltan datos.** Elige ciudad, vías y adelantamientos.", ephemeral=True)
             return
+
+        # Guardar el view en una variable para usarlo en el modal
+        view = self
 
         class SesionModal(discord.ui.Modal, title="📋 Configurar Sesión"):
             velocidad = discord.ui.TextInput(label="🚗 Velocidad Máxima (mph)", placeholder="Ej: 80", required=True, max_length=10)
             link = discord.ui.TextInput(label="🔗 Link del Servidor", placeholder="https://www.roblox.com/share?code=...", required=True, max_length=200)
 
             async def on_submit(self, modal_interaction: discord.Interaction):
+                # Validar velocidad
                 if not self.velocidad.value.isdigit():
                     await modal_interaction.response.send_message("⚠️ La velocidad debe ser un número.", ephemeral=True)
                     return
 
-                view = modal_interaction.message.components[0].view
-                if not view or not hasattr(view, 'ciudad'):
-                    await modal_interaction.response.send_message("❌ Error: No se encontraron los datos de la sesión. Vuelve a abrir el panel.", ephemeral=True)
-                    return
-
+                # Obtener los datos del view padre (usando la variable view)
                 ciudad = view.ciudad
                 vias = view.vias
                 adelantamientos = view.adelantamientos
                 velocidad = self.velocidad.value
                 link = self.link.value
 
+                # Validar que los datos existan
+                if not ciudad or not vias or not adelantamientos:
+                    await modal_interaction.response.send_message("❌ Error: No se encontraron los datos de la sesión. Vuelve a abrir el panel.", ephemeral=True)
+                    return
+
+                # Elegir imagen de ciudad
                 if ciudad == "greenville":
                     img_ciudad = URL_GREENVILLE
                 elif ciudad == "horton":
@@ -1424,11 +1431,13 @@ class PanelSesionesView(discord.ui.View):
                 else:
                     img_ciudad = URL_BROOKMERE
 
+                # Elegir imagen de vías (no se usa, pero lo dejamos por si acaso)
                 if vias == "1":
                     img_vias = URL_1VIA
                 else:
                     img_vias = URL_2VIAS
 
+                # Guardar escena
                 escenas = cargar(ESCENAS_FILE)
                 channel_id = str(modal_interaction.channel_id)
                 
@@ -1448,24 +1457,31 @@ class PanelSesionesView(discord.ui.View):
                 }
                 guardar(ESCENAS_FILE, escenas)
 
+                # Crear embed
                 embed = discord.Embed(
                     title="🏁 **SESIÓN ABIERTA**",
                     description=f"**{NOMBRE_SERVIDOR}**",
                     color=discord.Color.gold()
                 )
+                
+                # Solo la imagen de la ciudad (sin miniatura)
                 embed.set_image(url=img_ciudad)
 
                 adelanto_texto = "✅ Permitidos" if adelantamientos == "si" else "❌ No permitidos"
+                
+                # Construir el valor de DETALLES
+                detalles = (
+                    f"🌆 **Ciudad:** {ciudad.capitalize()}\n"
+                    f"🛣️ **Vías:** {vias} vías\n"
+                    f"🚗 **Velocidad Máx:** {velocidad} mph\n"
+                    f"🏁 **Adelantamientos:** {adelanto_texto}\n"
+                    f"👑 **Host:** {modal_interaction.user.mention}\n"
+                    f"🔗 **Link:** [🌐 Haz clic aquí]({link})"
+                )
+                
                 embed.add_field(
                     name="📋 **DETALLES**",
-                    value=(
-                        f"🌆 **Ciudad:** {ciudad.capitalize()}\n"
-                        f"🛣️ **Vías:** {vias} vías\n"
-                        f"🚗 **Velocidad Máx:** {velocidad} mph\n"
-                        f"🏁 **Adelantamientos:** {adelanto_texto}\n"
-                        f"👑 **Host:** {modal_interaction.user.mention}\n"
-                        f"🔗 **Link:** [🌐 Haz clic aquí]({link})"
-                    ),
+                    value=detalles,
                     inline=False
                 )
                 embed.set_footer(
@@ -1473,6 +1489,7 @@ class PanelSesionesView(discord.ui.View):
                     icon_url=modal_interaction.user.display_avatar.url
                 )
 
+                # Enviar al canal general
                 canal_general = bot.get_channel(CANAL_GENERAL_ID)
                 if canal_general:
                     await canal_general.send("@everyone", embed=embed)
