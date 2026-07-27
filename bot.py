@@ -1437,23 +1437,18 @@ class PanelSesionesView(discord.ui.View):
 
                 # ========== COMBINAR IMÁGENES CON PILLOW ==========
                 try:
-                    # Descargar imágenes
                     response_ciudad = requests.get(img_ciudad)
                     response_vias = requests.get(img_vias)
                     
-                    # Abrir imágenes
                     ciudad_img = Image.open(BytesIO(response_ciudad.content))
                     vias_img = Image.open(BytesIO(response_vias.content))
                     
-                    # Redimensionar vías al mismo tamaño que ciudad (si es necesario)
                     if ciudad_img.size != vias_img.size:
                         vias_img = vias_img.resize(ciudad_img.size)
                     
-                    # Combinar: poner vías ENCIMA de ciudad
                     combinada = ciudad_img.copy()
                     combinada.paste(vias_img, (0, 0), vias_img if vias_img.mode == 'RGBA' else None)
                     
-                    # Guardar en bytes
                     img_bytes = BytesIO()
                     combinada.save(img_bytes, format='PNG')
                     img_bytes.seek(0)
@@ -1484,14 +1479,12 @@ class PanelSesionesView(discord.ui.View):
                 }
                 guardar(ESCENAS_FILE, escenas)
 
-                # Crear embed con la imagen combinada
                 embed = discord.Embed(
                     title="🏁 **SESIÓN ABIERTA**",
                     description=f"**{NOMBRE_SERVIDOR}**",
                     color=discord.Color.gold()
                 )
                 
-                # Imagen combinada (ciudad + vías)
                 embed.set_image(url="attachment://sesion.png")
 
                 adelanto_texto = "✅ Permitidos" if adelantamientos == "si" else "❌ No permitidos"
@@ -1513,16 +1506,16 @@ class PanelSesionesView(discord.ui.View):
                 )
 
                 # Enviar al canal de sesiones
-canal_sesiones = bot.get_channel(1525377180622786701)
-if canal_sesiones:
-    await canal_sesiones.send(embed=embed, file=archivo)
-    await modal_interaction.response.send_message("✅ ¡Sesión enviada al canal de sesiones!", ephemeral=True)
-else:
-    await modal_interaction.response.send_message("❌ No encontré el canal de sesiones.", ephemeral=True)
+                canal_sesiones = bot.get_channel(1525377180622786701)
+                if canal_sesiones:
+                    await canal_sesiones.send(embed=embed, file=archivo)
+                    await modal_interaction.response.send_message("✅ ¡Sesión enviada al canal de sesiones!", ephemeral=True)
+                else:
+                    await modal_interaction.response.send_message("❌ No encontré el canal de sesiones.", ephemeral=True)
 
-await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión (Ciudad: {ciudad.capitalize()}, Vías: {vias})", discord.Color.gold())
+                await enviar_log(f"🎬 **{modal_interaction.user.mention}** abrió sesión (Ciudad: {ciudad.capitalize()}, Vías: {vias})", discord.Color.gold())
 
-await interaction.response.send_modal(SesionModal())
+        await interaction.response.send_modal(SesionModal())
 
 @bot.tree.command(name="panel_sesiones", description="📋 Panel para abrir sesiones - SOLO HOSTS")
 async def panel_sesiones(interaction: discord.Interaction):
