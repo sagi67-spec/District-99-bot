@@ -69,6 +69,7 @@ ROL_HOST_NOMBRE = "Host│🎮"
 ROL_POLICIA_NOMBRE = "Wsp│👮"
 ROL_DNI_NOMBRE = "Dni│🪪"
 ROL_LICENCIA_NOMBRE = "Licencia│🚗"
+ROL_TRABAJANDO_NOMBRE = "Trabajando"  # <--- NUEVO ROL
 
 def tiene_rol(member, rol_buscado):
     if not member:
@@ -122,112 +123,126 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
-        # ==================== FUNCIÓN PARA GENERAR LICENCIA (PROFESIONAL) ====================
+        # ==================== FUNCIÓN PARA GENERAR LICENCIA (MEJORADA) ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
-        # Fondo blanco
-        img = Image.new('RGB', (1000, 700), color=(255, 255, 255))
+        # ========== FONDO GRIS CLARO ==========
+        img = Image.new('RGB', (1000, 700), color=(240, 240, 245))
         draw = ImageDraw.Draw(img)
         
-        # Borde dorado
-        draw.rectangle([10, 10, 990, 690], outline=(255, 215, 0), width=8)
-        draw.rectangle([20, 20, 980, 680], outline=(255, 215, 0), width=2)
-        draw.rectangle([30, 30, 970, 670], outline=(220, 220, 220), width=1)
+        # ========== BORDE DORADO GRUESO ==========
+        draw.rectangle([10, 10, 990, 690], outline=(255, 215, 0), width=10)
+        draw.rectangle([20, 20, 980, 680], outline=(255, 215, 0), width=3)
+        draw.rectangle([30, 30, 970, 670], outline=(200, 200, 200), width=1)
         
-        # Fuentes
+        # ========== TÍTULOS ==========
         try:
-            font_logo = ImageFont.truetype("arial.ttf", 52)
-            font_sub = ImageFont.truetype("arial.ttf", 32)
-            font_datos = ImageFont.truetype("arial.ttf", 22)
-            font_estado = ImageFont.truetype("arial.ttf", 34)
+            font_logo = ImageFont.truetype("arial.ttf", 56)  # MÁS GRANDE
+            font_sub = ImageFont.truetype("arial.ttf", 36)   # MÁS GRANDE
+            font_datos = ImageFont.truetype("arial.ttf", 26) # MÁS GRANDE
+            font_estado = ImageFont.truetype("arial.ttf", 38) # MÁS GRANDE
         except:
             font_logo = ImageFont.load_default()
             font_sub = ImageFont.load_default()
             font_datos = ImageFont.load_default()
             font_estado = ImageFont.load_default()
         
-        # Logo
-        draw.text((502, 40), "🏛️ DISTRICT 99", fill=(200, 200, 200), font=font_logo, anchor="mt")
-        draw.text((500, 38), "🏛️ DISTRICT 99", fill=(255, 215, 0), font=font_logo, anchor="mt")
-        draw.text((502, 100), "LICENCIA DE CONDUCIR", fill=(200, 200, 200), font=font_sub, anchor="mt")
-        draw.text((500, 98), "LICENCIA DE CONDUCIR", fill=(0, 0, 0), font=font_sub, anchor="mt")
-        draw.line([100, 145, 900, 145], fill=(255, 215, 0), width=4)
-        draw.line([105, 148, 895, 148], fill=(200, 200, 200), width=1)
+        # Logo y título
+        draw.text((500, 40), "🏛️ DISTRICT 99", fill=(255, 215, 0), font=font_logo, anchor="mt")
+        draw.text((500, 105), "LICENCIA DE CONDUCIR", fill=(0, 0, 0), font=font_sub, anchor="mt")
+        draw.line([100, 155, 900, 155], fill=(255, 215, 0), width=4)
         
-        # Avatar Discord
-        avatar_size = 140
-        avatar_x1, avatar_y1 = 120, 195
+        # ========== AVATAR DISCORD ==========
+        avatar_size = 150
+        avatar_x1, avatar_y1 = 120, 200
+        
         try:
             avatar_url = usuario.display_avatar.url
             avatar_response = requests.get(avatar_url, timeout=5)
             avatar_img = Image.open(BytesIO(avatar_response.content))
             avatar_img = avatar_img.resize((avatar_size, avatar_size))
+            
             mask = Image.new('L', (avatar_size, avatar_size), 0)
             mask_draw = ImageDraw.Draw(mask)
             mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
+            
             avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
             avatar_circular.paste(avatar_img, (0, 0), mask)
+            
             img.paste(avatar_circular, (avatar_x1, avatar_y1), avatar_circular)
-            draw.ellipse([avatar_x1-8, avatar_y1-8, avatar_x1+avatar_size+8, avatar_y1+avatar_size+8], outline=(255, 215, 0), width=6)
-            draw.ellipse([avatar_x1-4, avatar_y1-4, avatar_x1+avatar_size+4, avatar_y1+avatar_size+4], outline=(200, 200, 200), width=2)
-            draw.text((avatar_x1 + 20, avatar_y1 + avatar_size + 20), "DISCORD", fill=(80, 80, 80), font=font_datos)
+            draw.ellipse([avatar_x1-6, avatar_y1-6, avatar_x1+avatar_size+6, avatar_y1+avatar_size+6],
+                         outline=(255, 215, 0), width=6)
+            draw.text((avatar_x1 + 25, avatar_y1 + avatar_size + 30), "DISCORD", fill=(100, 100, 100), font=font_datos)
         except:
-            draw.ellipse([avatar_x1, avatar_y1, avatar_x1+avatar_size, avatar_y1+avatar_size], outline=(200, 200, 200), width=3)
-            draw.text((avatar_x1 + 30, avatar_y1 + 60), "DISCORD", fill=(80, 80, 80), font=font_datos)
+            draw.ellipse([avatar_x1, avatar_y1, avatar_x1+avatar_size, avatar_y1+avatar_size],
+                         outline=(200, 200, 200), width=3)
+            draw.text((avatar_x1 + 30, avatar_y1 + 60), "DISCORD", fill=(100, 100, 100), font=font_datos)
         
-        # Avatar Roblox
-        avatar_x2, avatar_y2 = 320, 195
+        # ========== AVATAR ROBLOX ==========
+        avatar_x2, avatar_y2 = 320, 200
+        
         try:
             user_roblox = datos_licencia['user_roblox']
             search_url = f"https://users.roblox.com/v1/users/search?keyword={user_roblox}"
             search_response = requests.get(search_url, timeout=5)
             search_data = search_response.json()
+            
             if search_data and search_data.get('data') and len(search_data['data']) > 0:
                 user_id = search_data['data'][0]['id']
                 foto_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={user_id}&size=420x420&format=Png"
                 foto_response = requests.get(foto_url, timeout=5)
                 foto_data = foto_response.json()
+                
                 if foto_data and foto_data.get('data') and len(foto_data['data']) > 0:
                     avatar_roblox_url = foto_data['data'][0]['imageUrl']
                     avatar_roblox_response = requests.get(avatar_roblox_url, timeout=5)
                     foto_img = Image.open(BytesIO(avatar_roblox_response.content))
                     foto_img = foto_img.resize((avatar_size, avatar_size))
+                    
                     mask = Image.new('L', (avatar_size, avatar_size), 0)
                     mask_draw = ImageDraw.Draw(mask)
                     mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
+                    
                     foto_circular = Image.new('RGBA', (avatar_size, avatar_size))
                     foto_circular.paste(foto_img, (0, 0), mask)
+                    
                     img.paste(foto_circular, (avatar_x2, avatar_y2), foto_circular)
-                    draw.ellipse([avatar_x2-8, avatar_y2-8, avatar_x2+avatar_size+8, avatar_y2+avatar_size+8], outline=(255, 215, 0), width=6)
-                    draw.ellipse([avatar_x2-4, avatar_y2-4, avatar_x2+avatar_size+4, avatar_y2+avatar_size+4], outline=(200, 200, 200), width=2)
-                    draw.text((avatar_x2 + 40, avatar_y2 + avatar_size + 20), "ROBLOX", fill=(80, 80, 80), font=font_datos)
+                    draw.ellipse([avatar_x2-6, avatar_y2-6, avatar_x2+avatar_size+6, avatar_y2+avatar_size+6],
+                                 outline=(255, 215, 0), width=6)
+                    draw.text((avatar_x2 + 35, avatar_y2 + avatar_size + 30), "ROBLOX", fill=(100, 100, 100), font=font_datos)
                 else:
-                    draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size], outline=(200, 200, 200), width=3)
-                    draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(80, 80, 80), font=font_datos)
+                    draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
+                                 outline=(200, 200, 200), width=3)
+                    draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(100, 100, 100), font=font_datos)
             else:
-                draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size], outline=(200, 200, 200), width=3)
-                draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(80, 80, 80), font=font_datos)
+                draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
+                             outline=(200, 200, 200), width=3)
+                draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(100, 100, 100), font=font_datos)
         except:
-            draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size], outline=(200, 200, 200), width=3)
-            draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(80, 80, 80), font=font_datos)
+            draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
+                         outline=(200, 200, 200), width=3)
+            draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(100, 100, 100), font=font_datos)
         
-        # Tabla de datos
+        # ========== TABLA DE DATOS ==========
         x_left = 500
-        y_start = 190
-        spacing = 48
-        draw.rectangle([480, 175, 960, 615], outline=(200, 200, 200), width=2, fill=(245, 245, 245))
-        draw.rectangle([485, 180, 955, 610], outline=(220, 220, 220), width=1)
-        draw.text((500, 190), "DATOS DEL CIUDADANO", fill=(100, 100, 100), font=font_datos)
-        draw.line([500, 210, 940, 210], fill=(200, 200, 200), width=2)
+        y_start = 200
         
-        y_start = 225
-        spacing = 44
+        # Fondo de la tabla (azul oscuro)
+        draw.rectangle([480, 185, 960, 620], outline=(255, 215, 0), width=2, fill=(25, 35, 60))
+        draw.rectangle([485, 190, 955, 615], outline=(200, 200, 200), width=1)
+        
+        # Título de la tabla
+        draw.text((500, 200), "DATOS DEL CIUDADANO", fill=(255, 215, 0), font=font_datos)
+        draw.line([500, 225, 940, 225], fill=(255, 215, 0), width=2)
+        
+        y_start = 245
+        spacing = 46
         
         def dibujar_campo(label, valor, y, es_gold=False):
-            draw.text((510, y), label, fill=(80, 80, 80), font=font_datos)
-            color = (255, 215, 0) if es_gold else (0, 0, 0)
-            draw.text((510 + 200, y), valor, fill=color, font=font_datos)
-            draw.line([510, y + 30, 940, y + 30], fill=(235, 235, 235), width=1)
+            draw.text((510, y), label, fill=(200, 200, 220), font=font_datos)
+            color = (255, 215, 0) if es_gold else (255, 255, 255)
+            draw.text((510 + 220, y), valor, fill=color, font=font_datos)
+            draw.line([510, y + 35, 940, y + 35], fill=(60, 70, 100), width=1)
         
         nombre_completo = f"{datos_licencia['nombre']} {datos_licencia['apellidos']}"
         dibujar_campo("👤 Nombre:", nombre_completo, y_start)
@@ -247,14 +262,14 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         dibujar_campo("📅 Expiración:", datos_licencia['fecha_expiracion'], y_start)
         y_start += spacing
         
-        # Estado
-        draw.text((502, 640), "✅ ACTIVA", fill=(200, 200, 200), font=font_estado, anchor="mt")
-        draw.text((500, 638), "✅ ACTIVA", fill=(0, 180, 0), font=font_estado, anchor="mt")
+        # ========== ESTADO ==========
+        draw.text((500, 640), "✅ ACTIVA", fill=(0, 220, 100), font=font_estado, anchor="mt")
         
-        # Pie de página
+        # ========== PIE DE PÁGINA ==========
         draw.line([200, 665, 800, 665], fill=(255, 215, 0), width=2)
         draw.text((500, 680), "DISTRICT 99 - GVRP © 2026", fill=(150, 150, 150), font=font_datos, anchor="mt")
         
+        # ========== GUARDAR ==========
         img_bytes = BytesIO()
         img.save(img_bytes, format='PNG')
         img_bytes.seek(0)
@@ -399,6 +414,7 @@ async def on_ready():
         print(f"   🔹 Policía: {ROL_POLICIA_NOMBRE}")
         print(f"   🔹 DNI: {ROL_DNI_NOMBRE}")
         print(f"   🔹 Licencia: {ROL_LICENCIA_NOMBRE}")
+        print(f"   🔹 Trabajando: {ROL_TRABAJANDO_NOMBRE}")
         print(f"✅ Canales configurados:")
         print(f"   🔹 Pagos: {CANAL_PAGOS_ID}")
         print(f"   🔹 Crear Licencias: {CANAL_CREAR_LICENCIAS_ID}")
@@ -1215,7 +1231,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (CON EDAD AUTOMÁTICA) ====================
+    # ==================== PANEL DE LICENCIAS (CON BOTÓN - MENSAJE LIMPIO) ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1242,18 +1258,16 @@ class PanelLicenciasView(discord.ui.View):
             fecha_nacimiento = discord.ui.TextInput(label="Fecha de Nacimiento (DD/MM/YYYY)", placeholder="Ej: 15/05/1998", max_length=10, required=True)
             oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
             user_roblox = discord.ui.TextInput(label="Usuario de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
-            # ✅ AHORA SON 5 CAMPOS (EDAD ELIMINADA)
 
             async def on_submit(self, modal_interaction: discord.Interaction):
                 try:
                     user_id = str(modal_interaction.user.id)
 
-                    # Validar fecha
                     if not validar_fecha(self.fecha_nacimiento.value):
                         await modal_interaction.response.send_message("⚠️ Formato de fecha inválido. Usa DD/MM/YYYY", ephemeral=True)
                         return
 
-                    # ========== CALCULAR EDAD AUTOMÁTICAMENTE (MÉTODO DE CLAUDE) ==========
+                    # Calcular edad automáticamente
                     try:
                         fecha_parts = self.fecha_nacimiento.value.split("/")
                         año_nacimiento = int(fecha_parts[2])
@@ -1278,7 +1292,7 @@ class PanelLicenciasView(discord.ui.View):
                         "nombre": self.nombre.value,
                         "apellidos": self.apellidos.value,
                         "fecha_nacimiento": self.fecha_nacimiento.value,
-                        "edad": str(edad),  # Calculada automáticamente
+                        "edad": str(edad),
                         "oficio": self.oficio.value,
                         "user_roblox": self.user_roblox.value,
                         "user_discord": str(modal_interaction.user),
@@ -1348,8 +1362,7 @@ async def panel_licencias(interaction: discord.Interaction):
             "• Esta licencia es **personal e intransferible**.\n"
             "• Si pierdes tu licencia, deberás solicitar una nueva.\n"
             "• La licencia tiene una vigencia de **2 años**.\n\n"
-            "👁️ **Para ver tu licencia:** Usa `/mi_licencia`\n"
-            "🗑️ **Para eliminar tu licencia:** Usa `/eliminar_mi_licencia`"
+            "🖼️ **Tu licencia se generará automáticamente** y se enviará a este canal."
         ),
         color=discord.Color.gold()
     )
@@ -1357,93 +1370,7 @@ async def panel_licencias(interaction: discord.Interaction):
     
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
-
-    # ==================== VER LICENCIA (SOLO ADMINS/HOSTS) ====================
-@bot.tree.command(name="ver_licencia", description="👁️ Ver licencia de un usuario - SOLO ADMINS/HOSTS")
-@app_commands.describe(usuario="Usuario a consultar")
-async def ver_licencia_admin(interaction: discord.Interaction, usuario: discord.Member):
-    if not es_host(interaction.user) and not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
-        return
-    
-    licencias = cargar(LICENCIAS_FILE)
-    user_id = str(usuario.id)
-    
-    if user_id not in licencias:
-        await interaction.response.send_message(f"❌ {usuario.mention} no tiene licencia activa.", ephemeral=True)
-        return
-    
-    datos = licencias[user_id]
-    
-    embed = discord.Embed(
-        title=f"🪪 **LICENCIA DE {usuario.name.upper()}**",
-        color=discord.Color.gold()
-    )
-    embed.add_field(name="📋 **Licencia**", value=datos.get('licencia_id', 'N/A'), inline=False)
-    embed.add_field(name="👤 **Nombre**", value=f"{datos.get('nombre', 'N/A')} {datos.get('apellidos', 'N/A')}", inline=True)
-    embed.add_field(name="🎂 **Edad**", value=f"{datos.get('edad', 'N/A')} años", inline=True)
-    embed.add_field(name="💼 **Oficio**", value=datos.get('oficio', 'N/A'), inline=True)
-    embed.add_field(name="🎮 **Roblox**", value=datos.get('user_roblox', 'N/A'), inline=True)
-    embed.add_field(name="🪪 **DNI**", value=datos.get('dni', 'N/A'), inline=True)
-    embed.add_field(name="📅 **Expedición**", value=datos.get('fecha_expedicion', 'N/A'), inline=True)
-    embed.add_field(name="📅 **Expiración**", value=datos.get('fecha_expiracion', 'N/A'), inline=True)
-    embed.add_field(name="📌 **Estado**", value="🟢 ACTIVA", inline=True)
-    embed.set_footer(text=f"Solicitado por {interaction.user.name}")
-    
-    await interaction.response.send_message(embed=embed)
-
-# ==================== ELIMINAR LICENCIA (SOLO ADMINS/HOSTS) ====================
-@bot.tree.command(name="eliminar_licencia", description="🗑️ Eliminar licencia de un usuario - SOLO ADMINS/HOSTS")
-@app_commands.describe(
-    usuario="Usuario a eliminar licencia",
-    motivo="Motivo de la eliminación (opcional)"
-)
-async def eliminar_licencia_admin(
-    interaction: discord.Interaction,
-    usuario: discord.Member,
-    motivo: str = None
-):
-    if not es_host(interaction.user) and not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
-        return
-    
-    licencias = cargar(LICENCIAS_FILE)
-    user_id = str(usuario.id)
-    
-    if user_id not in licencias:
-        await interaction.response.send_message(f"❌ {usuario.mention} no tiene licencia activa.", ephemeral=True)
-        return
-    
-    datos_licencia = licencias[user_id]
-    licencia_id = datos_licencia.get("licencia_id", "N/A")
-    nombre = datos_licencia.get("nombre", "N/A")
-    apellidos = datos_licencia.get("apellidos", "N/A")
-    
-    del licencias[user_id]
-    guardar(LICENCIAS_FILE, licencias)
-    
-    try:
-        rol = discord.utils.get(interaction.guild.roles, name=ROL_LICENCIA_NOMBRE)
-        if rol and rol in usuario.roles:
-            await usuario.remove_roles(rol)
-    except:
-        pass
-    
-    embed = discord.Embed(
-        title="🗑️ **LICENCIA ELIMINADA**",
-        description=f"{usuario.mention} ya no tiene licencia de conducir.",
-        color=discord.Color.red()
-    )
-    embed.add_field(name="📋 **Licencia**", value=licencia_id, inline=True)
-    embed.add_field(name="👤 **Nombre**", value=f"{nombre} {apellidos}", inline=True)
-    embed.add_field(name="👮 **Eliminado por**", value=interaction.user.mention, inline=False)
-    if motivo:
-        embed.add_field(name="📌 **Motivo**", value=motivo, inline=False)
-    embed.set_footer(text=f"Eliminado el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
-    
-    await interaction.response.send_message(embed=embed)
-    await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó la licencia de **{usuario.mention}** (Motivo: {motivo if motivo else 'No especificado'})", discord.Color.red())
-    # ==================== PANEL DE TURNOS (CON SELECT - EPHEMERAL) ====================
+    # ==================== PANEL DE TURNOS (CON ROL TRABAJANDO) ====================
 class PanelTurnosView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1454,8 +1381,7 @@ class PanelTurnosView(discord.ui.View):
             discord.SelectOption(label="🚔 Iniciar Turno", value="iniciar", emoji="🚔"),
             discord.SelectOption(label="🛑 Finalizar Turno", value="finalizar", emoji="🛑"),
             discord.SelectOption(label="📋 Turnos Activos", value="activos", emoji="📋"),
-        ],
-        custom_id="turnos_select"
+        ]
     )
     async def turnos_select(self, interaction: discord.Interaction, select: discord.ui.Select):
         opcion = select.values[0]
@@ -1471,6 +1397,14 @@ class PanelTurnosView(discord.ui.View):
             if user_id in turnos and turnos[user_id].get("activo", False):
                 await interaction.response.send_message("⚠️ Ya tienes un turno activo. Usa la opción **Finalizar Turno**.", ephemeral=True)
                 return
+            
+            # ========== ASIGNAR ROL "TRABAJANDO" ==========
+            try:
+                rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
+                if rol_trabajando:
+                    await interaction.user.add_roles(rol_trabajando)
+            except:
+                pass
             
             turnos[user_id] = {
                 "policia_id": user_id,
@@ -1488,11 +1422,12 @@ class PanelTurnosView(discord.ui.View):
             embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
             embed.add_field(name="🕐 **Inicio**", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
             embed.add_field(name="📋 **Estado**", value="🟢 EN SERVICIO", inline=True)
+            embed.add_field(name="🔹 **Rol asignado**", value=f"✅ {ROL_TRABAJANDO_NOMBRE}", inline=True)
             embed.set_image(url=URL_TURNOS)
             embed.set_footer(text="¡Buena suerte en tu patrullaje! 🚓")
             
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            await enviar_log(f"🚔 **{interaction.user.mention}** inició turno de patrullaje", discord.Color.green())
+            await enviar_log(f"🚔 **{interaction.user.mention}** inició turno de patrullaje (Rol {ROL_TRABAJANDO_NOMBRE} asignado)", discord.Color.green())
 
         elif opcion == "finalizar":
             if not es_policia(interaction.user):
@@ -1505,6 +1440,14 @@ class PanelTurnosView(discord.ui.View):
             if user_id not in turnos or not turnos[user_id].get("activo", False):
                 await interaction.response.send_message("❌ No tienes un turno activo. Usa la opción **Iniciar Turno**.", ephemeral=True)
                 return
+            
+            # ========== QUITAR ROL "TRABAJANDO" ==========
+            try:
+                rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
+                if rol_trabajando and rol_trabajando in interaction.user.roles:
+                    await interaction.user.remove_roles(rol_trabajando)
+            except:
+                pass
             
             turno = turnos[user_id]
             inicio = datetime.fromisoformat(turno["inicio"])
@@ -1532,11 +1475,12 @@ class PanelTurnosView(discord.ui.View):
             embed.add_field(name="⏱️ **Duración**", value=f"{horas}h {minutos}m", inline=False)
             embed.add_field(name="🚨 **Multas puestas**", value=str(len(multas_turno)), inline=True)
             embed.add_field(name="📋 **Estado**", value="🔴 FUERA DE SERVICIO", inline=True)
+            embed.add_field(name="🔹 **Rol eliminado**", value=f"❌ {ROL_TRABAJANDO_NOMBRE}", inline=True)
             embed.set_image(url=URL_TURNOS)
             embed.set_footer(text="¡Buen trabajo oficial! 🌟")
             
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            await enviar_log(f"🚔 **{interaction.user.mention}** finalizó turno (Duración: {horas}h {minutos}m, Multas: {len(multas_turno)})", discord.Color.red())
+            await enviar_log(f"🚔 **{interaction.user.mention}** finalizó turno (Duración: {horas}h {minutos}m, Multas: {len(multas_turno)}) (Rol {ROL_TRABAJANDO_NOMBRE} quitado)", discord.Color.red())
 
         elif opcion == "activos":
             if not es_policia(interaction.user):
@@ -1593,7 +1537,8 @@ async def panel_turnos(interaction: discord.Interaction):
             "🛑 **Finalizar Turno** → Termina tu patrullaje.\n"
             "📋 **Turnos Activos** → Ver policías en servicio.\n\n"
             "⚠️ **Requisitos:** Debes tener el rol **Wsp│👮** para usar estas opciones.\n"
-            "🔒 **Privacidad:** Las respuestas solo las verás tú."
+            "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
+            "🔄 **Rol automático:** Al iniciar turno, se te asignará el rol **Trabajando**."
         ),
         color=discord.Color.blue()
     )
