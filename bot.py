@@ -1215,7 +1215,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (CON SELECT - SIN CUSTOM_ID) ====================
+    # ==================== PANEL DE LICENCIAS (CON SELECT - CORREGIDO) ====================
 # Diccionario temporal para datos entre modales
 datos_temporales = {}
 
@@ -1229,31 +1229,27 @@ class PanelLicenciasView(discord.ui.View):
             discord.SelectOption(label="📝 Crear Licencia", value="crear", emoji="📝"),
             discord.SelectOption(label="👁️ Ver Mi Licencia", value="ver", emoji="👁️"),
             discord.SelectOption(label="🗑️ Eliminar Mi Licencia", value="eliminar", emoji="🗑️"),
-        ],
-        custom_id="licencias_select"
+        ]
     )
     async def licencias_select(self, interaction: discord.Interaction, select: discord.ui.Select):
-        # Defer inmediato para evitar timeout
-        await interaction.response.defer(ephemeral=True)
-        
         opcion = select.values[0]
         
         if opcion == "crear":
+            # ========== SIN DEFER - RESPUESTA DIRECTA CON MODAL ==========
             # Verificar DNI
             dnis = cargar(DNI_FILE)
             user_id = str(interaction.user.id)
             
             if user_id not in dnis:
-                await interaction.followup.send("⚠️ Necesitas tener un DNI antes de solicitar licencia. Usa `/crear_dni`", ephemeral=True)
+                await interaction.response.send_message("⚠️ Necesitas tener un DNI antes de solicitar licencia. Usa `/crear_dni`", ephemeral=True)
                 return
 
             # Verificar licencia activa
             licencias = cargar(LICENCIAS_FILE)
             if user_id in licencias:
-                await interaction.followup.send("⚠️ Ya tienes una licencia activa.", ephemeral=True)
+                await interaction.response.send_message("⚠️ Ya tienes una licencia activa.", ephemeral=True)
                 return
 
-            # MODAL 1 - SIN CUSTOM_ID
             class LicenciaModal1(discord.ui.Modal, title="📝 Solicitar Licencia (1/2)"):
                 nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
                 apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
@@ -1269,7 +1265,6 @@ class PanelLicenciasView(discord.ui.View):
                         "edad": self.edad.value
                     }
 
-                    # MODAL 2 - SIN CUSTOM_ID
                     class LicenciaModal2(discord.ui.Modal, title="📝 Solicitar Licencia (2/2)"):
                         oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
                         user_roblox = discord.ui.TextInput(label="Usuario de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
@@ -1352,11 +1347,13 @@ class PanelLicenciasView(discord.ui.View):
 
                     await modal_interaction.response.send_modal(LicenciaModal2())
 
-            # ABRIR MODAL CON FOLLOWUP
-            await interaction.followup.send_modal(LicenciaModal1())
+            # ========== ABRIR MODAL DIRECTAMENTE (SIN DEFER) ==========
+            await interaction.response.send_modal(LicenciaModal1())
 
         elif opcion == "ver":
-            # Ver mi licencia (ephemeral)
+            # ========== CON DEFER (EPHEMERAL) ==========
+            await interaction.response.defer(ephemeral=True)
+            
             licencias = cargar(LICENCIAS_FILE)
             user_id = str(interaction.user.id)
             
@@ -1385,7 +1382,9 @@ class PanelLicenciasView(discord.ui.View):
             await interaction.followup.send(embed=embed, ephemeral=True)
 
         elif opcion == "eliminar":
-            # Eliminar mi licencia (ephemeral)
+            # ========== CON DEFER (EPHEMERAL) ==========
+            await interaction.response.defer(ephemeral=True)
+            
             licencias = cargar(LICENCIAS_FILE)
             user_id = str(interaction.user.id)
             
