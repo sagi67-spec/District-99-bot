@@ -1302,15 +1302,18 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (MEJORADO) ====================
+    # ==================== PANEL DE LICENCIAS (CORREGIDO) ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
     @discord.ui.button(label="📝 Crear Licencia", style=discord.ButtonStyle.success, custom_id="crear_licencia")
     async def crear_licencia(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Responder inmediatamente para evitar timeout
+        await interaction.response.defer(ephemeral=True)
+
         if interaction.channel.id != CANAL_CREAR_LICENCIAS_ID:
-            await interaction.response.send_message(f"⚠️ Este panel solo funciona en <#{CANAL_CREAR_LICENCIAS_ID}>", ephemeral=True)
+            await interaction.followup.send(f"⚠️ Este panel solo funciona en <#{CANAL_CREAR_LICENCIAS_ID}>", ephemeral=True)
             return
 
         class LicenciaModal(discord.ui.Modal, title="📝 Solicitar Licencia"):
@@ -1372,6 +1375,7 @@ class PanelLicenciasView(discord.ui.View):
                     except:
                         pass
 
+                    # Generar la imagen con Pillow
                     archivo_licencia = await generar_licencia(modal_interaction.user, datos_licencia)
                     if archivo_licencia is None:
                         await modal_interaction.response.send_message("❌ Error al generar la imagen de la licencia.", ephemeral=True)
@@ -1402,7 +1406,8 @@ class PanelLicenciasView(discord.ui.View):
                     print(f"❌ Error en el panel de licencias: {e}")
                     await modal_interaction.response.send_message(f"❌ Error al crear la licencia: {e}", ephemeral=True)
 
-        await interaction.response.send_modal(LicenciaModal())
+        # Mostrar el modal
+        await interaction.followup.send_modal(LicenciaModal())
 
 @bot.tree.command(name="panel_licencias", description="📋 Panel para solicitar licencias - SOLO ADMIN/HOST")
 async def panel_licencias(interaction: discord.Interaction):
@@ -1434,6 +1439,7 @@ async def panel_licencias(interaction: discord.Interaction):
     
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
+    
     # ==================== PANEL DE TURNOS ====================
 class PanelTurnosView(discord.ui.View):
     def __init__(self):
