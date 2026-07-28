@@ -1195,7 +1195,10 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== COMANDO PARA SOLICITAR LICENCIA (CON MODAL DIVIDIDO) ====================
+    # ==================== COMANDO PARA SOLICITAR LICENCIA (CORREGIDO) ====================
+# Diccionario temporal para guardar datos entre modales
+datos_temporales = {}
+
 @bot.tree.command(name="solicitar_licencia", description="📝 Solicitar licencia de conducir - SOLO USUARIOS CON DNI")
 async def solicitar_licencia(interaction: discord.Interaction):
     # Verificar DNI
@@ -1224,8 +1227,9 @@ async def solicitar_licencia(interaction: discord.Interaction):
         edad = discord.ui.TextInput(label="Edad", placeholder="Ej: 25", max_length=3, required=True)
 
         async def on_submit(self, modal_interaction: discord.Interaction):
-            # Guardar datos en el objeto del modal para pasarlos al siguiente
-            modal_interaction.client_data = {
+            # Guardar datos en el diccionario temporal usando el ID del usuario como clave
+            user_id = str(modal_interaction.user.id)
+            datos_temporales[user_id] = {
                 "nombre": self.nombre.value,
                 "apellidos": self.apellidos.value,
                 "fecha_nacimiento": self.fecha_nacimiento.value,
@@ -1238,12 +1242,15 @@ async def solicitar_licencia(interaction: discord.Interaction):
 
                 async def on_submit(self, modal2_interaction: discord.Interaction):
                     try:
-                        # Recuperar datos del primer modal
-                        data = modal2_interaction.client_data
+                        # Recuperar datos del diccionario temporal
+                        user_id = str(modal2_interaction.user.id)
+                        data = datos_temporales.pop(user_id, None)
+                        
+                        if data is None:
+                            await modal2_interaction.response.send_message("❌ Error: No se encontraron los datos. Vuelve a intentarlo.", ephemeral=True)
+                            return
 
                         licencias = cargar(LICENCIAS_FILE)
-                        user_id = str(modal2_interaction.user.id)
-                        
                         if user_id in licencias:
                             await modal2_interaction.response.send_message("⚠️ Ya tienes una licencia activa.", ephemeral=True)
                             return
