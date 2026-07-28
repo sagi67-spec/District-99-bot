@@ -1302,33 +1302,30 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (CORREGIDO - SIN DEFER) ====================
+    # ==================== PANEL DE LICENCIAS (FINAL) ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="📝 Crear Licencia", style=discord.ButtonStyle.success, custom_id="crear_licencia")
+    @discord.ui.button(label="📝 Crear Licencia", style=discord.ButtonStyle.success)
     async def crear_licencia(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Verificar canal ANTES de abrir el modal
+        # VERIFICAR CANAL ANTES DE ABRIR EL MODAL
         if interaction.channel.id != CANAL_CREAR_LICENCIAS_ID:
             await interaction.response.send_message(f"⚠️ Este panel solo funciona en <#{CANAL_CREAR_LICENCIAS_ID}>", ephemeral=True)
             return
 
+        # DEFINIR EL MODAL (SIN DEFER, DIRECTO)
         class LicenciaModal(discord.ui.Modal, title="📝 Solicitar Licencia"):
             nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
             apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
-            fecha_nacimiento = discord.ui.TextInput(
-                label="Fecha de Nacimiento (DD/MM/YYYY)",
-                placeholder="Ej: 15/05/1998",
-                max_length=10,
-                required=True
-            )
+            fecha_nacimiento = discord.ui.TextInput(label="Fecha de Nacimiento (DD/MM/YYYY)", placeholder="Ej: 15/05/1998", max_length=10, required=True)
             edad = discord.ui.TextInput(label="Edad", placeholder="Ej: 25", max_length=3, required=True)
             oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
             user_roblox = discord.ui.TextInput(label="Usuario de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
 
             async def on_submit(self, modal_interaction: discord.Interaction):
                 try:
+                    # Validar fecha
                     if not validar_fecha(self.fecha_nacimiento.value):
                         await modal_interaction.response.send_message("⚠️ Formato de fecha inválido. Usa DD/MM/YYYY", ephemeral=True)
                         return
@@ -1402,7 +1399,7 @@ class PanelLicenciasView(discord.ui.View):
                     print(f"❌ Error en el panel de licencias: {e}")
                     await modal_interaction.response.send_message(f"❌ Error al crear la licencia: {e}", ephemeral=True)
 
-        # ========== ENVIAR EL MODAL DIRECTAMENTE (SIN DEFER) ==========
+        # ABRIR EL MODAL DIRECTAMENTE
         await interaction.response.send_modal(LicenciaModal())
 
 @bot.tree.command(name="panel_licencias", description="📋 Panel para solicitar licencias - SOLO ADMIN/HOST")
