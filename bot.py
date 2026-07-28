@@ -1195,12 +1195,25 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== COMANDO PARA SOLICITAR LICENCIA (CORREGIDO) ====================
-# Diccionario temporal para guardar datos entre modales
-datos_temporales = {}
-
+    # ==================== COMANDO PARA SOLICITAR LICENCIA (DIRECTO) ====================
 @bot.tree.command(name="solicitar_licencia", description="📝 Solicitar licencia de conducir - SOLO USUARIOS CON DNI")
-async def solicitar_licencia(interaction: discord.Interaction):
+@app_commands.describe(
+    nombre="Nombre",
+    apellidos="Apellidos",
+    fecha_nacimiento="Fecha de Nacimiento (DD/MM/YYYY)",
+    edad="Edad",
+    oficio="Oficio",
+    user_roblox="Usuario de Roblox"
+)
+async def solicitar_licencia(
+    interaction: discord.Interaction,
+    nombre: str,
+    apellidos: str,
+    fecha_nacimiento: str,
+    edad: int,
+    oficio: str,
+    user_roblox: str
+):
     # Verificar DNI
     dnis = cargar(DNI_FILE)
     user_id = str(interaction.user.id)
@@ -1215,111 +1228,68 @@ async def solicitar_licencia(interaction: discord.Interaction):
         await interaction.response.send_message("⚠️ Ya tienes una licencia activa.", ephemeral=True)
         return
 
-    class LicenciaModal1(discord.ui.Modal, title="📝 Solicitar Licencia (1/2)"):
-        nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
-        apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
-        fecha_nacimiento = discord.ui.TextInput(
-            label="Fecha de Nacimiento (DD/MM/YYYY)",
-            placeholder="Ej: 15/05/1998",
-            max_length=10,
-            required=True
+    # Validar fecha
+    if not validar_fecha(fecha_nacimiento):
+        await interaction.response.send_message("⚠️ Formato de fecha inválido. Usa DD/MM/YYYY", ephemeral=True)
+        return
+
+    try:
+        num_licencia = len(licencias) + 1
+        licencia_id = f"LIC-2026-{num_licencia:04d}"
+
+        datos_licencia = {
+            "nombre": nombre,
+            "apellidos": apellidos,
+            "fecha_nacimiento": fecha_nacimiento,
+            "edad": str(edad),
+            "oficio": oficio,
+            "user_roblox": user_roblox,
+            "user_discord": str(interaction.user),
+            "dni": dnis[user_id]["numero_dni"],
+            "licencia_id": licencia_id,
+            "fecha_expedicion": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
+            "fecha_expiracion": (datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"),
+            "estado": "Activa"
+        }
+        licencias[user_id] = datos_licencia
+        guardar(LICENCIAS_FILE, licencias)
+
+        try:
+            rol = discord.utils.get(interaction.guild.roles, name=ROL_LICENCIA_NOMBRE)
+            if rol:
+                await interaction.user.add_roles(rol)
+        except:
+            pass
+
+        archivo_licencia = await generar_licencia(interaction.user, datos_licencia)
+        if archivo_licencia is None:
+            await interaction.response.send_message("❌ Error al generar la imagen de la licencia.", ephemeral=True)
+            return
+
+        embed = discord.Embed(
+            title="🪪 **LICENCIA GENERADA**",
+            description=f"{interaction.user.mention}",
+            color=discord.Color.gold()
         )
-        edad = discord.ui.TextInput(label="Edad", placeholder="Ej: 25", max_length=3, required=True)
+        embed.set_image(url="attachment://licencia.png")
+        embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
 
-        async def on_submit(self, modal_interaction: discord.Interaction):
-            # Guardar datos en el diccionario temporal usando el ID del usuario como clave
-            user_id = str(modal_interaction.user.id)
-            datos_temporales[user_id] = {
-                "nombre": self.nombre.value,
-                "apellidos": self.apellidos.value,
-                "fecha_nacimiento": self.fecha_nacimiento.value,
-                "edad": self.edad.value
-            }
+        canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
+        if canal_registro:
+            await canal_registro.send(
+                content=f"📢 **Nueva licencia generada para {interaction.user.mention}**",
+                embed=embed,
+                file=archivo_licencia
+            )
+            await interaction.response.send_message("✅ **¡Licencia creada exitosamente!**", ephemeral=True)
+        else:
+            await interaction.response.send_message("❌ No se encontró el canal de registro de licencias.", ephemeral=True)
 
-            class LicenciaModal2(discord.ui.Modal, title="📝 Solicitar Licencia (2/2)"):
-                oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
-                user_roblox = discord.ui.TextInput(label="Usuario de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
+        await enviar_log(f"🪪 **{interaction.user.mention}** creó su licencia (Nº {licencia_id})", discord.Color.gold())
 
-                async def on_submit(self, modal2_interaction: discord.Interaction):
-                    try:
-                        # Recuperar datos del diccionario temporal
-                        user_id = str(modal2_interaction.user.id)
-                        data = datos_temporales.pop(user_id, None)
-                        
-                        if data is None:
-                            await modal2_interaction.response.send_message("❌ Error: No se encontraron los datos. Vuelve a intentarlo.", ephemeral=True)
-                            return
-
-                        licencias = cargar(LICENCIAS_FILE)
-                        if user_id in licencias:
-                            await modal2_interaction.response.send_message("⚠️ Ya tienes una licencia activa.", ephemeral=True)
-                            return
-
-                        dnis = cargar(DNI_FILE)
-                        if user_id not in dnis:
-                            await modal2_interaction.response.send_message("⚠️ Necesitas tener un DNI antes de solicitar licencia. Usa `/crear_dni`", ephemeral=True)
-                            return
-
-                        num_licencia = len(licencias) + 1
-                        licencia_id = f"LIC-2026-{num_licencia:04d}"
-
-                        datos_licencia = {
-                            "nombre": data["nombre"],
-                            "apellidos": data["apellidos"],
-                            "fecha_nacimiento": data["fecha_nacimiento"],
-                            "edad": data["edad"],
-                            "oficio": self.oficio.value,
-                            "user_roblox": self.user_roblox.value,
-                            "user_discord": str(modal2_interaction.user),
-                            "dni": dnis[user_id]["numero_dni"],
-                            "licencia_id": licencia_id,
-                            "fecha_expedicion": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
-                            "fecha_expiracion": (datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"),
-                            "estado": "Activa"
-                        }
-                        licencias[user_id] = datos_licencia
-                        guardar(LICENCIAS_FILE, licencias)
-
-                        try:
-                            rol = discord.utils.get(modal2_interaction.guild.roles, name=ROL_LICENCIA_NOMBRE)
-                            if rol:
-                                await modal2_interaction.user.add_roles(rol)
-                        except:
-                            pass
-
-                        archivo_licencia = await generar_licencia(modal2_interaction.user, datos_licencia)
-                        if archivo_licencia is None:
-                            await modal2_interaction.response.send_message("❌ Error al generar la imagen de la licencia.", ephemeral=True)
-                            return
-
-                        embed = discord.Embed(
-                            title="🪪 **LICENCIA GENERADA**",
-                            description=f"{modal2_interaction.user.mention}",
-                            color=discord.Color.gold()
-                        )
-                        embed.set_image(url="attachment://licencia.png")
-                        embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
-
-                        canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
-                        if canal_registro:
-                            await canal_registro.send(
-                                content=f"📢 **Nueva licencia generada para {modal2_interaction.user.mention}**",
-                                embed=embed,
-                                file=archivo_licencia
-                            )
-                            await modal2_interaction.response.send_message("✅ **¡Licencia creada exitosamente!**", ephemeral=True)
-                        else:
-                            await modal2_interaction.response.send_message("❌ No se encontró el canal de registro de licencias.", ephemeral=True)
-
-                        await enviar_log(f"🪪 **{modal2_interaction.user.mention}** creó su licencia (Nº {licencia_id})", discord.Color.gold())
-
-                    except Exception as e:
-                        print(f"❌ Error en el comando de licencia: {e}")
-                        await modal2_interaction.response.send_message(f"❌ Error al crear la licencia: {e}", ephemeral=True)
-
-            await modal_interaction.response.send_modal(LicenciaModal2())
-
-    await interaction.response.send_modal(LicenciaModal1())
+    except Exception as e:
+        print(f"❌ Error en el comando de licencia: {e}")
+        await interaction.response.send_message(f"❌ Error al crear la licencia: {e}", ephemeral=True)
     # ==================== PANEL DE TURNOS ====================
 class PanelTurnosView(discord.ui.View):
     def __init__(self):
