@@ -1302,18 +1302,16 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (CORREGIDO) ====================
+    # ==================== PANEL DE LICENCIAS (CORREGIDO - SIN DEFER) ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
     @discord.ui.button(label="📝 Crear Licencia", style=discord.ButtonStyle.success, custom_id="crear_licencia")
     async def crear_licencia(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Responder inmediatamente para evitar timeout
-        await interaction.response.defer(ephemeral=True)
-
+        # Verificar canal ANTES de abrir el modal
         if interaction.channel.id != CANAL_CREAR_LICENCIAS_ID:
-            await interaction.followup.send(f"⚠️ Este panel solo funciona en <#{CANAL_CREAR_LICENCIAS_ID}>", ephemeral=True)
+            await interaction.response.send_message(f"⚠️ Este panel solo funciona en <#{CANAL_CREAR_LICENCIAS_ID}>", ephemeral=True)
             return
 
         class LicenciaModal(discord.ui.Modal, title="📝 Solicitar Licencia"):
@@ -1331,7 +1329,6 @@ class PanelLicenciasView(discord.ui.View):
 
             async def on_submit(self, modal_interaction: discord.Interaction):
                 try:
-                    # Validar fecha
                     if not validar_fecha(self.fecha_nacimiento.value):
                         await modal_interaction.response.send_message("⚠️ Formato de fecha inválido. Usa DD/MM/YYYY", ephemeral=True)
                         return
@@ -1375,7 +1372,6 @@ class PanelLicenciasView(discord.ui.View):
                     except:
                         pass
 
-                    # Generar la imagen con Pillow
                     archivo_licencia = await generar_licencia(modal_interaction.user, datos_licencia)
                     if archivo_licencia is None:
                         await modal_interaction.response.send_message("❌ Error al generar la imagen de la licencia.", ephemeral=True)
@@ -1406,8 +1402,8 @@ class PanelLicenciasView(discord.ui.View):
                     print(f"❌ Error en el panel de licencias: {e}")
                     await modal_interaction.response.send_message(f"❌ Error al crear la licencia: {e}", ephemeral=True)
 
-        # Mostrar el modal
-        await interaction.followup.send_modal(LicenciaModal())
+        # ========== ENVIAR EL MODAL DIRECTAMENTE (SIN DEFER) ==========
+        await interaction.response.send_modal(LicenciaModal())
 
 @bot.tree.command(name="panel_licencias", description="📋 Panel para solicitar licencias - SOLO ADMIN/HOST")
 async def panel_licencias(interaction: discord.Interaction):
