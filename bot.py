@@ -1,6 +1,6 @@
 """
 Bot de Discord para servidor de rol (RP) — DISTRICT 99
-CÓDIGO COMPLETO - PARTE 1/7
+CÓDIGO COMPLETO MEJORADO - PARTE 1/7
 """
 
 import json
@@ -8,7 +8,7 @@ import os
 import re
 import asyncio
 from datetime import datetime, timezone, timedelta
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import requests
 from io import BytesIO
 
@@ -125,83 +125,158 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
-        # ==================== FUNCIÓN PARA GENERAR LICENCIA (DESDE CERO) ====================
+        # ==================== FUNCIÓN PARA GENERAR LICENCIA (MEJORADA) ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
-        # Crear fondo azul oscuro
-        img = Image.new('RGB', (800, 500), color=(20, 30, 50))
+        # ========== FONDO DEGRADADO AZUL-NEGRO ==========
+        img = Image.new('RGB', (900, 600), color=(10, 20, 40))
         draw = ImageDraw.Draw(img)
         
-        # Bordes dorados
-        draw.rectangle([10, 10, 790, 490], outline=(255, 215, 0), width=4)
-        draw.rectangle([20, 20, 780, 480], outline=(255, 215, 0), width=1)
+        # Degradado simple (rectángulo con transparencia)
+        for i in range(600):
+            color = (
+                10 + int((20 - 10) * (i / 600)),
+                20 + int((40 - 20) * (i / 600)),
+                40 + int((60 - 40) * (i / 600))
+            )
+            draw.line([(0, i), (900, i)], fill=color)
         
-        # Títulos
+        # ========== BORDE DORADO ==========
+        draw.rectangle([15, 15, 885, 585], outline=(255, 215, 0), width=6)
+        draw.rectangle([25, 25, 875, 575], outline=(255, 215, 0), width=2)
+        
+        # ========== LOGO Y TÍTULO ==========
         try:
-            font_titulo = ImageFont.truetype("arial.ttf", 36)
-            font_subtitulo = ImageFont.truetype("arial.ttf", 24)
-            font_datos = ImageFont.truetype("arial.ttf", 18)
+            font_logo = ImageFont.truetype("arial.ttf", 42)
+            font_sub = ImageFont.truetype("arial.ttf", 28)
+            font_datos = ImageFont.truetype("arial.ttf", 20)
+            font_datos_gold = ImageFont.truetype("arial.ttf", 20)
+            font_estado = ImageFont.truetype("arial.ttf", 26)
         except:
-            font_titulo = ImageFont.load_default()
-            font_subtitulo = ImageFont.load_default()
+            font_logo = ImageFont.load_default()
+            font_sub = ImageFont.load_default()
             font_datos = ImageFont.load_default()
+            font_datos_gold = ImageFont.load_default()
+            font_estado = ImageFont.load_default()
         
-        draw.text((400, 40), "DISTRICT 99 - GVRP", fill=(255, 215, 0), font=font_titulo, anchor="mt")
-        draw.text((400, 80), "LICENCIA DE CONDUCIR", fill=(255, 255, 255), font=font_subtitulo, anchor="mt")
-        draw.line([100, 110, 700, 110], fill=(255, 215, 0), width=2)
+        # Logo (texto)
+        draw.text((450, 35), "🏛️ DISTRICT 99", fill=(255, 215, 0), font=font_logo, anchor="mt")
+        draw.text((450, 85), "LICENCIA DE CONDUCIR", fill=(255, 255, 255), font=font_sub, anchor="mt")
         
-        # Círculo para la foto
-        circle_center = (130, 200)
-        circle_radius = 60
-        draw.ellipse(
-            [circle_center[0] - circle_radius, circle_center[1] - circle_radius,
-             circle_center[0] + circle_radius, circle_center[1] + circle_radius],
-            outline=(255, 215, 0), width=3
-        )
+        # Línea separadora dorada
+        draw.line([150, 120, 750, 120], fill=(255, 215, 0), width=3)
         
-        # Foto de perfil del usuario
+        # ========== AVATARES (DISCORD Y ROBLOX) ==========
+        # Avatar de Discord (izquierda)
+        avatar_x1, avatar_y1 = 120, 170
+        avatar_size = 100
         try:
             avatar_url = usuario.display_avatar.url
             avatar_response = requests.get(avatar_url, timeout=5)
             avatar_img = Image.open(BytesIO(avatar_response.content))
-            avatar_img = avatar_img.resize((120, 120))
+            avatar_img = avatar_img.resize((avatar_size, avatar_size))
             
-            mask = Image.new('L', (120, 120), 0)
+            mask = Image.new('L', (avatar_size, avatar_size), 0)
             mask_draw = ImageDraw.Draw(mask)
-            mask_draw.ellipse((0, 0, 120, 120), fill=255)
+            mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
             
-            avatar_circular = Image.new('RGBA', (120, 120))
+            avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
             avatar_circular.paste(avatar_img, (0, 0), mask)
             
-            img.paste(avatar_circular, (circle_center[0] - 60, circle_center[1] - 60), avatar_circular)
+            img.paste(avatar_circular, (avatar_x1, avatar_y1), avatar_circular)
+            draw.ellipse([avatar_x1-5, avatar_y1-5, avatar_x1+avatar_size+5, avatar_y1+avatar_size+5],
+                         outline=(255, 215, 0), width=4)
         except:
-            pass
+            # Si falla, dibujar círculo vacío
+            draw.ellipse([avatar_x1, avatar_y1, avatar_x1+avatar_size, avatar_y1+avatar_size],
+                         outline=(255, 215, 0), width=3)
+            draw.text((avatar_x1+30, avatar_y1+40), "DISCORD", fill=(255, 255, 255), font=font_datos)
         
-        # Datos del usuario
-        x_left = 250
-        y_start = 150
-        spacing = 35
+        # Avatar de Roblox (derecha)
+        avatar_x2, avatar_y2 = 250, 170
+        try:
+            user_roblox = datos_licencia['user_roblox']
+            search_url = f"https://users.roblox.com/v1/users/search?keyword={user_roblox}"
+            search_response = requests.get(search_url, timeout=5)
+            search_data = search_response.json()
+            
+            if search_data and search_data.get('data') and len(search_data['data']) > 0:
+                user_id = search_data['data'][0]['id']
+                foto_url = f"https://www.roblox.com/headshot-thumbnail/image?userId={user_id}&width=420&height=420"
+                foto_response = requests.get(foto_url, timeout=5)
+                foto_img = Image.open(BytesIO(foto_response.content))
+                foto_img = foto_img.resize((avatar_size, avatar_size))
+                
+                mask = Image.new('L', (avatar_size, avatar_size), 0)
+                mask_draw = ImageDraw.Draw(mask)
+                mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
+                
+                foto_circular = Image.new('RGBA', (avatar_size, avatar_size))
+                foto_circular.paste(foto_img, (0, 0), mask)
+                
+                img.paste(foto_circular, (avatar_x2, avatar_y2), foto_circular)
+                draw.ellipse([avatar_x2-5, avatar_y2-5, avatar_x2+avatar_size+5, avatar_y2+avatar_size+5],
+                             outline=(255, 215, 0), width=4)
+            else:
+                draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
+                             outline=(255, 215, 0), width=3)
+                draw.text((avatar_x2+20, avatar_y2+40), "ROBLOX", fill=(255, 255, 255), font=font_datos)
+        except:
+            draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
+                         outline=(255, 215, 0), width=3)
+            draw.text((avatar_x2+20, avatar_y2+40), "ROBLOX", fill=(255, 255, 255), font=font_datos)
         
-        draw.text((x_left, y_start), f"Nombre: {datos_licencia['nombre']}", fill=(255, 255, 255), font=font_datos)
-        y_start += spacing
-        draw.text((x_left, y_start), f"Apellidos: {datos_licencia['apellidos']}", fill=(255, 255, 255), font=font_datos)
-        y_start += spacing
-        draw.text((x_left, y_start), f"Fecha Nac.: {datos_licencia['fecha_nacimiento']}", fill=(255, 255, 255), font=font_datos)
-        y_start += spacing
-        draw.text((x_left, y_start), f"DNI: {datos_licencia['dni']}", fill=(255, 255, 255), font=font_datos)
-        y_start += spacing
-        draw.text((x_left, y_start), f"Licencia: {datos_licencia['licencia_id']}", fill=(255, 255, 255), font=font_datos)
-        y_start += spacing
-        draw.text((x_left, y_start), f"Expedición: {datos_licencia['fecha_expedicion']}", fill=(255, 255, 255), font=font_datos)
-        y_start += spacing
-        draw.text((x_left, y_start), f"Expiración: {datos_licencia['fecha_expiracion']}", fill=(255, 255, 255), font=font_datos)
-        y_start += spacing
-        draw.text((x_left, y_start), f"Firma: {usuario.name}", fill=(255, 215, 0), font=font_datos)
+        # ========== DATOS DEL USUARIO (COLUMNA IZQUIERDA) ==========
+        x_left = 380
+        y_start = 160
+        spacing = 38
         
-        # Estado y pie de página
-        draw.text((400, 460), "ACTIVA", fill=(0, 255, 0), font=font_subtitulo, anchor="mt")
-        draw.text((400, 485), "DISTRICT 99 - GVRP © 2026", fill=(150, 150, 150), font=font_datos, anchor="mt")
+        # Función para dibujar cada campo
+        def dibujar_campo(label, valor, y, es_gold=False):
+            draw.text((x_left, y), label, fill=(200, 200, 200), font=font_datos)
+            color = (255, 215, 0) if es_gold else (255, 255, 255)
+            draw.text((x_left + 170, y), valor, fill=color, font=font_datos)
         
+        # Nombre y Apellidos (juntos)
+        nombre_completo = f"{datos_licencia['nombre']} {datos_licencia['apellidos']}"
+        dibujar_campo("👤 Nombre:", nombre_completo, y_start)
+        y_start += spacing
+        
+        # Edad
+        dibujar_campo("🎂 Edad:", f"{datos_licencia['edad']} años", y_start)
+        y_start += spacing
+        
+        # Oficio
+        dibujar_campo("💼 Oficio:", datos_licencia['oficio'], y_start)
+        y_start += spacing
+        
+        # Roblox
+        dibujar_campo("🎮 Roblox:", datos_licencia['user_roblox'], y_start)
+        y_start += spacing
+        
+        # DNI (generado)
+        dibujar_campo("🪪 DNI:", datos_licencia['dni'], y_start)
+        y_start += spacing
+        
+        # Licencia (generada)
+        dibujar_campo("📋 Licencia:", datos_licencia['licencia_id'], y_start)
+        y_start += spacing
+        
+        # Fecha Expedición
+        dibujar_campo("📅 Expedición:", datos_licencia['fecha_expedicion'], y_start)
+        y_start += spacing
+        
+        # Fecha Expiración
+        dibujar_campo("📅 Expiración:", datos_licencia['fecha_expiracion'], y_start)
+        y_start += spacing
+        
+        # ========== ESTADO ==========
+        draw.text((450, 545), "🟢 ACTIVA", fill=(0, 255, 100), font=font_estado, anchor="mt")
+        
+        # ========== PIE DE PÁGINA ==========
+        draw.text((450, 575), "DISTRICT 99 - GVRP © 2026", fill=(100, 100, 150), font=font_datos, anchor="mt")
+        
+        # ========== GUARDAR ==========
         img_bytes = BytesIO()
         img.save(img_bytes, format='PNG')
         img_bytes.seek(0)
@@ -1252,7 +1327,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS ====================
+    # ==================== PANEL DE LICENCIAS (MEJORADO) ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1266,12 +1341,23 @@ class PanelLicenciasView(discord.ui.View):
         class LicenciaModal(discord.ui.Modal, title="📝 Solicitar Licencia"):
             nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
             apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
+            fecha_nacimiento = discord.ui.TextInput(
+                label="Fecha de Nacimiento (DD/MM/YYYY)",
+                placeholder="Ej: 15/05/1998",
+                max_length=10,
+                required=True
+            )
             edad = discord.ui.TextInput(label="Edad", placeholder="Ej: 25", max_length=3, required=True)
             oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
-            user_roblox = discord.ui.TextInput(label="User de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
+            user_roblox = discord.ui.TextInput(label="Usuario de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
 
             async def on_submit(self, modal_interaction: discord.Interaction):
                 try:
+                    # Validar fecha
+                    if not validar_fecha(self.fecha_nacimiento.value):
+                        await modal_interaction.response.send_message("⚠️ Formato de fecha inválido. Usa DD/MM/YYYY", ephemeral=True)
+                        return
+
                     licencias = cargar(LICENCIAS_FILE)
                     user_id = str(modal_interaction.user.id)
                     
@@ -1290,12 +1376,12 @@ class PanelLicenciasView(discord.ui.View):
                     datos_licencia = {
                         "nombre": self.nombre.value,
                         "apellidos": self.apellidos.value,
+                        "fecha_nacimiento": self.fecha_nacimiento.value,
                         "edad": self.edad.value,
                         "oficio": self.oficio.value,
                         "user_roblox": self.user_roblox.value,
                         "user_discord": str(modal_interaction.user),
                         "dni": dnis[user_id]["numero_dni"],
-                        "fecha_nacimiento": dnis[user_id]["fecha_nacimiento"],
                         "licencia_id": licencia_id,
                         "fecha_expedicion": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
                         "fecha_expiracion": (datetime.now(timezone.utc) + timedelta(days=730)).strftime("%d/%m/%Y"),
@@ -1360,9 +1446,10 @@ async def panel_licencias(interaction: discord.Interaction):
             "📌 **Datos solicitados:**\n"
             "• Nombre\n"
             "• Apellidos\n"
+            "• Fecha de Nacimiento (DD/MM/YYYY)\n"
             "• Edad\n"
             "• Oficio\n"
-            "• User de Roblox\n\n"
+            "• Usuario de Roblox\n\n"
             "⚠️ **Requisitos:**\n"
             "• Debes tener un DNI creado (`/crear_dni`)\n\n"
         ),
