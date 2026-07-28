@@ -1,6 +1,6 @@
 """
 Bot de Discord para servidor de rol (RP) — DISTRICT 99
-CÓDIGO COMPLETO MEJORADO - PARTE 1/7
+CÓDIGO COMPLETO Y CORREGIDO - PARTE 1/7
 """
 
 import json
@@ -8,7 +8,7 @@ import os
 import re
 import asyncio
 from datetime import datetime, timezone, timedelta
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 import requests
 from io import BytesIO
 
@@ -132,7 +132,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         img = Image.new('RGB', (900, 600), color=(10, 20, 40))
         draw = ImageDraw.Draw(img)
         
-        # Degradado simple (rectángulo con transparencia)
+        # Degradado simple
         for i in range(600):
             color = (
                 10 + int((20 - 10) * (i / 600)),
@@ -145,29 +145,23 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.rectangle([15, 15, 885, 585], outline=(255, 215, 0), width=6)
         draw.rectangle([25, 25, 875, 575], outline=(255, 215, 0), width=2)
         
-        # ========== LOGO Y TÍTULO ==========
+        # ========== TÍTULOS ==========
         try:
             font_logo = ImageFont.truetype("arial.ttf", 42)
             font_sub = ImageFont.truetype("arial.ttf", 28)
             font_datos = ImageFont.truetype("arial.ttf", 20)
-            font_datos_gold = ImageFont.truetype("arial.ttf", 20)
             font_estado = ImageFont.truetype("arial.ttf", 26)
         except:
             font_logo = ImageFont.load_default()
             font_sub = ImageFont.load_default()
             font_datos = ImageFont.load_default()
-            font_datos_gold = ImageFont.load_default()
             font_estado = ImageFont.load_default()
         
-        # Logo (texto)
         draw.text((450, 35), "🏛️ DISTRICT 99", fill=(255, 215, 0), font=font_logo, anchor="mt")
         draw.text((450, 85), "LICENCIA DE CONDUCIR", fill=(255, 255, 255), font=font_sub, anchor="mt")
-        
-        # Línea separadora dorada
         draw.line([150, 120, 750, 120], fill=(255, 215, 0), width=3)
         
-        # ========== AVATARES (DISCORD Y ROBLOX) ==========
-        # Avatar de Discord (izquierda)
+        # ========== AVATAR DE DISCORD ==========
         avatar_x1, avatar_y1 = 120, 170
         avatar_size = 100
         try:
@@ -187,12 +181,11 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             draw.ellipse([avatar_x1-5, avatar_y1-5, avatar_x1+avatar_size+5, avatar_y1+avatar_size+5],
                          outline=(255, 215, 0), width=4)
         except:
-            # Si falla, dibujar círculo vacío
             draw.ellipse([avatar_x1, avatar_y1, avatar_x1+avatar_size, avatar_y1+avatar_size],
                          outline=(255, 215, 0), width=3)
             draw.text((avatar_x1+30, avatar_y1+40), "DISCORD", fill=(255, 255, 255), font=font_datos)
         
-        # Avatar de Roblox (derecha)
+        # ========== AVATAR DE ROBLOX ==========
         avatar_x2, avatar_y2 = 250, 170
         try:
             user_roblox = datos_licencia['user_roblox']
@@ -226,54 +219,36 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                          outline=(255, 215, 0), width=3)
             draw.text((avatar_x2+20, avatar_y2+40), "ROBLOX", fill=(255, 255, 255), font=font_datos)
         
-        # ========== DATOS DEL USUARIO (COLUMNA IZQUIERDA) ==========
+        # ========== DATOS DEL USUARIO ==========
         x_left = 380
         y_start = 160
         spacing = 38
         
-        # Función para dibujar cada campo
         def dibujar_campo(label, valor, y, es_gold=False):
             draw.text((x_left, y), label, fill=(200, 200, 200), font=font_datos)
             color = (255, 215, 0) if es_gold else (255, 255, 255)
             draw.text((x_left + 170, y), valor, fill=color, font=font_datos)
         
-        # Nombre y Apellidos (juntos)
         nombre_completo = f"{datos_licencia['nombre']} {datos_licencia['apellidos']}"
         dibujar_campo("👤 Nombre:", nombre_completo, y_start)
         y_start += spacing
-        
-        # Edad
         dibujar_campo("🎂 Edad:", f"{datos_licencia['edad']} años", y_start)
         y_start += spacing
-        
-        # Oficio
         dibujar_campo("💼 Oficio:", datos_licencia['oficio'], y_start)
         y_start += spacing
-        
-        # Roblox
         dibujar_campo("🎮 Roblox:", datos_licencia['user_roblox'], y_start)
         y_start += spacing
-        
-        # DNI (generado)
         dibujar_campo("🪪 DNI:", datos_licencia['dni'], y_start)
         y_start += spacing
-        
-        # Licencia (generada)
         dibujar_campo("📋 Licencia:", datos_licencia['licencia_id'], y_start)
         y_start += spacing
-        
-        # Fecha Expedición
         dibujar_campo("📅 Expedición:", datos_licencia['fecha_expedicion'], y_start)
         y_start += spacing
-        
-        # Fecha Expiración
         dibujar_campo("📅 Expiración:", datos_licencia['fecha_expiracion'], y_start)
         y_start += spacing
         
         # ========== ESTADO ==========
         draw.text((450, 545), "🟢 ACTIVA", fill=(0, 255, 100), font=font_estado, anchor="mt")
-        
-        # ========== PIE DE PÁGINA ==========
         draw.text((450, 575), "DISTRICT 99 - GVRP © 2026", fill=(100, 100, 150), font=font_datos, anchor="mt")
         
         # ========== GUARDAR ==========
