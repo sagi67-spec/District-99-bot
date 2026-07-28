@@ -1215,7 +1215,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (UN SOLO MODAL) ====================
+    # ==================== PANEL DE LICENCIAS (CORREGIDO - CON CLAUDE) ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1232,7 +1232,8 @@ class PanelLicenciasView(discord.ui.View):
         opcion = select.values[0]
         
         if opcion == "crear":
-            # ========== VERIFICACIONES ==========
+            # ========== SIN DEFER - MODAL DIRECTO ==========
+            # Verificar DNI
             dnis = cargar(DNI_FILE)
             user_id = str(interaction.user.id)
             
@@ -1240,12 +1241,12 @@ class PanelLicenciasView(discord.ui.View):
                 await interaction.response.send_message("⚠️ Necesitas tener un DNI antes de solicitar licencia. Usa `/crear_dni`", ephemeral=True)
                 return
 
+            # Verificar licencia activa
             licencias = cargar(LICENCIAS_FILE)
             if user_id in licencias:
                 await interaction.response.send_message("⚠️ Ya tienes una licencia activa.", ephemeral=True)
                 return
 
-            # ========== UN SOLO MODAL (CON 6 CAMPOS) ==========
             class LicenciaModal(discord.ui.Modal, title="📝 Solicitar Licencia"):
                 nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
                 apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
@@ -1330,11 +1331,11 @@ class PanelLicenciasView(discord.ui.View):
                         print(f"❌ Error en el panel de licencias: {e}")
                         await modal_interaction.response.send_message(f"❌ Error al crear la licencia: {e}", ephemeral=True)
 
-            # ========== ABRIR MODAL DIRECTAMENTE ==========
+            # ========== ABRIR MODAL DIRECTAMENTE (SIN DEFER) ==========
             await interaction.response.send_modal(LicenciaModal())
 
         elif opcion == "ver":
-            # ========== VER LICENCIA (EPHEMERAL) ==========
+            # ========== CON DEFER (EPHEMERAL) ==========
             await interaction.response.defer(ephemeral=True)
             
             licencias = cargar(LICENCIAS_FILE)
@@ -1365,7 +1366,7 @@ class PanelLicenciasView(discord.ui.View):
             await interaction.followup.send(embed=embed, ephemeral=True)
 
         elif opcion == "eliminar":
-            # ========== ELIMINAR LICENCIA (EPHEMERAL) ==========
+            # ========== CON DEFER (EPHEMERAL) ==========
             await interaction.response.defer(ephemeral=True)
             
             licencias = cargar(LICENCIAS_FILE)
