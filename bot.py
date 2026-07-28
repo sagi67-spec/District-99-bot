@@ -1315,19 +1315,13 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (CON SELECT) ====================
+    # ==================== PANEL DE LICENCIAS (CON BOTÓN) ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.select(
-        placeholder="📝 Haz clic aquí para solicitar licencia",
-        options=[
-            discord.SelectOption(label="Solicitar Licencia", value="crear", emoji="📝", description="Completa el formulario para tu licencia")
-        ],
-        custom_id="solicitar_licencia_select"
-    )
-    async def solicitar_licencia_select(self, interaction: discord.Interaction, select: discord.ui.Select):
+    @discord.ui.button(label="📝 Crear Licencia", style=discord.ButtonStyle.success)
+    async def crear_licencia(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.channel.id != CANAL_CREAR_LICENCIAS_ID:
             await interaction.response.send_message(f"⚠️ Este panel solo funciona en <#{CANAL_CREAR_LICENCIAS_ID}>", ephemeral=True)
             return
@@ -1335,12 +1329,7 @@ class PanelLicenciasView(discord.ui.View):
         class LicenciaModal(discord.ui.Modal, title="📝 Solicitar Licencia"):
             nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
             apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
-            fecha_nacimiento = discord.ui.TextInput(
-                label="Fecha de Nacimiento (DD/MM/YYYY)",
-                placeholder="Ej: 15/05/1998",
-                max_length=10,
-                required=True
-            )
+            fecha_nacimiento = discord.ui.TextInput(label="Fecha de Nacimiento (DD/MM/YYYY)", placeholder="Ej: 15/05/1998", max_length=10, required=True)
             edad = discord.ui.TextInput(label="Edad", placeholder="Ej: 25", max_length=3, required=True)
             oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
             user_roblox = discord.ui.TextInput(label="Usuario de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
@@ -1435,7 +1424,7 @@ async def panel_licencias(interaction: discord.Interaction):
     embed = discord.Embed(
         title="📋 **PANEL DE LICENCIAS**",
         description=(
-            "Selecciona la opción del menú para completar tus datos y generar tu licencia de conducir de **DISTRICT 99 - GVRP**.\n\n"
+            "Presiona el botón para completar tus datos y generar tu licencia de conducir de **DISTRICT 99 - GVRP**.\n\n"
             "📌 **Datos solicitados:**\n"
             "• Nombre\n"
             "• Apellidos\n"
@@ -1452,6 +1441,7 @@ async def panel_licencias(interaction: discord.Interaction):
     
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
+    
     # ==================== PANEL DE TURNOS ====================
 class PanelTurnosView(discord.ui.View):
     def __init__(self):
