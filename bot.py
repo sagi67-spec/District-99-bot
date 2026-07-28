@@ -129,6 +129,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         img = Image.new('RGB', (900, 600), color=(10, 20, 40))
         draw = ImageDraw.Draw(img)
         
+        # Degradado
         for i in range(600):
             color = (
                 10 + int((20 - 10) * (i / 600)),
@@ -157,7 +158,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.text((450, 85), "LICENCIA DE CONDUCIR", fill=(255, 255, 255), font=font_sub, anchor="mt")
         draw.line([150, 120, 750, 120], fill=(255, 215, 0), width=3)
         
-        # Avatar de Discord
+        # ========== AVATAR DE DISCORD ==========
         avatar_x1, avatar_y1 = 120, 170
         avatar_size = 100
         try:
@@ -181,41 +182,54 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                          outline=(255, 215, 0), width=3)
             draw.text((avatar_x1+30, avatar_y1+40), "DISCORD", fill=(255, 255, 255), font=font_datos)
         
-        # Avatar de Roblox
+        # ========== AVATAR DE ROBLOX (AUTOMÁTICO) ==========
         avatar_x2, avatar_y2 = 250, 170
         try:
             user_roblox = datos_licencia['user_roblox']
+            # Buscar usuario en Roblox (API correcta)
             search_url = f"https://users.roblox.com/v1/users/search?keyword={user_roblox}"
             search_response = requests.get(search_url, timeout=5)
             search_data = search_response.json()
             
             if search_data and search_data.get('data') and len(search_data['data']) > 0:
                 user_id = search_data['data'][0]['id']
-                foto_url = f"https://www.roblox.com/headshot-thumbnail/image?userId={user_id}&width=420&height=420"
+                # Obtener avatar (API correcta)
+                foto_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={user_id}&size=420x420&format=Png"
                 foto_response = requests.get(foto_url, timeout=5)
-                foto_img = Image.open(BytesIO(foto_response.content))
-                foto_img = foto_img.resize((avatar_size, avatar_size))
+                foto_data = foto_response.json()
                 
-                mask = Image.new('L', (avatar_size, avatar_size), 0)
-                mask_draw = ImageDraw.Draw(mask)
-                mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
-                
-                foto_circular = Image.new('RGBA', (avatar_size, avatar_size))
-                foto_circular.paste(foto_img, (0, 0), mask)
-                
-                img.paste(foto_circular, (avatar_x2, avatar_y2), foto_circular)
-                draw.ellipse([avatar_x2-5, avatar_y2-5, avatar_x2+avatar_size+5, avatar_y2+avatar_size+5],
-                             outline=(255, 215, 0), width=4)
+                if foto_data and foto_data.get('data') and len(foto_data['data']) > 0:
+                    # Descargar la imagen del avatar
+                    avatar_roblox_url = foto_data['data'][0]['imageUrl']
+                    avatar_roblox_response = requests.get(avatar_roblox_url, timeout=5)
+                    foto_img = Image.open(BytesIO(avatar_roblox_response.content))
+                    foto_img = foto_img.resize((avatar_size, avatar_size))
+                    
+                    mask = Image.new('L', (avatar_size, avatar_size), 0)
+                    mask_draw = ImageDraw.Draw(mask)
+                    mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
+                    
+                    foto_circular = Image.new('RGBA', (avatar_size, avatar_size))
+                    foto_circular.paste(foto_img, (0, 0), mask)
+                    
+                    img.paste(foto_circular, (avatar_x2, avatar_y2), foto_circular)
+                    draw.ellipse([avatar_x2-5, avatar_y2-5, avatar_x2+avatar_size+5, avatar_y2+avatar_size+5],
+                                 outline=(255, 215, 0), width=4)
+                else:
+                    draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
+                                 outline=(255, 215, 0), width=3)
+                    draw.text((avatar_x2+20, avatar_y2+40), "ROBLOX", fill=(255, 255, 255), font=font_datos)
             else:
                 draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
                              outline=(255, 215, 0), width=3)
                 draw.text((avatar_x2+20, avatar_y2+40), "ROBLOX", fill=(255, 255, 255), font=font_datos)
-        except:
+        except Exception as e:
+            print(f"❌ Error al obtener la foto de Roblox: {e}")
             draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
                          outline=(255, 215, 0), width=3)
             draw.text((avatar_x2+20, avatar_y2+40), "ROBLOX", fill=(255, 255, 255), font=font_datos)
         
-        # Datos del usuario
+        # ========== DATOS DEL USUARIO ==========
         x_left = 380
         y_start = 160
         spacing = 38
