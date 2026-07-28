@@ -125,29 +125,82 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
-        # ==================== FUNCIÓN PARA GENERAR LICENCIA ====================
+        # ==================== FUNCIÓN PARA GENERAR LICENCIA (DESDE CERO) ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
-    URL_BASE = "https://cdn.discordapp.com/attachments/1530830750310596618/1531390643384094830/17849514822062.png?ex=6a690a2d&is=6a67b8ad&hm=dac6894563acdb8e1220d4f132329731e8bfe819502881f9d1f1044f2d9e279a&"
-    
     try:
-        response = requests.get(URL_BASE, timeout=10)
-        img = Image.open(BytesIO(response.content))
+        # Crear fondo azul oscuro
+        img = Image.new('RGB', (800, 500), color=(20, 30, 50))
         draw = ImageDraw.Draw(img)
         
+        # Bordes dorados
+        draw.rectangle([10, 10, 790, 490], outline=(255, 215, 0), width=4)
+        draw.rectangle([20, 20, 780, 480], outline=(255, 215, 0), width=1)
+        
+        # Títulos
         try:
+            font_titulo = ImageFont.truetype("arial.ttf", 36)
+            font_subtitulo = ImageFont.truetype("arial.ttf", 24)
             font_datos = ImageFont.truetype("arial.ttf", 18)
         except:
+            font_titulo = ImageFont.load_default()
+            font_subtitulo = ImageFont.load_default()
             font_datos = ImageFont.load_default()
         
-        # ========== COORDENADAS CORRECTAS ==========
-        draw.text((180, 135), datos_licencia['nombre'], fill=(0, 0, 0), font=font_datos)
-        draw.text((180, 175), datos_licencia['apellidos'], fill=(0, 0, 0), font=font_datos)
-        draw.text((180, 215), datos_licencia['fecha_nacimiento'], fill=(0, 0, 0), font=font_datos)
-        draw.text((180, 255), datos_licencia['dni'], fill=(0, 0, 0), font=font_datos)
-        draw.text((180, 295), datos_licencia['licencia_id'], fill=(0, 0, 0), font=font_datos)
-        draw.text((180, 335), datos_licencia['fecha_expedicion'], fill=(0, 0, 0), font=font_datos)
-        draw.text((180, 375), datos_licencia['fecha_expiracion'], fill=(0, 0, 0), font=font_datos)
-        draw.text((180, 415), usuario.name, fill=(0, 0, 0), font=font_datos)
+        draw.text((400, 40), "DISTRICT 99 - GVRP", fill=(255, 215, 0), font=font_titulo, anchor="mt")
+        draw.text((400, 80), "LICENCIA DE CONDUCIR", fill=(255, 255, 255), font=font_subtitulo, anchor="mt")
+        draw.line([100, 110, 700, 110], fill=(255, 215, 0), width=2)
+        
+        # Círculo para la foto
+        circle_center = (130, 200)
+        circle_radius = 60
+        draw.ellipse(
+            [circle_center[0] - circle_radius, circle_center[1] - circle_radius,
+             circle_center[0] + circle_radius, circle_center[1] + circle_radius],
+            outline=(255, 215, 0), width=3
+        )
+        
+        # Foto de perfil del usuario
+        try:
+            avatar_url = usuario.display_avatar.url
+            avatar_response = requests.get(avatar_url, timeout=5)
+            avatar_img = Image.open(BytesIO(avatar_response.content))
+            avatar_img = avatar_img.resize((120, 120))
+            
+            mask = Image.new('L', (120, 120), 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.ellipse((0, 0, 120, 120), fill=255)
+            
+            avatar_circular = Image.new('RGBA', (120, 120))
+            avatar_circular.paste(avatar_img, (0, 0), mask)
+            
+            img.paste(avatar_circular, (circle_center[0] - 60, circle_center[1] - 60), avatar_circular)
+        except:
+            pass
+        
+        # Datos del usuario
+        x_left = 250
+        y_start = 150
+        spacing = 35
+        
+        draw.text((x_left, y_start), f"Nombre: {datos_licencia['nombre']}", fill=(255, 255, 255), font=font_datos)
+        y_start += spacing
+        draw.text((x_left, y_start), f"Apellidos: {datos_licencia['apellidos']}", fill=(255, 255, 255), font=font_datos)
+        y_start += spacing
+        draw.text((x_left, y_start), f"Fecha Nac.: {datos_licencia['fecha_nacimiento']}", fill=(255, 255, 255), font=font_datos)
+        y_start += spacing
+        draw.text((x_left, y_start), f"DNI: {datos_licencia['dni']}", fill=(255, 255, 255), font=font_datos)
+        y_start += spacing
+        draw.text((x_left, y_start), f"Licencia: {datos_licencia['licencia_id']}", fill=(255, 255, 255), font=font_datos)
+        y_start += spacing
+        draw.text((x_left, y_start), f"Expedición: {datos_licencia['fecha_expedicion']}", fill=(255, 255, 255), font=font_datos)
+        y_start += spacing
+        draw.text((x_left, y_start), f"Expiración: {datos_licencia['fecha_expiracion']}", fill=(255, 255, 255), font=font_datos)
+        y_start += spacing
+        draw.text((x_left, y_start), f"Firma: {usuario.name}", fill=(255, 215, 0), font=font_datos)
+        
+        # Estado y pie de página
+        draw.text((400, 460), "ACTIVA", fill=(0, 255, 0), font=font_subtitulo, anchor="mt")
+        draw.text((400, 485), "DISTRICT 99 - GVRP © 2026", fill=(150, 150, 150), font=font_datos, anchor="mt")
         
         img_bytes = BytesIO()
         img.save(img_bytes, format='PNG')
