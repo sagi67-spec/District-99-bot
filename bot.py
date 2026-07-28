@@ -1517,7 +1517,7 @@ async def eliminar_licencia_admin(
     
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó la licencia de **{usuario.mention}** (Motivo: {motivo if motivo else 'No especificado'})", discord.Color.red())
-    # ==================== PANEL DE TURNOS (CON SELECT) ====================
+    # ==================== PANEL DE TURNOS (CON SELECT - EPHEMERAL) ====================
 class PanelTurnosView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1565,7 +1565,7 @@ class PanelTurnosView(discord.ui.View):
             embed.set_image(url=URL_TURNOS)
             embed.set_footer(text="¡Buena suerte en tu patrullaje! 🚓")
             
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             await enviar_log(f"🚔 **{interaction.user.mention}** inició turno de patrullaje", discord.Color.green())
 
         elif opcion == "finalizar":
@@ -1609,7 +1609,7 @@ class PanelTurnosView(discord.ui.View):
             embed.set_image(url=URL_TURNOS)
             embed.set_footer(text="¡Buen trabajo oficial! 🌟")
             
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             await enviar_log(f"🚔 **{interaction.user.mention}** finalizó turno (Duración: {horas}h {minutos}m, Multas: {len(multas_turno)})", discord.Color.red())
 
         elif opcion == "activos":
@@ -1651,7 +1651,7 @@ class PanelTurnosView(discord.ui.View):
                 )
             
             embed.set_image(url=URL_TURNOS)
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="panel_turnos", description="📋 Panel para gestionar turnos - SOLO ADMIN/HOST")
 async def panel_turnos(interaction: discord.Interaction):
@@ -1666,7 +1666,8 @@ async def panel_turnos(interaction: discord.Interaction):
             "🚔 **Iniciar Turno** → Comienza tu patrullaje.\n"
             "🛑 **Finalizar Turno** → Termina tu patrullaje.\n"
             "📋 **Turnos Activos** → Ver policías en servicio.\n\n"
-            "⚠️ **Requisitos:** Debes tener el rol **Wsp│👮** para usar estas opciones."
+            "⚠️ **Requisitos:** Debes tener el rol **Wsp│👮** para usar estas opciones.\n"
+            "🔒 **Privacidad:** Las respuestas solo las verás tú."
         ),
         color=discord.Color.blue()
     )
