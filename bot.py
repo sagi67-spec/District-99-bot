@@ -1215,7 +1215,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (CON SELECT) ====================
+    # ==================== PANEL DE LICENCIAS (CON SELECT - SIN CUSTOM_ID) ====================
 # Diccionario temporal para datos entre modales
 datos_temporales = {}
 
@@ -1233,6 +1233,9 @@ class PanelLicenciasView(discord.ui.View):
         custom_id="licencias_select"
     )
     async def licencias_select(self, interaction: discord.Interaction, select: discord.ui.Select):
+        # Defer inmediato para evitar timeout
+        await interaction.response.defer(ephemeral=True)
+        
         opcion = select.values[0]
         
         if opcion == "crear":
@@ -1241,15 +1244,16 @@ class PanelLicenciasView(discord.ui.View):
             user_id = str(interaction.user.id)
             
             if user_id not in dnis:
-                await interaction.response.send_message("⚠️ Necesitas tener un DNI antes de solicitar licencia. Usa `/crear_dni`", ephemeral=True)
+                await interaction.followup.send("⚠️ Necesitas tener un DNI antes de solicitar licencia. Usa `/crear_dni`", ephemeral=True)
                 return
 
             # Verificar licencia activa
             licencias = cargar(LICENCIAS_FILE)
             if user_id in licencias:
-                await interaction.response.send_message("⚠️ Ya tienes una licencia activa.", ephemeral=True)
+                await interaction.followup.send("⚠️ Ya tienes una licencia activa.", ephemeral=True)
                 return
 
+            # MODAL 1 - SIN CUSTOM_ID
             class LicenciaModal1(discord.ui.Modal, title="📝 Solicitar Licencia (1/2)"):
                 nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
                 apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
@@ -1265,6 +1269,7 @@ class PanelLicenciasView(discord.ui.View):
                         "edad": self.edad.value
                     }
 
+                    # MODAL 2 - SIN CUSTOM_ID
                     class LicenciaModal2(discord.ui.Modal, title="📝 Solicitar Licencia (2/2)"):
                         oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
                         user_roblox = discord.ui.TextInput(label="Usuario de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
@@ -1347,7 +1352,8 @@ class PanelLicenciasView(discord.ui.View):
 
                     await modal_interaction.response.send_modal(LicenciaModal2())
 
-            await interaction.response.send_modal(LicenciaModal1())
+            # ABRIR MODAL CON FOLLOWUP
+            await interaction.followup.send_modal(LicenciaModal1())
 
         elif opcion == "ver":
             # Ver mi licencia (ephemeral)
@@ -1355,7 +1361,7 @@ class PanelLicenciasView(discord.ui.View):
             user_id = str(interaction.user.id)
             
             if user_id not in licencias:
-                await interaction.response.send_message("❌ No tienes una licencia activa.", ephemeral=True)
+                await interaction.followup.send("❌ No tienes una licencia activa.", ephemeral=True)
                 return
             
             datos = licencias[user_id]
@@ -1376,7 +1382,7 @@ class PanelLicenciasView(discord.ui.View):
             embed.add_field(name="📌 **Estado**", value="🟢 ACTIVA", inline=True)
             embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
             
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
         elif opcion == "eliminar":
             # Eliminar mi licencia (ephemeral)
@@ -1384,7 +1390,7 @@ class PanelLicenciasView(discord.ui.View):
             user_id = str(interaction.user.id)
             
             if user_id not in licencias:
-                await interaction.response.send_message("❌ No tienes una licencia activa.", ephemeral=True)
+                await interaction.followup.send("❌ No tienes una licencia activa.", ephemeral=True)
                 return
             
             datos = licencias[user_id]
@@ -1408,7 +1414,7 @@ class PanelLicenciasView(discord.ui.View):
             embed.add_field(name="📋 **Licencia**", value=licencia_id, inline=True)
             embed.set_footer(text=f"Eliminada el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
             
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.followup.send(embed=embed, ephemeral=True)
             await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó su propia licencia (Nº {licencia_id})", discord.Color.red())
 
 @bot.tree.command(name="panel_licencias", description="📋 Panel para gestionar licencias - SOLO ADMIN/HOST")
@@ -1424,7 +1430,8 @@ async def panel_licencias(interaction: discord.Interaction):
             "📝 **Crear Licencia** → Solicita tu licencia de conducir.\n"
             "👁️ **Ver Mi Licencia** → Muestra los datos de tu licencia.\n"
             "🗑️ **Eliminar Mi Licencia** → Elimina tu licencia actual.\n\n"
-            "⚠️ **Requisitos:** Debes tener un DNI creado (`/crear_dni`) para solicitar licencia."
+            "⚠️ **Requisitos:** Debes tener un DNI creado (`/crear_dni`) para solicitar licencia.\n"
+            "🔒 **Privacidad:** Las respuestas solo las verás tú."
         ),
         color=discord.Color.gold()
     )
