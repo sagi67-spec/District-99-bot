@@ -125,36 +125,53 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         # ==================== FUNCIÓN PARA GENERAR LICENCIA (MEJORADA) ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
-        # ========== FONDO BLANCO/GRIS CLARO ==========
-        img = Image.new('RGB', (1000, 700), color=(245, 245, 245))  # Fondo gris claro
+        # ========== FONDO CON DEGRADADO Y EFECTO ==========
+        img = Image.new('RGB', (1000, 700), color=(15, 20, 35))  # Fondo oscuro elegante
         draw = ImageDraw.Draw(img)
         
-        # ========== BORDE DORADO ==========
-        draw.rectangle([15, 15, 985, 685], outline=(255, 215, 0), width=8)
-        draw.rectangle([30, 30, 970, 670], outline=(255, 215, 0), width=3)
+        # Degradado sutil (más claro en el centro)
+        for i in range(700):
+            color = (
+                15 + int((40 - 15) * (i / 700)),
+                20 + int((50 - 20) * (i / 700)),
+                35 + int((80 - 35) * (i / 700))
+            )
+            draw.line([(0, i), (1000, i)], fill=color)
+        
+        # ========== BORDE DORADO (DOBLE) ==========
+        draw.rectangle([12, 12, 988, 688], outline=(255, 215, 0), width=6)
+        draw.rectangle([22, 22, 978, 678], outline=(255, 215, 0), width=2)
+        
+        # Esquinas decoradas (pequeños círculos dorados)
+        for x, y in [(25, 25), (975, 25), (25, 675), (975, 675)]:
+            draw.ellipse([x-6, y-6, x+6, y+6], fill=(255, 215, 0))
         
         # ========== LOGO Y TÍTULO ==========
         try:
-            font_logo = ImageFont.truetype("arial.ttf", 52)
-            font_sub = ImageFont.truetype("arial.ttf", 32)
-            font_datos = ImageFont.truetype("arial.ttf", 24)
-            font_estado = ImageFont.truetype("arial.ttf", 30)
+            font_logo = ImageFont.truetype("arial.ttf", 48)
+            font_sub = ImageFont.truetype("arial.ttf", 28)
+            font_datos = ImageFont.truetype("arial.ttf", 22)
+            font_estado = ImageFont.truetype("arial.ttf", 32)
         except:
             font_logo = ImageFont.load_default()
             font_sub = ImageFont.load_default()
             font_datos = ImageFont.load_default()
             font_estado = ImageFont.load_default()
         
-        # Logo en dorado
+        # Logo con efecto sombra
+        draw.text((502, 38), "🏛️ DISTRICT 99", fill=(0, 0, 0), font=font_logo, anchor="mt")  # Sombra
         draw.text((500, 35), "🏛️ DISTRICT 99", fill=(255, 215, 0), font=font_logo, anchor="mt")
-        draw.text((500, 95), "LICENCIA DE CONDUCIR", fill=(0, 0, 0), font=font_sub, anchor="mt")
         
-        # Línea separadora dorada
-        draw.line([100, 140, 900, 140], fill=(255, 215, 0), width=4)
+        draw.text((502, 92), "LICENCIA DE CONDUCIR", fill=(0, 0, 0), font=font_sub, anchor="mt")  # Sombra
+        draw.text((500, 90), "LICENCIA DE CONDUCIR", fill=(255, 255, 255), font=font_sub, anchor="mt")
         
-        # ========== AVATAR DE DISCORD (GRANDE) ==========
-        avatar_size = 150
-        avatar_x1, avatar_y1 = 130, 180
+        # Línea separadora dorada con efecto
+        draw.line([120, 130, 880, 130], fill=(255, 215, 0), width=3)
+        draw.line([125, 133, 875, 133], fill=(255, 255, 200), width=1)
+        
+        # ========== AVATAR DE DISCORD (GRANDE, CON MARCO) ==========
+        avatar_size = 140
+        avatar_x1, avatar_y1 = 120, 180
         
         try:
             avatar_url = usuario.display_avatar.url
@@ -162,6 +179,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             avatar_img = Image.open(BytesIO(avatar_response.content))
             avatar_img = avatar_img.resize((avatar_size, avatar_size))
             
+            # Máscara circular
             mask = Image.new('L', (avatar_size, avatar_size), 0)
             mask_draw = ImageDraw.Draw(mask)
             mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
@@ -169,18 +187,21 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
             avatar_circular.paste(avatar_img, (0, 0), mask)
             
+            # Marco dorado con borde doble
             img.paste(avatar_circular, (avatar_x1, avatar_y1), avatar_circular)
-            draw.ellipse([avatar_x1-6, avatar_y1-6, avatar_x1+avatar_size+6, avatar_y1+avatar_size+6],
+            draw.ellipse([avatar_x1-8, avatar_y1-8, avatar_x1+avatar_size+8, avatar_y1+avatar_size+8],
                          outline=(255, 215, 0), width=6)
+            draw.ellipse([avatar_x1-4, avatar_y1-4, avatar_x1+avatar_size+4, avatar_y1+avatar_size+4],
+                         outline=(255, 255, 200), width=2)
             # Etiqueta
-            draw.text((avatar_x1 + 30, avatar_y1 + avatar_size + 15), "DISCORD", fill=(100, 100, 100), font=font_datos)
+            draw.text((avatar_x1 + 20, avatar_y1 + avatar_size + 20), "DISCORD", fill=(200, 200, 200), font=font_datos)
         except:
             draw.ellipse([avatar_x1, avatar_y1, avatar_x1+avatar_size, avatar_y1+avatar_size],
                          outline=(200, 200, 200), width=3)
-            draw.text((avatar_x1 + 40, avatar_y1 + 60), "DISCORD", fill=(0, 0, 0), font=font_datos)
+            draw.text((avatar_x1 + 30, avatar_y1 + 60), "DISCORD", fill=(200, 200, 200), font=font_datos)
         
-        # ========== AVATAR DE ROBLOX (GRANDE) ==========
-        avatar_x2, avatar_y2 = 330, 180
+        # ========== AVATAR DE ROBLOX (GRANDE, CON MARCO) ==========
+        avatar_x2, avatar_y2 = 310, 180
         
         try:
             user_roblox = datos_licencia['user_roblox']
@@ -208,33 +229,38 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                     foto_circular.paste(foto_img, (0, 0), mask)
                     
                     img.paste(foto_circular, (avatar_x2, avatar_y2), foto_circular)
-                    draw.ellipse([avatar_x2-6, avatar_y2-6, avatar_x2+avatar_size+6, avatar_y2+avatar_size+6],
+                    draw.ellipse([avatar_x2-8, avatar_y2-8, avatar_x2+avatar_size+8, avatar_y2+avatar_size+8],
                                  outline=(255, 215, 0), width=6)
-                    draw.text((avatar_x2 + 40, avatar_y2 + avatar_size + 15), "ROBLOX", fill=(100, 100, 100), font=font_datos)
+                    draw.ellipse([avatar_x2-4, avatar_y2-4, avatar_x2+avatar_size+4, avatar_y2+avatar_size+4],
+                                 outline=(255, 255, 200), width=2)
+                    draw.text((avatar_x2 + 30, avatar_y2 + avatar_size + 20), "ROBLOX", fill=(200, 200, 200), font=font_datos)
                 else:
                     draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
                                  outline=(200, 200, 200), width=3)
-                    draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(0, 0, 0), font=font_datos)
+                    draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(200, 200, 200), font=font_datos)
             else:
                 draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
                              outline=(200, 200, 200), width=3)
-                draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(0, 0, 0), font=font_datos)
+                draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(200, 200, 200), font=font_datos)
         except Exception as e:
             print(f"❌ Error al obtener la foto de Roblox: {e}")
             draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
                          outline=(200, 200, 200), width=3)
-            draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(0, 0, 0), font=font_datos)
+            draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(200, 200, 200), font=font_datos)
         
-        # ========== DATOS DEL USUARIO (TABLA LIMPIA) ==========
-        x_left = 530
-        y_start = 180
-        spacing = 45
+        # ========== FONDO DE LA LICENCIA (TARJETA INTERNA) ==========
+        draw.rectangle([490, 170, 960, 620], outline=(255, 215, 0), width=2, fill=(25, 30, 50))
+        draw.rectangle([495, 175, 955, 615], outline=(255, 215, 0), width=1)
         
-        # Función para dibujar cada campo en negro
+        # ========== DATOS DEL USUARIO (DENTRO DE LA TARJETA) ==========
+        x_left = 510
+        y_start = 195
+        spacing = 44
+        
         def dibujar_campo(label, valor, y, es_gold=False):
-            draw.text((x_left, y), label, fill=(50, 50, 50), font=font_datos)
-            color = (255, 215, 0) if es_gold else (0, 0, 0)
-            draw.text((x_left + 220, y), valor, fill=color, font=font_datos)
+            draw.text((x_left, y), label, fill=(180, 180, 200), font=font_datos)
+            color = (255, 215, 0) if es_gold else (255, 255, 255)
+            draw.text((x_left + 200, y), valor, fill=color, font=font_datos)
         
         nombre_completo = f"{datos_licencia['nombre']} {datos_licencia['apellidos']}"
         dibujar_campo("👤 Nombre:", nombre_completo, y_start)
@@ -254,11 +280,16 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         dibujar_campo("📅 Expiración:", datos_licencia['fecha_expiracion'], y_start)
         y_start += spacing
         
-        # ========== ESTADO (VERDE, GRANDE) ==========
-        draw.text((500, 620), "🟢 ACTIVA", fill=(0, 180, 0), font=font_estado, anchor="mt")
+        # ========== ESTADO (GRANDE, CON EFECTO) ==========
+        draw.text((502, 638), "🟢 ACTIVA", fill=(0, 0, 0), font=font_estado, anchor="mt")  # Sombra
+        draw.text((500, 635), "🟢 ACTIVA", fill=(0, 220, 100), font=font_estado, anchor="mt")
         
-        # ========== PIE DE PÁGINA ==========
-        draw.text((500, 660), "DISTRICT 99 - GVRP © 2026", fill=(150, 150, 150), font=font_datos, anchor="mt")
+        # ========== LOGO DEL SERVIDOR EN EL PIE ==========
+        # Línea decorativa
+        draw.line([200, 660, 800, 660], fill=(255, 215, 0), width=2)
+        
+        # Pie de página
+        draw.text((500, 678), "DISTRICT 99 - GVRP © 2026", fill=(150, 150, 160), font=font_datos, anchor="mt")
         
         # ========== GUARDAR ==========
         img_bytes = BytesIO()
