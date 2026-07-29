@@ -69,7 +69,7 @@ ROL_HOST_NOMBRE = "Host│🎮"
 ROL_POLICIA_NOMBRE = "Wsp│👮"
 ROL_DNI_NOMBRE = "Dni│🪪"
 ROL_LICENCIA_NOMBRE = "Licencia│🚗"
-ROL_TRABAJANDO_NOMBRE = "Trabajando"  # <--- NUEVO ROL
+ROL_TRABAJANDO_NOMBRE = "Trabajando│🛠️"  # <--- NUEVO ROL
 
 def tiene_rol(member, rol_buscado):
     if not member:
@@ -1370,7 +1370,7 @@ async def panel_licencias(interaction: discord.Interaction):
     
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
-    # ==================== PANEL DE TURNOS (CON ROL TRABAJANDO) ====================
+    # ==================== PANEL DE TURNOS (CON ROL TRABAJANDO│🛠️) ====================
 class PanelTurnosView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1398,13 +1398,13 @@ class PanelTurnosView(discord.ui.View):
                 await interaction.response.send_message("⚠️ Ya tienes un turno activo. Usa la opción **Finalizar Turno**.", ephemeral=True)
                 return
             
-            # ========== ASIGNAR ROL "TRABAJANDO" ==========
+            # ========== ASIGNAR ROL "Trabajando│🛠️" ==========
             try:
                 rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
                 if rol_trabajando:
                     await interaction.user.add_roles(rol_trabajando)
-            except:
-                pass
+            except Exception as e:
+                print(f"❌ Error al asignar rol {ROL_TRABAJANDO_NOMBRE}: {e}")
             
             turnos[user_id] = {
                 "policia_id": user_id,
@@ -1441,13 +1441,13 @@ class PanelTurnosView(discord.ui.View):
                 await interaction.response.send_message("❌ No tienes un turno activo. Usa la opción **Iniciar Turno**.", ephemeral=True)
                 return
             
-            # ========== QUITAR ROL "TRABAJANDO" ==========
+            # ========== QUITAR ROL "Trabajando│🛠️" ==========
             try:
                 rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
                 if rol_trabajando and rol_trabajando in interaction.user.roles:
                     await interaction.user.remove_roles(rol_trabajando)
-            except:
-                pass
+            except Exception as e:
+                print(f"❌ Error al quitar rol {ROL_TRABAJANDO_NOMBRE}: {e}")
             
             turno = turnos[user_id]
             inicio = datetime.fromisoformat(turno["inicio"])
@@ -1538,7 +1538,7 @@ async def panel_turnos(interaction: discord.Interaction):
             "📋 **Turnos Activos** → Ver policías en servicio.\n\n"
             "⚠️ **Requisitos:** Debes tener el rol **Wsp│👮** para usar estas opciones.\n"
             "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
-            "🔄 **Rol automático:** Al iniciar turno, se te asignará el rol **Trabajando**."
+            f"🔄 **Rol automático:** Al iniciar turno, se te asignará el rol **{ROL_TRABAJANDO_NOMBRE}**."
         ),
         color=discord.Color.blue()
     )
