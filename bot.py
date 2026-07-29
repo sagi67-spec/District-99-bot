@@ -1362,7 +1362,7 @@ async def panel_licencias(interaction: discord.Interaction):
             "• Esta licencia es **personal e intransferible**.\n"
             "• Si pierdes tu licencia, deberás solicitar una nueva.\n"
             "• La licencia tiene una vigencia de **2 años**.\n\n"
-            "🖼️ **Tu licencia se generará automáticamente** y se enviará a este canal."
+            "🖼️ **Tu licencia se generará automáticamente** y se enviará a el canal de registrar licencias."
         ),
         color=discord.Color.gold()
     )
