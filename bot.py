@@ -69,7 +69,7 @@ ROL_HOST_NOMBRE = "Host│🎮"
 ROL_POLICIA_NOMBRE = "Wsp│👮"
 ROL_DNI_NOMBRE = "Dni│🪪"
 ROL_LICENCIA_NOMBRE = "Licencia│🚗"
-ROL_TRABAJANDO_NOMBRE = "Trabajando│🛠️"  # <--- NUEVO ROL
+ROL_TRABAJANDO_NOMBRE = "Trabajando│🛠️"
 
 def tiene_rol(member, rol_buscado):
     if not member:
@@ -126,21 +126,21 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         # ==================== FUNCIÓN PARA GENERAR LICENCIA (MEJORADA) ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
-        # ========== FONDO GRIS CLARO ==========
+        # Fondo gris claro
         img = Image.new('RGB', (1000, 700), color=(240, 240, 245))
         draw = ImageDraw.Draw(img)
         
-        # ========== BORDE DORADO GRUESO ==========
+        # Borde dorado grueso
         draw.rectangle([10, 10, 990, 690], outline=(255, 215, 0), width=10)
         draw.rectangle([20, 20, 980, 680], outline=(255, 215, 0), width=3)
         draw.rectangle([30, 30, 970, 670], outline=(200, 200, 200), width=1)
         
-        # ========== TÍTULOS ==========
+        # Títulos (LETRAS MÁS GRANDES)
         try:
-            font_logo = ImageFont.truetype("arial.ttf", 56)  # MÁS GRANDE
-            font_sub = ImageFont.truetype("arial.ttf", 36)   # MÁS GRANDE
-            font_datos = ImageFont.truetype("arial.ttf", 26) # MÁS GRANDE
-            font_estado = ImageFont.truetype("arial.ttf", 38) # MÁS GRANDE
+            font_logo = ImageFont.truetype("arial.ttf", 56)
+            font_sub = ImageFont.truetype("arial.ttf", 36)
+            font_datos = ImageFont.truetype("arial.ttf", 26)
+            font_estado = ImageFont.truetype("arial.ttf", 38)
         except:
             font_logo = ImageFont.load_default()
             font_sub = ImageFont.load_default()
@@ -152,7 +152,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.text((500, 105), "LICENCIA DE CONDUCIR", fill=(0, 0, 0), font=font_sub, anchor="mt")
         draw.line([100, 155, 900, 155], fill=(255, 215, 0), width=4)
         
-        # ========== AVATAR DISCORD ==========
+        # Avatar Discord
         avatar_size = 150
         avatar_x1, avatar_y1 = 120, 200
         
@@ -178,7 +178,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                          outline=(200, 200, 200), width=3)
             draw.text((avatar_x1 + 30, avatar_y1 + 60), "DISCORD", fill=(100, 100, 100), font=font_datos)
         
-        # ========== AVATAR ROBLOX ==========
+        # Avatar Roblox
         avatar_x2, avatar_y2 = 320, 200
         
         try:
@@ -223,15 +223,13 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                          outline=(200, 200, 200), width=3)
             draw.text((avatar_x2 + 40, avatar_y2 + 60), "ROBLOX", fill=(100, 100, 100), font=font_datos)
         
-        # ========== TABLA DE DATOS ==========
+        # Tabla de datos
         x_left = 500
         y_start = 200
         
-        # Fondo de la tabla (azul oscuro)
         draw.rectangle([480, 185, 960, 620], outline=(255, 215, 0), width=2, fill=(25, 35, 60))
         draw.rectangle([485, 190, 955, 615], outline=(200, 200, 200), width=1)
         
-        # Título de la tabla
         draw.text((500, 200), "DATOS DEL CIUDADANO", fill=(255, 215, 0), font=font_datos)
         draw.line([500, 225, 940, 225], fill=(255, 215, 0), width=2)
         
@@ -262,14 +260,13 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         dibujar_campo("📅 Expiración:", datos_licencia['fecha_expiracion'], y_start)
         y_start += spacing
         
-        # ========== ESTADO ==========
+        # Estado
         draw.text((500, 640), "✅ ACTIVA", fill=(0, 220, 100), font=font_estado, anchor="mt")
         
-        # ========== PIE DE PÁGINA ==========
+        # Pie de página
         draw.line([200, 665, 800, 665], fill=(255, 215, 0), width=2)
         draw.text((500, 680), "DISTRICT 99 - GVRP © 2026", fill=(150, 150, 150), font=font_datos, anchor="mt")
         
-        # ========== GUARDAR ==========
         img_bytes = BytesIO()
         img.save(img_bytes, format='PNG')
         img_bytes.seek(0)
@@ -1231,7 +1228,7 @@ class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
 @app_commands.describe(staff="Staff a evaluar")
 async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
     await interaction.response.send_modal(EvalModal(staff))
-    # ==================== PANEL DE LICENCIAS (CON BOTÓN - MENSAJE LIMPIO) ====================
+    # ==================== PANEL DE LICENCIAS ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1362,7 +1359,7 @@ async def panel_licencias(interaction: discord.Interaction):
             "• Esta licencia es **personal e intransferible**.\n"
             "• Si pierdes tu licencia, deberás solicitar una nueva.\n"
             "• La licencia tiene una vigencia de **2 años**.\n\n"
-            "🖼️ **Tu licencia se generará automáticamente** y se enviará a el canal de registrar licencias."
+            "🖼️ **Tu licencia se generará automáticamente** y se enviará a este canal."
         ),
         color=discord.Color.gold()
     )
@@ -1398,7 +1395,7 @@ class PanelTurnosView(discord.ui.View):
                 await interaction.response.send_message("⚠️ Ya tienes un turno activo. Usa la opción **Finalizar Turno**.", ephemeral=True)
                 return
             
-            # ========== ASIGNAR ROL "Trabajando│🛠️" ==========
+            # Asignar rol "Trabajando│🛠️"
             try:
                 rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
                 if rol_trabajando:
@@ -1441,7 +1438,7 @@ class PanelTurnosView(discord.ui.View):
                 await interaction.response.send_message("❌ No tienes un turno activo. Usa la opción **Iniciar Turno**.", ephemeral=True)
                 return
             
-            # ========== QUITAR ROL "Trabajando│🛠️" ==========
+            # Quitar rol "Trabajando│🛠️"
             try:
                 rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
                 if rol_trabajando and rol_trabajando in interaction.user.roles:
@@ -1547,7 +1544,104 @@ async def panel_turnos(interaction: discord.Interaction):
     
     view = PanelTurnosView()
     await interaction.response.send_message(embed=embed, view=view)
-    # ==================== STATS ====================
+
+# ==================== ENVIAR MENSAJE (SOLO ADMINS - CON IMÁGENES FLEXIBLES) ====================
+@bot.tree.command(name="enviar", description="📢 Enviar un mensaje como el bot - SOLO ADMINS")
+@app_commands.describe(
+    titulo="El título del anuncio (opcional)",
+    mensaje="El mensaje que quieres que el bot envíe",
+    canal="El canal donde quieres enviarlo (opcional - por defecto el canal actual)",
+    imagen_principal="Imagen grande (abajo del embed) - sube una imagen",
+    imagen_miniatura="Imagen pequeña (arriba a la derecha) - sube una imagen",
+    posicion_imagen="¿Dónde quieres la imagen principal?"
+)
+@app_commands.choices(
+    posicion_imagen=[
+        app_commands.Choice(name="📷 Abajo (principal)", value="abajo"),
+        app_commands.Choice(name="📷 Arriba (miniatura)", value="arriba"),
+        app_commands.Choice(name="📷 Ambas (principal + miniatura)", value="ambas"),
+    ]
+)
+async def enviar_mensaje(
+    interaction: discord.Interaction,
+    mensaje: str,
+    titulo: str = None,
+    canal: discord.TextChannel = None,
+    imagen_principal: discord.Attachment = None,
+    imagen_miniatura: discord.Attachment = None,
+    posicion_imagen: app_commands.Choice[str] = None
+):
+    # Verificar que sea admin
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("⛔ Solo **Admins** pueden usar este comando.", ephemeral=True)
+        return
+
+    # Si no se especifica canal, usar el canal actual
+    canal_destino = canal if canal else interaction.channel
+
+    # Crear embed con el mensaje
+    embed = discord.Embed(
+        title=titulo if titulo else "📢 ANUNCIO OFICIAL",
+        description=mensaje,
+        color=discord.Color.gold()
+    )
+    embed.set_author(
+        name="DISTRICT 99 - GVRP",
+        icon_url=interaction.guild.icon.url if interaction.guild.icon else None
+    )
+    embed.set_footer(
+        text=f"Enviado por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}",
+        icon_url=interaction.user.display_avatar.url
+    )
+
+    # Validar imágenes
+    if posicion_imagen and posicion_imagen.value == "ambas" and not imagen_principal:
+        await interaction.response.send_message("⚠️ Seleccionaste **Ambas** pero no subiste una imagen principal.", ephemeral=True)
+        return
+
+    # Colocar imágenes según posición
+    if posicion_imagen:
+        if posicion_imagen.value == "abajo":
+            if imagen_principal:
+                embed.set_image(url=imagen_principal.url)
+            else:
+                await interaction.response.send_message("⚠️ No subiste una imagen principal.", ephemeral=True)
+                return
+
+        elif posicion_imagen.value == "arriba":
+            if imagen_principal:
+                embed.set_thumbnail(url=imagen_principal.url)
+            else:
+                await interaction.response.send_message("⚠️ No subiste una imagen para la miniatura.", ephemeral=True)
+                return
+
+        elif posicion_imagen.value == "ambas":
+            if imagen_principal:
+                embed.set_image(url=imagen_principal.url)
+            if imagen_miniatura:
+                embed.set_thumbnail(url=imagen_miniatura.url)
+
+    else:
+        # Por defecto, imagen principal abajo
+        if imagen_principal:
+            embed.set_image(url=imagen_principal.url)
+
+    # Validar que haya imagen si se seleccionó posición
+    if posicion_imagen and not imagen_principal and not imagen_miniatura:
+        await interaction.response.send_message("⚠️ Seleccionaste una posición pero no subiste ninguna imagen.", ephemeral=True)
+        return
+
+    # Enviar el mensaje
+    try:
+        await canal_destino.send(embed=embed)
+        await interaction.response.send_message(
+            f"✅ **Mensaje enviado a {canal_destino.mention}**",
+            ephemeral=True
+        )
+        await enviar_log(f"📢 **{interaction.user.mention}** envió un anuncio a {canal_destino.mention}", discord.Color.gold())
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Error al enviar el mensaje: {e}", ephemeral=True)
+        # ==================== STATS ====================
 @bot.tree.command(name="stats", description="📊 Estadísticas del bot - SOLO ADMINS")
 async def stats(interaction: discord.Interaction):
     if not interaction.user.guild_permissions.administrator:
