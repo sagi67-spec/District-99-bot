@@ -75,8 +75,8 @@ ROL_POLICIA_NOMBRE = "Wsp│👮"
 ROL_DNI_NOMBRE = "Dni│🪪"
 ROL_LICENCIA_NOMBRE = "Licencia│🚗"
 ROL_TRABAJANDO_NOMBRE = "Trabajando│🛠️"
-ROL_EMS_NOMBRE = "EMS│🚑"
-ROL_DOT_NOMBRE = "DOT│🚦"
+ROL_EMS_NOMBRE = "Ems│🚑"      # <--- CON ESPACIO
+ROL_DOT_NOMBRE = "Dot│🚧"
 
 def tiene_rol(member, rol_buscado):
     if not member:
@@ -1428,6 +1428,7 @@ class PanelWSPView(discord.ui.View):
                 await interaction.response.send_message("⚠️ Ya tienes un turno activo. Usa la opción **Finalizar Turno**.", ephemeral=True)
                 return
             
+            # Asignar rol "Trabajando│🛠️" (solo si el usuario tiene el rol de policía)
             try:
                 rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
                 if rol_trabajando:
@@ -1470,6 +1471,7 @@ class PanelWSPView(discord.ui.View):
                 await interaction.response.send_message("❌ No tienes un turno activo. Usa la opción **Iniciar Turno**.", ephemeral=True)
                 return
             
+            # Quitar rol "Trabajando│🛠️"
             try:
                 rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
                 if rol_trabajando and rol_trabajando in interaction.user.roles:
@@ -1705,6 +1707,7 @@ class PanelDOTView(discord.ui.View):
                 await interaction.response.send_message("⛔ Solo **DOT** pueden usar esta opción.", ephemeral=True)
                 return
             
+            # Asignar rol "Trabajando│🛠️"
             try:
                 rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
                 if rol_trabajando:
@@ -1733,6 +1736,7 @@ class PanelDOTView(discord.ui.View):
                 await interaction.response.send_message("⛔ Solo **DOT** pueden usar esta opción.", ephemeral=True)
                 return
             
+            # Quitar rol "Trabajando│🛠️"
             try:
                 rol_trabajando = discord.utils.get(interaction.guild.roles, name=ROL_TRABAJANDO_NOMBRE)
                 if rol_trabajando and rol_trabajando in interaction.user.roles:
@@ -1781,7 +1785,7 @@ async def panel_dot(interaction: discord.Interaction):
             "🚦 **Iniciar Servicio** → Comienza tu servicio de DOT.\n"
             "🛑 **Finalizar Servicio** → Termina tu servicio.\n"
             "📋 **Servicio Activo** → Ver DOT en servicio.\n\n"
-            "⚠️ **Requisitos:** Debes tener el rol **DOT│🚦** para usar estas opciones.\n"
+            "⚠️ **Requisitos:** Debes tener el rol **Dot│🚧** para usar estas opciones.\n"
             "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
             f"🔄 **Rol automático:** Al iniciar servicio, se te asignará el rol **{ROL_TRABAJANDO_NOMBRE}**."
         ),
