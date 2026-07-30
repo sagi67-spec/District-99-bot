@@ -1,6 +1,6 @@
 """
 Bot de Discord para servidor de rol (RP) — DISTRICT 99
-CÓDIGO COMPLETO - PARTE 1/7
+CÓDIGO COMPLETO - PARTE 1/8
 """
 
 import json
@@ -1399,7 +1399,8 @@ async def panel_licencias(interaction: discord.Interaction):
     
     view = PanelLicenciasView()
     await interaction.response.send_message(embed=embed, view=view)
-    # ==================== PANEL DE WSP (POLICÍA) ====================
+
+# ==================== PANEL DE WSP (POLICÍA) ====================
 class PanelWSPView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1574,8 +1575,7 @@ async def panel_wsp(interaction: discord.Interaction):
     
     view = PanelWSPView()
     await interaction.response.send_message(embed=embed, view=view)
-
-# ==================== PANEL DE EMS ====================
+    # ==================== PANEL DE EMS ====================
 class PanelEMSView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1780,8 +1780,108 @@ async def panel_dot(interaction: discord.Interaction):
             "Selecciona una opción del menú para gestionar tu servicio de tránsito.\n\n"
             "🚦 **Iniciar Servicio** → Comienza tu servicio de DOT.\n"
             "🛑 **Finalizar Servicio** → Termina tu servicio.\n"
-            "📋 **Servicio Activo** → 
-    # ==================== STATS ====================
+            "📋 **Servicio Activo** → Ver DOT en servicio.\n\n"
+            "⚠️ **Requisitos:** Debes tener el rol **DOT│🚦** para usar estas opciones.\n"
+            "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
+            f"🔄 **Rol automático:** Al iniciar servicio, se te asignará el rol **{ROL_TRABAJANDO_NOMBRE}**."
+        ),
+        color=discord.Color.blue()
+    )
+    embed.set_image(url=URL_IMG_DOT)
+    embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
+    
+    view = PanelDOTView()
+    await interaction.response.send_message(embed=embed, view=view)
+    # ==================== ENVIAR MENSAJE (SOLO ADMINS - CON IMÁGENES FLEXIBLES) ====================
+@bot.tree.command(name="enviar", description="📢 Enviar un mensaje como el bot - SOLO ADMINS")
+@app_commands.describe(
+    titulo="El título del anuncio (opcional)",
+    mensaje="El mensaje que quieres que el bot envíe",
+    canal="El canal donde quieres enviarlo (opcional - por defecto el canal actual)",
+    imagen_principal="Imagen grande (abajo del embed) - sube una imagen",
+    imagen_miniatura="Imagen pequeña (arriba a la derecha) - sube una imagen",
+    posicion_imagen="¿Dónde quieres la imagen principal?"
+)
+@app_commands.choices(
+    posicion_imagen=[
+        app_commands.Choice(name="📷 Abajo (principal)", value="abajo"),
+        app_commands.Choice(name="📷 Arriba (miniatura)", value="arriba"),
+        app_commands.Choice(name="📷 Ambas (principal + miniatura)", value="ambas"),
+    ]
+)
+async def enviar_mensaje(
+    interaction: discord.Interaction,
+    mensaje: str,
+    titulo: str = None,
+    canal: discord.TextChannel = None,
+    imagen_principal: discord.Attachment = None,
+    imagen_miniatura: discord.Attachment = None,
+    posicion_imagen: app_commands.Choice[str] = None
+):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("⛔ Solo **Admins** pueden usar este comando.", ephemeral=True)
+        return
+
+    canal_destino = canal if canal else interaction.channel
+
+    embed = discord.Embed(
+        title=titulo if titulo else "📢 ANUNCIO OFICIAL",
+        description=mensaje,
+        color=discord.Color.gold()
+    )
+    embed.set_author(
+        name="DISTRICT 99 - GVRP",
+        icon_url=interaction.guild.icon.url if interaction.guild.icon else None
+    )
+    embed.set_footer(
+        text=f"Enviado por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}",
+        icon_url=interaction.user.display_avatar.url
+    )
+
+    if posicion_imagen and posicion_imagen.value == "ambas" and not imagen_principal:
+        await interaction.response.send_message("⚠️ Seleccionaste **Ambas** pero no subiste una imagen principal.", ephemeral=True)
+        return
+
+    if posicion_imagen:
+        if posicion_imagen.value == "abajo":
+            if imagen_principal:
+                embed.set_image(url=imagen_principal.url)
+            else:
+                await interaction.response.send_message("⚠️ No subiste una imagen principal.", ephemeral=True)
+                return
+
+        elif posicion_imagen.value == "arriba":
+            if imagen_principal:
+                embed.set_thumbnail(url=imagen_principal.url)
+            else:
+                await interaction.response.send_message("⚠️ No subiste una imagen para la miniatura.", ephemeral=True)
+                return
+
+        elif posicion_imagen.value == "ambas":
+            if imagen_principal:
+                embed.set_image(url=imagen_principal.url)
+            if imagen_miniatura:
+                embed.set_thumbnail(url=imagen_miniatura.url)
+
+    else:
+        if imagen_principal:
+            embed.set_image(url=imagen_principal.url)
+
+    if posicion_imagen and not imagen_principal and not imagen_miniatura:
+        await interaction.response.send_message("⚠️ Seleccionaste una posición pero no subiste ninguna imagen.", ephemeral=True)
+        return
+
+    try:
+        await canal_destino.send(embed=embed)
+        await interaction.response.send_message(
+            f"✅ **Mensaje enviado a {canal_destino.mention}**",
+            ephemeral=True
+        )
+        await enviar_log(f"📢 **{interaction.user.mention}** envió un anuncio a {canal_destino.mention}", discord.Color.gold())
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Error al enviar el mensaje: {e}", ephemeral=True)
+
+# ==================== STATS ====================
 @bot.tree.command(name="stats", description="📊 Estadísticas del bot - SOLO ADMINS")
 async def stats(interaction: discord.Interaction):
     if not interaction.user.guild_permissions.administrator:
