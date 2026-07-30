@@ -75,7 +75,7 @@ ROL_POLICIA_NOMBRE = "Wsp│👮"
 ROL_DNI_NOMBRE = "Dni│🪪"
 ROL_LICENCIA_NOMBRE = "Licencia│🚗"
 ROL_TRABAJANDO_NOMBRE = "Trabajando│🛠️"
-ROL_EMS_NOMBRE = "Ems│🚑"      # <--- CON ESPACIO
+ROL_EMS_NOMBRE = "Ems│ 🚑"      # <--- CON ESPACIO
 ROL_DOT_NOMBRE = "Dot│🚧"
 
 def tiene_rol(member, rol_buscado):
