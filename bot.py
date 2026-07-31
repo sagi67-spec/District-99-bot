@@ -340,17 +340,19 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
 # ==================== FUNCIÓN PARA GENERAR DNI (PROVISIONAL) ====================
 async def generar_dni(usuario: discord.Member, datos_dni: dict):
     try:
-        W, H = 600, 420
+        W, H = 950, 600
         img = Image.new('RGB', (W, H), color=(18, 18, 22))
         draw = ImageDraw.Draw(img)
 
         # ========== COLORES ==========
         DORADO = (212, 175, 90)
+        DORADO_CLARO = (235, 205, 140)
         BLANCO = (255, 255, 255)
         GRIS = (160, 165, 175)
+        NEGRO_CARD = (22, 22, 26)
         VERDE = (60, 210, 100)
 
-        # ========== FONDO ==========
+        # ========== FONDO: MARCO METÁLICO + INTERIOR NEGRO ==========
         for i in range(H):
             t = i / H
             r = int(150 + 60 * abs(0.5 - t) * 2)
@@ -358,38 +360,81 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
             b = int(165 + 60 * abs(0.5 - t) * 2)
             draw.line([(0, i), (W, i)], fill=(r, g, b))
 
-        margen = 15
-        draw.rectangle([margen, margen, W - margen, H - margen], fill=(22, 22, 26))
+        margen = 20
+        draw.rectangle([margen, margen, W - margen, H - margen], fill=NEGRO_CARD)
 
-        # ========== FUENTES ==========
+        # ========== FUENTES (Montserrat, las mismas de la licencia) ==========
+        FUENTE_BASE = "fonts/Montserrat-Bold.ttf"
+        FUENTE_NORMAL = "fonts/Montserrat-Regular.ttf"
         try:
-            font_title = ImageFont.truetype("arial.ttf", 24)
-            font_sub = ImageFont.truetype("arial.ttf", 14)
-            font_label = ImageFont.truetype("arial.ttf", 12)
-            font_value = ImageFont.truetype("arial.ttf", 18)
-            font_footer = ImageFont.truetype("arial.ttf", 10)
-            font_status = ImageFont.truetype("arial.ttf", 16)
-        except:
-            font_title = font_sub = font_label = font_value = font_footer = font_status = ImageFont.load_default()
+            font_logo = ImageFont.truetype(FUENTE_BASE, 46)
+            font_logo_sub = ImageFont.truetype(FUENTE_BASE, 20)
+            font_title = ImageFont.truetype(FUENTE_BASE, 32)
+            font_sub = ImageFont.truetype(FUENTE_NORMAL, 17)
+            font_num = ImageFont.truetype(FUENTE_BASE, 19)
+            font_label = ImageFont.truetype(FUENTE_NORMAL, 16)
+            font_value = ImageFont.truetype(FUENTE_BASE, 26)
+            font_status = ImageFont.truetype(FUENTE_BASE, 24)
+            font_footer = ImageFont.truetype(FUENTE_NORMAL, 13)
+            font_avatar_label = ImageFont.truetype(FUENTE_BASE, 15)
+        except Exception as e:
+            print(f"⚠️ Error cargando fuentes: {e}")
+            font_logo = font_logo_sub = font_title = font_sub = font_num = font_label = font_value = font_status = font_footer = font_avatar_label = ImageFont.load_default()
 
-        # ========== ESQUINAS ==========
-        esquina = 25
-        bx1, by1, bx2, by2 = margen + 8, margen + 8, W - margen - 8, H - margen - 8
+        # ========== ESQUINAS DECORADAS ==========
+        esquina = 40
+        grosor = 4
+        bx1, by1, bx2, by2 = margen + 12, margen + 12, W - margen - 12, H - margen - 12
         for (cx, cy, dx, dy) in [(bx1, by1, 1, 1), (bx2, by1, -1, 1), (bx1, by2, 1, -1), (bx2, by2, -1, -1)]:
-            draw.line([(cx, cy), (cx + esquina * dx, cy)], fill=DORADO, width=2)
-            draw.line([(cx, cy), (cx, cy + esquina * dy)], fill=DORADO, width=2)
+            draw.line([(cx, cy), (cx + esquina * dx, cy)], fill=DORADO, width=grosor)
+            draw.line([(cx, cy), (cx, cy + esquina * dy)], fill=DORADO, width=grosor)
+
+        # ========== LOGO "99 GVRP" ==========
+        draw.text((55, 32), "99", fill=DORADO, font=font_logo)
+        draw.text((55, 82), "GVRP", fill=DORADO_CLARO, font=font_logo_sub)
 
         # ========== TÍTULO ==========
-        draw.text((W // 2, 25), "DOCUMENTO NACIONAL DE IDENTIDAD", fill=BLANCO, font=font_title, anchor="mt")
-        draw.text((W // 2, 52), "DISTRICT 99 - GVRP", fill=GRIS, font=font_sub, anchor="mt")
+        draw.text((W // 2, 34), "DOCUMENTO NACIONAL DE IDENTIDAD", fill=BLANCO, font=font_title, anchor="mt")
+        draw.text((W // 2, 76), "DISTRICT 99 - GVRP", fill=GRIS, font=font_sub, anchor="mt")
 
         # ========== Nº DNI ==========
-        draw.text((W - 25, 18), f"#{datos_dni.get('numero_dni', '00000000')}", fill=DORADO, font=font_sub, anchor="rt")
-        draw.line([30, 72, W - 30, 72], fill=DORADO, width=1)
+        numero_dni = datos_dni.get('numero_dni', '00000000')
+        draw.text((W - 50, 34), f"#{numero_dni}", fill=DORADO, font=font_num, anchor="rt")
+        draw.text((W - 50, 60), "VÁLIDO", fill=GRIS, font=font_footer, anchor="rt")
 
-        # ========== AVATAR ==========
-        avatar_size = 75
-        avatar_x, avatar_y = 25, 90
+        draw.line([50, 135, W - 50, 135], fill=DORADO, width=2)
+
+        # ========== ICONOS VECTORIALES ==========
+        def icono_persona(cx, cy, s, color):
+            draw.ellipse([cx - s*0.3, cy - s*0.5, cx + s*0.3, cy], outline=color, width=2)
+            draw.arc([cx - s*0.5, cy - s*0.05, cx + s*0.5, cy + s*0.9], 180, 360, fill=color, width=2)
+
+        def icono_pastel(cx, cy, s, color):
+            draw.rectangle([cx - s*0.4, cy, cx + s*0.4, cy + s*0.35], outline=color, width=2)
+            for dx in (-0.25, 0, 0.25):
+                draw.line([cx + dx*s, cy, cx + dx*s, cy - s*0.2], fill=color, width=2)
+                draw.ellipse([cx + dx*s - 2, cy - s*0.28, cx + dx*s + 2, cy - s*0.2], fill=color)
+
+        def icono_calendario(cx, cy, s, color):
+            draw.rounded_rectangle([cx - s*0.4, cy - s*0.35, cx + s*0.4, cy + s*0.35], radius=3, outline=color, width=2)
+            draw.line([cx - s*0.4, cy - s*0.1, cx + s*0.4, cy - s*0.1], fill=color, width=2)
+            draw.line([cx - s*0.2, cy - s*0.48, cx - s*0.2, cy - s*0.3], fill=color, width=2)
+            draw.line([cx + s*0.2, cy - s*0.48, cx + s*0.2, cy - s*0.3], fill=color, width=2)
+
+        def icono_maletin(cx, cy, s, color):
+            draw.rectangle([cx - s*0.4, cy - s*0.1, cx + s*0.4, cy + s*0.35], outline=color, width=2)
+            draw.arc([cx - s*0.18, cy - s*0.32, cx + s*0.18, cy - s*0.05], 180, 360, fill=color, width=2)
+            draw.line([cx - s*0.4, cy + s*0.1, cx + s*0.4, cy + s*0.1], fill=color, width=1)
+
+        def icono_tarjeta(cx, cy, s, color):
+            draw.rounded_rectangle([cx - s*0.45, cy - s*0.3, cx + s*0.45, cy + s*0.3], radius=4, outline=color, width=2)
+            draw.line([cx - s*0.45, cy - s*0.05, cx + s*0.45, cy - s*0.05], fill=color, width=1)
+            draw.ellipse([cx - s*0.3, cy + s*0.05, cx - s*0.12, cy + s*0.2], outline=color, width=1)
+
+        # ========== AVATAR DISCORD (más grande, único, arriba a la izquierda del cuerpo) ==========
+        avatar_size = 200
+        avatar_x, avatar_y = 60, 175
+
         try:
             avatar_response = requests.get(usuario.display_avatar.url, timeout=5)
             avatar_img = Image.open(BytesIO(avatar_response.content)).convert("RGBA").resize((avatar_size, avatar_size))
@@ -398,39 +443,49 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
             circular = Image.new('RGBA', (avatar_size, avatar_size))
             circular.paste(avatar_img, (0, 0), mask)
             img.paste(circular, (avatar_x, avatar_y), circular)
-        except:
-            pass
-        draw.ellipse([avatar_x - 3, avatar_y - 3, avatar_x + avatar_size + 3, avatar_y + avatar_size + 3], outline=DORADO, width=2)
+        except Exception as e:
+            print(f"⚠️ Error avatar: {e}")
+        draw.ellipse([avatar_x - 4, avatar_y - 4, avatar_x + avatar_size + 4, avatar_y + avatar_size + 4], outline=DORADO, width=4)
+        draw.text((avatar_x + avatar_size // 2, avatar_y + avatar_size + 16), "DISCORD", fill=GRIS, font=font_avatar_label, anchor="mt")
 
-        # ========== DATOS ==========
-        table_x = 125
-        y_start = 90
-        spacing = 38
+        # ========== TARJETA DE DATOS ==========
+        card_x1, card_y1 = 300, 165
+        card_x2, card_y2 = W - 50, 490
+        draw.rounded_rectangle([card_x1, card_y1, card_x2, card_y2], radius=18, fill=(32, 32, 38), outline=DORADO, width=2)
+
+        table_x = card_x1 + 45
+        y_start = card_y1 + 30
+        row_h = 62
+        icon_x_offset = -34
+        icon_size = 24
 
         datos = [
-            ("NOMBRE", f"{datos_dni.get('nombre', '')} {datos_dni.get('apellidos', '')}"),
-            ("EDAD", f"{datos_dni.get('edad', '')} AÑOS"),
-            ("NACIMIENTO", datos_dni.get('fecha_nacimiento', '')),
-            ("OFICIO", datos_dni.get('oficio', '')),
-            ("DNI", datos_dni.get('numero_dni', '')),
-            ("EXPEDICIÓN", datos_dni.get('fecha_expedicion', '')),
+            ("NOMBRE COMPLETO", f"{datos_dni.get('nombre', '')} {datos_dni.get('apellidos', '')}", icono_persona),
+            ("EDAD", f"{datos_dni.get('edad', '')} AÑOS", icono_pastel),
+            ("NACIMIENTO", datos_dni.get('fecha_nacimiento', ''), icono_calendario),
+            ("OFICIO", datos_dni.get('oficio', 'Ciudadano'), icono_maletin),
+            ("DNI", numero_dni, icono_tarjeta),
         ]
 
         y = y_start
-        for label, value in datos:
-            draw.text((table_x, y), label, fill=GRIS, font=font_label)
-            draw.text((table_x, y + 16), value, fill=BLANCO, font=font_value)
-            draw.line([table_x, y + 34, W - 20, y + 34], fill=(40, 40, 45), width=1)
-            y += spacing
+        for i, (label, value, icono_fn) in enumerate(datos):
+            icono_fn(table_x + icon_x_offset + icon_size // 2, y + 12, icon_size, DORADO)
+            draw.text((table_x, y), label, fill=DORADO, font=font_label)
+            draw.text((table_x, y + 22), value, fill=BLANCO, font=font_value)
+            if i < len(datos) - 1:
+                draw.line([table_x, y + 52, card_x2 - 40, y + 52], fill=(55, 50, 40), width=1)
+            y += row_h
 
-        # ========== ESTADO ==========
-        status_y = H - 45
-        draw.line([30, status_y - 5, W - 30, status_y - 5], fill=(40, 40, 45), width=1)
-        draw.ellipse([W // 2 - 55, status_y, W // 2 - 41, status_y + 14], fill=VERDE)
-        draw.text((W // 2 - 28, status_y + 2), "VÁLIDO", fill=VERDE, font=font_status, anchor="lt")
+        # ========== ESTADO INFERIOR ==========
+        status_y = H - 90
+        draw.line([50, status_y - 10, W - 50, status_y - 10], fill=DORADO, width=1)
+        draw.rounded_rectangle([W // 2 - 100, status_y, W // 2 + 100, status_y + 48], radius=12,
+                                fill=(20, 45, 30), outline=VERDE, width=2)
+        draw.ellipse([W // 2 - 80, status_y + 16, W // 2 - 62, status_y + 34], fill=VERDE)
+        draw.text((W // 2 - 48, status_y + 12), "VÁLIDO", fill=VERDE, font=font_status, anchor="lt")
 
         # ========== PIE ==========
-        draw.text((W // 2, H - 16), "DISTRICT 99 - GVRP © 2026", fill=(70, 75, 85), font=font_footer, anchor="mt")
+        draw.text((W // 2, H - 30), "DISTRICT 99 - GVRP © 2026", fill=GRIS, font=font_footer, anchor="mt")
 
         img_bytes = BytesIO()
         img.save(img_bytes, format='PNG', quality=95)
