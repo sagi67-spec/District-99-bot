@@ -183,13 +183,18 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             print(f"⚠️ Error cargando fuentes: {e}")
             font_logo = font_logo_sub = font_title = font_sub = font_lic_num = font_valid = font_label = font_value = font_status = font_footer = font_avatar_label = ImageFont.load_default()
 
-        # ========== ESQUINAS DECORADAS DORADAS ==========
-        esquina = 45
-        grosor = 4
+        # ========== ESQUINAS DECORADAS DORADAS (DOBLE LÍNEA) ==========
+        esquina = 50
+        grosor = 5
         bx1, by1, bx2, by2 = margen + 12, margen + 12, W - margen - 12, H - margen - 12
         for (cx, cy, dx, dy) in [(bx1, by1, 1, 1), (bx2, by1, -1, 1), (bx1, by2, 1, -1), (bx2, by2, -1, -1)]:
+            # línea exterior gruesa
             draw.line([(cx, cy), (cx + esquina * dx, cy)], fill=DORADO, width=grosor)
             draw.line([(cx, cy), (cx, cy + esquina * dy)], fill=DORADO, width=grosor)
+            # línea interior delgada (efecto doble borde)
+            offset = 10
+            draw.line([(cx + offset*dx, cy + offset*dy), (cx + (esquina-15) * dx, cy + offset*dy)], fill=DORADO, width=2)
+            draw.line([(cx + offset*dx, cy + offset*dy), (cx + offset*dx, cy + (esquina-15) * dy)], fill=DORADO, width=2)
 
         # ========== LOGO "99 GVRP" ==========
         draw.text((60, 40), "99", fill=DORADO, font=font_logo)
@@ -213,6 +218,22 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.text((W - 60, 68), "VALID", fill=GRIS, font=font_valid, anchor="rt")
 
         draw.line([60, 165, W - 60, 165], fill=DORADO, width=2)
+
+        # ========== STICKER HOLOGRÁFICO/CROMADO (esquina sup. derecha) ==========
+        def dibujar_sticker(x, y, w, h):
+            # base gris plateada con degradado diagonal simulado
+            for i in range(w):
+                t = i / w
+                r = int(180 + 50 * abs(0.5 - t) * 2)
+                g = int(185 + 50 * abs(0.5 - t) * 2)
+                b = int(195 + 55 * abs(0.5 - t) * 2)
+                draw.line([(x + i, y), (x + i, y + h)], fill=(r, g, b))
+            draw.rounded_rectangle([x, y, x + w, y + h], radius=6, outline=(120, 122, 130), width=2)
+            # reflejo diagonal claro
+            draw.line([(x + 4, y + h - 4), (x + w - 4, y + 4)], fill=(240, 242, 248), width=3)
+
+        sticker_w, sticker_h = 70, 45
+        dibujar_sticker(W - 60 - sticker_w, 95, sticker_w, sticker_h)
 
         # ========== ICONOS VECTORIALES ==========
         def icono_persona(cx, cy, s, color):
@@ -338,6 +359,9 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.ellipse([col2_x - 14, estado_y1 + 19, col2_x + 4, estado_y1 + 37], fill=VERDE)
         draw.text((col2_x + 20, estado_y1 + 13), "ESTADO: ACTIVA", fill=VERDE, font=font_status, anchor="lt")
 
+        # ========== SEGUNDO STICKER HOLOGRÁFICO (cerca del pie, derecha) ==========
+        dibujar_sticker(W - 60 - sticker_w - 130, H - 130, sticker_w, sticker_h)
+
         # ========== PIE DE PÁGINA ==========
         draw.line([60, H - 70, W - 60, H - 70], fill=DORADO, width=1)
         draw.text((W // 2, H - 50), "DISTRICT 99 - GVRP © 2026", fill=GRIS, font=font_footer, anchor="mt")
@@ -352,7 +376,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         print(f"❌ Error al generar la licencia: {e}")
         import traceback
         traceback.print_exc()
-        return None
+        return None     
 # ==================== FUNCIÓN PARA GENERAR DNI (PROVISIONAL) ====================
 async def generar_dni(usuario: discord.Member, datos_dni: dict):
     try:
