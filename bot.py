@@ -272,70 +272,71 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             pass
         draw.ellipse([avatar_x2 - 4, avatar_y2 - 4, avatar_x2 + avatar_size + 4, avatar_y2 + avatar_size + 4], outline=DORADO, width=4)
         draw.text((avatar_x2 + avatar_size // 2, avatar_y2 + avatar_size + 14), "ROBLOX", fill=GRIS, font=font_avatar_label, anchor="mt")
-                # ========== TARJETA DE DATOS ==========
-    card_x1, card_y1 = 320, 195
-    card_x2, card_y2 = W - 60, 610
-    draw.rounded_rectangle([card_x1, card_y1, card_x2, card_y2], radius=18, fill=(32, 32, 38), outline=DORADO, width=2)
 
-    # ========== TABLA DE DATOS ==========
-    table_x = card_x1 + 40
-    col2_x = card_x1 + (card_x2 - card_x1) // 2 + 30
-    y_start = card_y1 + 35
-    row_h = 75
-    icon_x_offset = -34
-    icon_size = 26
+        # ========== TARJETA DE DATOS ==========
+        card_x1, card_y1 = 320, 195
+        card_x2, card_y2 = W - 60, 610
+        draw.rounded_rectangle([card_x1, card_y1, card_x2, card_y2], radius=18, fill=(32, 32, 38), outline=DORADO, width=2)
 
-    datos_izq = [
-        ("NOMBRE COMPLETO", f"{datos_licencia.get('nombre', '')} {datos_licencia.get('apellidos', '')}", icono_persona),
-        ("EDAD", f"{datos_licencia.get('edad', '')} AÑOS", icono_pastel),
-        ("OFICIO", datos_licencia.get('oficio', ''), icono_maletin),
-        ("ROBLOX", datos_licencia.get('user_roblox', ''), icono_gamepad),
-        ("DNI", datos_licencia.get('dni', ''), icono_tarjeta),
-    ]
-    datos_der = [
-        ("LICENCIA", licencia_id, icono_tarjeta),
-        ("EXPEDICIÓN", datos_licencia.get('fecha_expedicion', ''), icono_calendario),
-        ("EXPIRACIÓN", datos_licencia.get('fecha_expiracion', ''), icono_calendario),
-    ]
+        # ========== TABLA DE DATOS ==========
+        table_x = card_x1 + 40
+        col2_x = card_x1 + (card_x2 - card_x1) // 2 + 30
+        y_start = card_y1 + 35
+        row_h = 75
+        icon_x_offset = -34
+        icon_size = 26
 
-    y = y_start
-    for i in range(max(len(datos_izq), len(datos_der))):
-        if i < len(datos_izq):
-            label, value, icono_fn = datos_izq[i]
-            icono_fn(table_x + icon_x_offset + icon_size // 2, y + 14, icon_size, DORADO)
-            draw.text((table_x, y), label, fill=DORADO, font=font_label)
-            draw.text((table_x, y + 24), value, fill=BLANCO, font=font_value)
-        if i < len(datos_der):
-            label, value, icono_fn = datos_der[i]
-            icono_fn(col2_x + icon_x_offset + icon_size // 2, y + 14, icon_size, DORADO)
-            draw.text((col2_x, y), label, fill=DORADO, font=font_label)
-            draw.text((col2_x, y + 24), value, fill=BLANCO, font=font_value)
-        if i < max(len(datos_izq), len(datos_der)) - 1:
-            draw.line([table_x, y + 62, card_x2 - 40, y + 62], fill=(55, 50, 40), width=1)
-        y += row_h
+        datos_izq = [
+            ("NOMBRE COMPLETO", f"{datos_licencia.get('nombre', '')} {datos_licencia.get('apellidos', '')}", icono_persona),
+            ("EDAD", f"{datos_licencia.get('edad', '')} AÑOS", icono_pastel),
+            ("OFICIO", datos_licencia.get('oficio', ''), icono_maletin),
+            ("ROBLOX", datos_licencia.get('user_roblox', ''), icono_gamepad),
+            ("DNI", datos_licencia.get('dni', ''), icono_tarjeta),
+        ]
+        datos_der = [
+            ("LICENCIA", licencia_id, icono_tarjeta),
+            ("EXPEDICIÓN", datos_licencia.get('fecha_expedicion', ''), icono_calendario),
+            ("EXPIRACIÓN", datos_licencia.get('fecha_expiracion', ''), icono_calendario),
+        ]
 
-    # ========== RECUADRO ESTADO ==========
-    estado_y1 = y_start + 4 * row_h - 10
-    draw.rounded_rectangle([col2_x - 34, estado_y1, card_x2 - 40, estado_y1 + 55], radius=12,
-                            fill=(20, 45, 30), outline=VERDE, width=2)
-    draw.ellipse([col2_x - 14, estado_y1 + 19, col2_x + 4, estado_y1 + 37], fill=VERDE)
-    draw.text((col2_x + 20, estado_y1 + 13), "ESTADO: ACTIVA", fill=VERDE, font=font_status, anchor="lt")
+        y = y_start
+        for i in range(max(len(datos_izq), len(datos_der))):
+            if i < len(datos_izq):
+                label, value, icono_fn = datos_izq[i]
+                icono_fn(table_x + icon_x_offset + icon_size // 2, y + 14, icon_size, DORADO)
+                draw.text((table_x, y), label, fill=DORADO, font=font_label)
+                draw.text((table_x, y + 24), value, fill=BLANCO, font=font_value)
+            if i < len(datos_der):
+                label, value, icono_fn = datos_der[i]
+                icono_fn(col2_x + icon_x_offset + icon_size // 2, y + 14, icon_size, DORADO)
+                draw.text((col2_x, y), label, fill=DORADO, font=font_label)
+                draw.text((col2_x, y + 24), value, fill=BLANCO, font=font_value)
+            if i < max(len(datos_izq), len(datos_der)) - 1:
+                draw.line([table_x, y + 62, card_x2 - 40, y + 62], fill=(55, 50, 40), width=1)
+            y += row_h
 
-    # ========== PIE DE PÁGINA ==========
-    draw.line([60, H - 70, W - 60, H - 70], fill=DORADO, width=1)
-    draw.text((W // 2, H - 50), "DISTRICT 99 - GVRP © 2026", fill=GRIS, font=font_footer, anchor="mt")
+        # ========== RECUADRO ESTADO ==========
+        estado_y1 = y_start + 4 * row_h - 10
+        draw.rounded_rectangle([col2_x - 34, estado_y1, card_x2 - 40, estado_y1 + 55], radius=12,
+                                fill=(20, 45, 30), outline=VERDE, width=2)
+        draw.ellipse([col2_x - 14, estado_y1 + 19, col2_x + 4, estado_y1 + 37], fill=VERDE)
+        draw.text((col2_x + 20, estado_y1 + 13), "ESTADO: ACTIVA", fill=VERDE, font=font_status, anchor="lt")
 
-    # ========== GUARDAR ==========
-    img_bytes = BytesIO()
-    img.save(img_bytes, format='PNG', quality=95)
-    img_bytes.seek(0)
-    return discord.File(img_bytes, filename="licencia.png")
+        # ========== PIE DE PÁGINA ==========
+        draw.line([60, H - 70, W - 60, H - 70], fill=DORADO, width=1)
+        draw.text((W // 2, H - 50), "DISTRICT 99 - GVRP © 2026", fill=GRIS, font=font_footer, anchor="mt")
 
-except Exception as e:
-    print(f"❌ Error al generar la licencia: {e}")
-    import traceback
-    traceback.print_exc()
-    return None
+        # ========== GUARDAR ==========
+        img_bytes = BytesIO()
+        img.save(img_bytes, format='PNG', quality=95)
+        img_bytes.seek(0)
+        return discord.File(img_bytes, filename="licencia.png")
+
+    except Exception as e:
+        print(f"❌ Error al generar la licencia: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 # ==================== FUNCIÓN PARA GENERAR DNI (PROVISIONAL) ====================
 async def generar_dni(usuario: discord.Member, datos_dni: dict):
     try:
