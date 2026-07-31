@@ -139,129 +139,154 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         # ==================== FUNCIÓN PARA GENERAR LICENCIA (COPIA EXACTA DE GEMINI) ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
-        # ========== CONFIGURACIÓN ==========
-        W, H = 800, 560
-        img = Image.new('RGB', (W, H), color=(8, 8, 12))
+        W, H = 1000, 620
+        img = Image.new('RGB', (W, H), color=(15, 15, 18))
         draw = ImageDraw.Draw(img)
-        
-        # ========== FONDO CON DEGRADADO MÁS NOTORIO ==========
+
+        # ========== FONDO DEGRADADO NEGRO ==========
         for i in range(H):
-            r = 8 + int((22 - 8) * (i / H))
-            g = 8 + int((22 - 8) * (i / H))
-            b = 12 + int((28 - 12) * (i / H))
+            r = 15 + int((30 - 15) * (i / H))
+            g = 15 + int((28 - 15) * (i / H))
+            b = 18 + int((32 - 18) * (i / H))
             draw.line([(0, i), (W, i)], fill=(r, g, b))
-        
-        # ========== BORDE ==========
-        draw.rectangle([10, 10, W-10, H-10], outline=(180, 185, 195), width=2)
-        draw.rectangle([16, 16, W-16, H-16], outline=(30, 30, 38), width=1)
-        
-        # ========== FUENTES GRANDES ==========
+
+        # ========== COLORES ==========
+        DORADO = (212, 175, 90)
+        DORADO_CLARO = (230, 200, 130)
+        BLANCO = (255, 255, 255)
+        GRIS = (170, 170, 175)
+        VERDE = (60, 210, 100)
+
+        # ========== FUENTES (CORREGIDO - usa DejaVu que SÍ existe en Railway) ==========
+        FUENTE_BASE = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        FUENTE_NORMAL = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
         try:
-            font_gvrp = ImageFont.truetype("arial.ttf", 38)  # G de GVRP más grande
-            font_gvrp_small = ImageFont.truetype("arial.ttf", 22)  # VRP más pequeño
-            font_title = ImageFont.truetype("arial.ttf", 34)
-            font_sub = ImageFont.truetype("arial.ttf", 18)
-            font_lic_num = ImageFont.truetype("arial.ttf", 20)
-            font_valid = ImageFont.truetype("arial.ttf", 14)
-            font_label = ImageFont.truetype("arial.ttf", 14)  # Etiquetas como "NOMBRE COMPLETO"
-            font_value = ImageFont.truetype("arial.ttf", 22)  # Valores GRANDES
-            font_status = ImageFont.truetype("arial.ttf", 24)
-            font_footer = ImageFont.truetype("arial.ttf", 11)
-        except:
-            font_gvrp = ImageFont.load_default()
-            font_gvrp_small = ImageFont.load_default()
-            font_title = ImageFont.load_default()
-            font_sub = ImageFont.load_default()
-            font_lic_num = ImageFont.load_default()
-            font_valid = ImageFont.load_default()
-            font_label = ImageFont.load_default()
-            font_value = ImageFont.load_default()
-            font_status = ImageFont.load_default()
-            font_footer = ImageFont.load_default()
-        
-        # ========== LOGO "GVRP" CON G MÁS GRANDE (como en la imagen) ==========
-        draw.text((30, 15), "G", fill=(180, 185, 195), font=font_gvrp, anchor="lt")
-        draw.text((65, 30), "VRP", fill=(180, 185, 195), font=font_gvrp_small, anchor="lt")
-        
-        # ========== TÍTULO PRINCIPAL (centrado) ==========
-        draw.text((W//2, 25), "LICENCIA DE CONDUCIR", fill=(255, 255, 255), font=font_title, anchor="mt")
-        
-        # ========== NÚMERO DE LICENCIA + VALID (esquina superior derecha) ==========
+            font_logo = ImageFont.truetype(FUENTE_BASE, 54)
+            font_logo_sub = ImageFont.truetype(FUENTE_BASE, 24)
+            font_title = ImageFont.truetype(FUENTE_BASE, 34)
+            font_sub = ImageFont.truetype(FUENTE_NORMAL, 18)
+            font_lic_num = ImageFont.truetype(FUENTE_BASE, 20)
+            font_valid = ImageFont.truetype(FUENTE_BASE, 14)
+            font_label = ImageFont.truetype(FUENTE_NORMAL, 16)
+            font_value = ImageFont.truetype(FUENTE_BASE, 26)
+            font_status = ImageFont.truetype(FUENTE_BASE, 26)
+            font_footer = ImageFont.truetype(FUENTE_NORMAL, 13)
+        except Exception as e:
+            print(f"⚠️ No se pudieron cargar fuentes DejaVu: {e}")
+            font_logo = font_logo_sub = font_title = font_sub = font_lic_num = font_valid = font_label = font_value = font_status = font_footer = ImageFont.load_default()
+
+        # ========== BORDE DORADO DECORADO ==========
+        draw.rectangle([8, 8, W-8, H-8], outline=DORADO, width=4)
+        draw.rectangle([16, 16, W-16, H-16], outline=(60, 55, 40), width=1)
+
+        # Esquinas decoradas (triángulos dorados)
+        esquina = 30
+        for (cx, cy, dx, dy) in [(16, 16, 1, 1), (W-16, 16, -1, 1), (16, H-16, 1, -1), (W-16, H-16, -1, -1)]:
+            draw.line([(cx, cy), (cx + esquina*dx, cy)], fill=DORADO, width=3)
+            draw.line([(cx, cy), (cx, cy + esquina*dy)], fill=DORADO, width=3)
+
+        # ========== LOGO "99 GVRP" ==========
+        draw.text((45, 30), "99", fill=DORADO, font=font_logo)
+        draw.text((45, 90), "GVRP", fill=DORADO_CLARO, font=font_logo_sub)
+
+        # ========== TÍTULO ==========
+        draw.text((W//2, 35), "LICENCIA DE CONDUCIR", fill=BLANCO, font=font_title, anchor="mt")
+        draw.text((W//2, 78), "DISTRICT 99 - GVRP", fill=GRIS, font=font_sub, anchor="mt")
+
+        # ========== Nº LICENCIA (arriba derecha) ==========
         licencia_id = datos_licencia.get('licencia_id', 'LIC-0000')
-        draw.text((W-30, 18), f"#{licencia_id}", fill=(255, 255, 255), font=font_lic_num, anchor="rt")
-        draw.text((W-30, 42), "VALID", fill=(150, 155, 165), font=font_valid, anchor="rt")
-        
-        # ========== SUBTÍTULO (como en la imagen: "DISTRICTO 99 - GVRP") ==========
-        draw.text((W//2, 65), "DISTRICTO 99 - GVRP", fill=(150, 155, 165), font=font_sub, anchor="mt")
-        
-        # ========== LÍNEA SEPARADORA ==========
-        draw.line([40, 90, W-40, 90], fill=(180, 185, 195), width=1)
-        draw.line([40, 92, W-40, 92], fill=(30, 30, 38), width=1)
-        
-        # ========== TABLA DE DATOS (TEXTO GRANDE Y OCUPANDO TODO) ==========
-        table_x = 45
-        col1_w = 350
-        col2_w = 350
-        row_h = 52
-        
-        # Columna izquierda
+        draw.text((W-40, 28), f"#{licencia_id}", fill=DORADO, font=font_lic_num, anchor="rt")
+        draw.text((W-40, 55), "VALID", fill=GRIS, font=font_valid, anchor="rt")
+
+        draw.line([40, 150, W-40, 150], fill=DORADO, width=2)
+
+        # ========== AVATAR DISCORD ==========
+        avatar_size = 150
+        avatar_x, avatar_y = 60, 185
+
+        try:
+            avatar_response = requests.get(usuario.display_avatar.url, timeout=5)
+            avatar_img = Image.open(BytesIO(avatar_response.content)).convert("RGBA").resize((avatar_size, avatar_size))
+            mask = Image.new('L', (avatar_size, avatar_size), 0)
+            ImageDraw.Draw(mask).ellipse((0, 0, avatar_size, avatar_size), fill=255)
+            circular = Image.new('RGBA', (avatar_size, avatar_size))
+            circular.paste(avatar_img, (0, 0), mask)
+            img.paste(circular, (avatar_x, avatar_y), circular)
+        except:
+            pass
+        draw.ellipse([avatar_x-4, avatar_y-4, avatar_x+avatar_size+4, avatar_y+avatar_size+4], outline=DORADO, width=4)
+        draw.text((avatar_x + avatar_size//2, avatar_y + avatar_size + 12), "DISCORD", fill=GRIS, font=font_label, anchor="mt")
+
+        # ========== AVATAR ROBLOX ==========
+        avatar_x2, avatar_y2 = 60, 400
+
+        try:
+            user_roblox = datos_licencia.get('user_roblox', '')
+            search_url = f"https://users.roblox.com/v1/users/search?keyword={user_roblox}"
+            search_data = requests.get(search_url, timeout=5).json()
+            if search_data.get('data'):
+                rid = search_data['data'][0]['id']
+                thumb_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={rid}&size=420x420&format=Png"
+                thumb_data = requests.get(thumb_url, timeout=5).json()
+                foto_url = thumb_data['data'][0]['imageUrl']
+                foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content)).convert("RGBA").resize((avatar_size, avatar_size))
+                mask = Image.new('L', (avatar_size, avatar_size), 0)
+                ImageDraw.Draw(mask).ellipse((0, 0, avatar_size, avatar_size), fill=255)
+                circular = Image.new('RGBA', (avatar_size, avatar_size))
+                circular.paste(foto_img, (0, 0), mask)
+                img.paste(circular, (avatar_x2, avatar_y2), circular)
+        except:
+            pass
+        draw.ellipse([avatar_x2-4, avatar_y2-4, avatar_x2+avatar_size+4, avatar_y2+avatar_size+4], outline=DORADO, width=4)
+        draw.text((avatar_x2 + avatar_size//2, avatar_y2 + avatar_size + 12), "ROBLOX", fill=GRIS, font=font_label, anchor="mt")
+
+        # ========== TABLA DE DATOS ==========
+        table_x = 280
+        col2_x = 640
+        y_start = 190
+        row_h = 68
+
         datos_izq = [
             ("NOMBRE COMPLETO", f"{datos_licencia.get('nombre', '')} {datos_licencia.get('apellidos', '')}"),
             ("EDAD", f"{datos_licencia.get('edad', '')} AÑOS"),
             ("OFICIO", datos_licencia.get('oficio', '')),
-            ("POBLACIÓN", "GREENVILLE"),
+            ("ROBLOX", datos_licencia.get('user_roblox', '')),
             ("DNI", datos_licencia.get('dni', '')),
         ]
-        
-        # Columna derecha
         datos_der = [
-            ("LICENCIA", datos_licencia.get('licencia_id', '')),
+            ("LICENCIA", licencia_id),
             ("EXPEDICIÓN", datos_licencia.get('fecha_expedicion', '')),
             ("EXPIRACIÓN", datos_licencia.get('fecha_expiracion', '')),
             ("ESTADO", "ACTIVA"),
         ]
-        
-        y = 110
-        max_rows = max(len(datos_izq), len(datos_der))
-        
-        for i in range(max_rows):
-            # Columna izquierda
+
+        y = y_start
+        for i in range(max(len(datos_izq), len(datos_der))):
             if i < len(datos_izq):
                 label, value = datos_izq[i]
-                draw.text((table_x, y), label, fill=(130, 135, 145), font=font_label)
-                draw.text((table_x, y + 22), value, fill=(255, 255, 255), font=font_value)
-            
-            # Columna derecha
+                draw.text((table_x, y), label, fill=DORADO, font=font_label)
+                draw.text((table_x, y + 24), value, fill=BLANCO, font=font_value)
             if i < len(datos_der):
                 label, value = datos_der[i]
-                draw.text((table_x + col1_w + 20, y), label, fill=(130, 135, 145), font=font_label)
-                draw.text((table_x + col1_w + 20, y + 22), value, fill=(255, 255, 255), font=font_value)
-            
-            # Línea separadora entre filas
-            draw.line([table_x, y + 48, table_x + col1_w + col2_w + 20, y + 48], fill=(30, 30, 38), width=1)
+                draw.text((col2_x, y), label, fill=DORADO, font=font_label)
+                draw.text((col2_x, y + 24), value, fill=BLANCO, font=font_value)
+            draw.line([table_x, y + 58, W - 40, y + 58], fill=(50, 45, 35), width=1)
             y += row_h
-        
-        # ========== ESTADO INFERIOR "ESTADO ACTIVA" CON CÍRCULO VERDE ==========
-        status_y = H - 60
-        
-        # Línea separadora
-        draw.line([40, status_y-8, W-40, status_y-8], fill=(30, 30, 38), width=1)
-        
-        # Círculo verde
-        draw.ellipse([W//2 - 80, status_y, W//2 - 62, status_y+18], fill=(0, 200, 80), outline=(0, 180, 70), width=1)
-        
-        # Texto "ESTADO ACTIVA" en verde
-        draw.text((W//2 - 50, status_y + 2), "ESTADO ACTIVA", fill=(0, 200, 80), font=font_status, anchor="lt")
-        
-        # ========== PIE DE PÁGINA (opcional, pequeño) ==========
-        draw.text((W//2, H-14), "DISTRICT 99 - GVRP © 2026", fill=(60, 65, 75), font=font_footer, anchor="mt")
-        
-        # ========== GUARDAR IMAGEN ==========
+
+        # ========== ESTADO INFERIOR ==========
+        status_y = H - 75
+        draw.line([40, status_y - 10, W - 40, status_y - 10], fill=DORADO, width=2)
+        draw.ellipse([W//2 - 130, status_y, W//2 - 108, status_y + 22], fill=VERDE)
+        draw.text((W//2 - 90, status_y), "ESTADO: ACTIVA", fill=VERDE, font=font_status, anchor="lt")
+
+        # ========== PIE ==========
+        draw.text((W//2, H - 25), "DISTRICT 99 - GVRP © 2026", fill=GRIS, font=font_footer, anchor="mt")
+
         img_bytes = BytesIO()
         img.save(img_bytes, format='PNG', quality=95)
         img_bytes.seek(0)
         return discord.File(img_bytes, filename="licencia.png")
-        
+
     except Exception as e:
         print(f"❌ Error al generar la licencia: {e}")
         import traceback
