@@ -639,8 +639,8 @@ class PanelDNIView(discord.ui.View):
                 required=True
             )
             fecha_nacimiento = discord.ui.TextInput(
-                label="📅 Fecha de Nacimiento (DD/MM/YYYY) - Edad se calcula automáticamente",
-                placeholder="Ej: 15/05/1998",
+                label="📅 Fecha Nacimiento (DD/MM/YYYY)",  # ✅ CORTO
+                placeholder="Ej: 15/05/1998 (Edad automática)",
                 max_length=10,
                 required=True
             )
@@ -651,7 +651,7 @@ class PanelDNIView(discord.ui.View):
                 required=True
             )
             user_roblox = discord.ui.TextInput(
-                label="Usuario de Roblox",
+                label="Usuario Roblox",
                 placeholder="Ej: Juanito_99",
                 max_length=50,
                 required=True
@@ -759,11 +759,36 @@ class PanelLicenciasView(discord.ui.View):
             return
 
         class LicenciaModal(discord.ui.Modal, title="📝 Solicitar Licencia"):
-            nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
-            apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
-            fecha_nacimiento = discord.ui.TextInput(label="📅 Fecha de Nacimiento (DD/MM/YYYY) - Edad se calcula automáticamente", placeholder="Ej: 15/05/1998", max_length=10, required=True)
-            oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
-            user_roblox = discord.ui.TextInput(label="Usuario de Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
+            nombre = discord.ui.TextInput(
+                label="Nombre",
+                placeholder="Ej: Juan",
+                max_length=50,
+                required=True
+            )
+            apellidos = discord.ui.TextInput(
+                label="Apellidos",
+                placeholder="Ej: Pérez García",
+                max_length=50,
+                required=True
+            )
+            fecha_nacimiento = discord.ui.TextInput(
+                label="📅 Fecha Nacimiento (DD/MM/YYYY)",  # ✅ CORTO
+                placeholder="Ej: 15/05/1998 (Edad automática)",
+                max_length=10,
+                required=True
+            )
+            oficio = discord.ui.TextInput(
+                label="Oficio",
+                placeholder="Ej: Conductor",
+                max_length=50,
+                required=True
+            )
+            user_roblox = discord.ui.TextInput(
+                label="Usuario Roblox",
+                placeholder="Ej: Juanito_99",
+                max_length=50,
+                required=True
+            )
 
             async def on_submit(self, modal_interaction: discord.Interaction):
                 try:
