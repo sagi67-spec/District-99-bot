@@ -146,14 +146,12 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         # ========== COLORES ==========
         DORADO = (212, 175, 90)
         DORADO_CLARO = (235, 205, 140)
-        PLATA = (190, 195, 205)
         BLANCO = (255, 255, 255)
         GRIS = (160, 165, 175)
         NEGRO_CARD = (22, 22, 26)
         VERDE = (60, 210, 100)
 
         # ========== FONDO: MARCO METÁLICO + INTERIOR NEGRO ==========
-        # Marco exterior plateado con degradado
         for i in range(H):
             t = i / H
             r = int(150 + 60 * abs(0.5 - t) * 2)
@@ -161,7 +159,6 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             b = int(165 + 60 * abs(0.5 - t) * 2)
             draw.line([(0, i), (W, i)], fill=(r, g, b))
 
-        # Interior negro (deja marco de 22px visible)
         margen = 22
         draw.rectangle([margen, margen, W - margen, H - margen], fill=NEGRO_CARD)
 
@@ -171,15 +168,15 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         try:
             font_logo = ImageFont.truetype(FUENTE_BASE, 60)
             font_logo_sub = ImageFont.truetype(FUENTE_BASE, 26)
-            font_title = ImageFont.truetype(FUENTE_BASE, 40)
+            font_title = ImageFont.truetype(FUENTE_BASE, 42)
             font_sub = ImageFont.truetype(FUENTE_NORMAL, 20)
             font_lic_num = ImageFont.truetype(FUENTE_BASE, 22)
             font_valid = ImageFont.truetype(FUENTE_BASE, 15)
             font_label = ImageFont.truetype(FUENTE_NORMAL, 17)
-            font_value = ImageFont.truetype(FUENTE_BASE, 28)
-            font_status = ImageFont.truetype(FUENTE_BASE, 28)
+            font_value = ImageFont.truetype(FUENTE_BASE, 27)
+            font_status = ImageFont.truetype(FUENTE_BASE, 26)
             font_footer = ImageFont.truetype(FUENTE_NORMAL, 14)
-            font_avatar_label = ImageFont.truetype(FUENTE_BASE, 16)
+            font_avatar_label = ImageFont.truetype(FUENTE_BASE, 17)
         except Exception as e:
             print(f"⚠️ Error cargando fuentes: {e}")
             font_logo = font_logo_sub = font_title = font_sub = font_lic_num = font_valid = font_label = font_value = font_status = font_footer = font_avatar_label = ImageFont.load_default()
@@ -187,9 +184,8 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         # ========== ESQUINAS DECORADAS DORADAS ==========
         esquina = 45
         grosor = 4
-        borde_x1, borde_y1, borde_x2, borde_y2 = margen + 12, margen + 12, W - margen - 12, H - margen - 12
-        for (cx, cy, dx, dy) in [(borde_x1, borde_y1, 1, 1), (borde_x2, borde_y1, -1, 1),
-                                    (borde_x1, borde_y2, 1, -1), (borde_x2, borde_y2, -1, -1)]:
+        bx1, by1, bx2, by2 = margen + 12, margen + 12, W - margen - 12, H - margen - 12
+        for (cx, cy, dx, dy) in [(bx1, by1, 1, 1), (bx2, by1, -1, 1), (bx1, by2, 1, -1), (bx2, by2, -1, -1)]:
             draw.line([(cx, cy), (cx + esquina * dx, cy)], fill=DORADO, width=grosor)
             draw.line([(cx, cy), (cx, cy + esquina * dy)], fill=DORADO, width=grosor)
 
@@ -199,18 +195,58 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
 
         # ========== TÍTULO CENTRAL ==========
         draw.text((W // 2, 42), "LICENCIA DE CONDUCIR", fill=BLANCO, font=font_title, anchor="mt")
-        draw.text((W // 2, 92), "DISTRICT 99 - GVRP", fill=GRIS, font=font_sub, anchor="mt")
+        draw.text((W // 2, 96), "DISTRICT 99 - GVRP", fill=GRIS, font=font_sub, anchor="mt")
 
-        # ========== Nº LICENCIA (arriba derecha) ==========
+        # ========== Nº LICENCIA ==========
         licencia_id = datos_licencia.get('licencia_id', 'LIC-0000')
         draw.text((W - 60, 40), f"#{licencia_id}", fill=DORADO, font=font_lic_num, anchor="rt")
         draw.text((W - 60, 68), "VALID", fill=GRIS, font=font_valid, anchor="rt")
 
-        # Línea separadora superior
         draw.line([60, 165, W - 60, 165], fill=DORADO, width=2)
 
+        # ========== ICONOS VECTORIALES DIBUJADOS A MANO ==========
+        def icono_persona(cx, cy, s, color):
+            # cabeza
+            draw.ellipse([cx - s*0.3, cy - s*0.5, cx + s*0.3, cy], outline=color, width=2)
+            # cuerpo
+            draw.arc([cx - s*0.5, cy - s*0.05, cx + s*0.5, cy + s*0.9], 180, 360, fill=color, width=2)
+
+        def icono_pastel(cx, cy, s, color):
+            draw.rectangle([cx - s*0.4, cy, cx + s*0.4, cy + s*0.35], outline=color, width=2)
+            for dx in (-0.25, 0, 0.25):
+                draw.line([cx + dx*s, cy, cx + dx*s, cy - s*0.2], fill=color, width=2)
+                draw.ellipse([cx + dx*s - 2, cy - s*0.28, cx + dx*s + 2, cy - s*0.2], fill=color)
+
+        def icono_maletin(cx, cy, s, color):
+            draw.rectangle([cx - s*0.4, cy - s*0.1, cx + s*0.4, cy + s*0.35], outline=color, width=2)
+            draw.arc([cx - s*0.18, cy - s*0.32, cx + s*0.18, cy - s*0.05], 180, 360, fill=color, width=2)
+            draw.line([cx - s*0.4, cy + s*0.1, cx + s*0.4, cy + s*0.1], fill=color, width=1)
+
+        def icono_ubicacion(cx, cy, s, color):
+            draw.ellipse([cx - s*0.3, cy - s*0.45, cx + s*0.3, cy + s*0.15], outline=color, width=2)
+            draw.polygon([(cx - s*0.15, cy + s*0.05), (cx + s*0.15, cy + s*0.05), (cx, cy + s*0.4)], outline=color)
+            draw.ellipse([cx - s*0.08, cy - s*0.22, cx + s*0.08, cy - s*0.06], outline=color, width=1)
+
+        def icono_tarjeta(cx, cy, s, color):
+            draw.rounded_rectangle([cx - s*0.45, cy - s*0.3, cx + s*0.45, cy + s*0.3], radius=4, outline=color, width=2)
+            draw.line([cx - s*0.45, cy - s*0.05, cx + s*0.45, cy - s*0.05], fill=color, width=1)
+            draw.ellipse([cx - s*0.3, cy + s*0.05, cx - s*0.12, cy + s*0.2], outline=color, width=1)
+
+        def icono_calendario(cx, cy, s, color):
+            draw.rounded_rectangle([cx - s*0.4, cy - s*0.35, cx + s*0.4, cy + s*0.35], radius=3, outline=color, width=2)
+            draw.line([cx - s*0.4, cy - s*0.1, cx + s*0.4, cy - s*0.1], fill=color, width=2)
+            draw.line([cx - s*0.2, cy - s*0.48, cx - s*0.2, cy - s*0.3], fill=color, width=2)
+            draw.line([cx + s*0.2, cy - s*0.48, cx + s*0.2, cy - s*0.3], fill=color, width=2)
+
+        def icono_gamepad(cx, cy, s, color):
+            draw.rounded_rectangle([cx - s*0.45, cy - s*0.2, cx + s*0.45, cy + s*0.2], radius=s*0.2, outline=color, width=2)
+            draw.line([cx - s*0.3, cy, cx - s*0.15, cy], fill=color, width=2)
+            draw.line([cx - s*0.225, cy - s*0.08, cx - s*0.225, cy + s*0.08], fill=color, width=2)
+            draw.ellipse([cx + s*0.15, cy - s*0.08, cx + s*0.22, cy - s*0.01], outline=color, width=1)
+            draw.ellipse([cx + s*0.28, cy + s*0.02, cx + s*0.35, cy + s*0.09], outline=color, width=1)
+
         # ========== AVATAR DISCORD ==========
-        avatar_size = 170
+        avatar_size = 175
         avatar_x, avatar_y = 70, 200
 
         try:
@@ -227,7 +263,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.text((avatar_x + avatar_size // 2, avatar_y + avatar_size + 14), "DISCORD", fill=GRIS, font=font_avatar_label, anchor="mt")
 
         # ========== AVATAR ROBLOX ==========
-        avatar_x2, avatar_y2 = 70, 440
+        avatar_x2, avatar_y2 = 70, 445
 
         try:
             user_roblox = datos_licencia.get('user_roblox', '')
@@ -249,50 +285,54 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.ellipse([avatar_x2 - 4, avatar_y2 - 4, avatar_x2 + avatar_size + 4, avatar_y2 + avatar_size + 4], outline=DORADO, width=4)
         draw.text((avatar_x2 + avatar_size // 2, avatar_y2 + avatar_size + 14), "ROBLOX", fill=GRIS, font=font_avatar_label, anchor="mt")
 
-        # ========== TARJETA DE DATOS (rounded rectangle) ==========
+        # ========== TARJETA DE DATOS ==========
         card_x1, card_y1 = 320, 195
-        card_x2, card_y2 = W - 60, 590
-        draw.rounded_rectangle([card_x1, card_y1, card_x2, card_y2], radius=18, fill=(30, 30, 36), outline=DORADO, width=2)
+        card_x2, card_y2 = W - 60, 610
+        draw.rounded_rectangle([card_x1, card_y1, card_x2, card_y2], radius=18, fill=(32, 32, 38), outline=DORADO, width=2)
 
-        # ========== TABLA DE DATOS CON ICONOS ==========
-        table_x = card_x1 + 35
-        col2_x = card_x1 + (card_x2 - card_x1) // 2 + 20
-        y_start = card_y1 + 30
-        row_h = 68
+        # ========== TABLA DE DATOS CON ICONOS VECTORIALES ==========
+        table_x = card_x1 + 40
+        col2_x = card_x1 + (card_x2 - card_x1) // 2 + 30
+        y_start = card_y1 + 35
+        row_h = 75
+        icon_x_offset = -34
+        icon_size = 26
 
         datos_izq = [
-            ("👤 NOMBRE COMPLETO", f"{datos_licencia.get('nombre', '')} {datos_licencia.get('apellidos', '')}"),
-            ("🎂 EDAD", f"{datos_licencia.get('edad', '')} AÑOS"),
-            ("💼 OFICIO", datos_licencia.get('oficio', '')),
-            ("🎮 ROBLOX", datos_licencia.get('user_roblox', '')),
-            ("🪪 DNI", datos_licencia.get('dni', '')),
+            ("NOMBRE COMPLETO", f"{datos_licencia.get('nombre', '')} {datos_licencia.get('apellidos', '')}", icono_persona),
+            ("EDAD", f"{datos_licencia.get('edad', '')} AÑOS", icono_pastel),
+            ("OFICIO", datos_licencia.get('oficio', ''), icono_maletin),
+            ("ROBLOX", datos_licencia.get('user_roblox', ''), icono_gamepad),
+            ("DNI", datos_licencia.get('dni', ''), icono_tarjeta),
         ]
         datos_der = [
-            ("🎫 LICENCIA", licencia_id),
-            ("📅 EXPEDICIÓN", datos_licencia.get('fecha_expedicion', '')),
-            ("📅 EXPIRACIÓN", datos_licencia.get('fecha_expiracion', '')),
+            ("LICENCIA", licencia_id, icono_tarjeta),
+            ("EXPEDICIÓN", datos_licencia.get('fecha_expedicion', ''), icono_calendario),
+            ("EXPIRACIÓN", datos_licencia.get('fecha_expiracion', ''), icono_calendario),
         ]
 
         y = y_start
         for i in range(max(len(datos_izq), len(datos_der))):
             if i < len(datos_izq):
-                label, value = datos_izq[i]
+                label, value, icono_fn = datos_izq[i]
+                icono_fn(table_x + icon_x_offset + icon_size // 2, y + 14, icon_size, DORADO)
                 draw.text((table_x, y), label, fill=DORADO, font=font_label)
                 draw.text((table_x, y + 24), value, fill=BLANCO, font=font_value)
             if i < len(datos_der):
-                label, value = datos_der[i]
+                label, value, icono_fn = datos_der[i]
+                icono_fn(col2_x + icon_x_offset + icon_size // 2, y + 14, icon_size, DORADO)
                 draw.text((col2_x, y), label, fill=DORADO, font=font_label)
                 draw.text((col2_x, y + 24), value, fill=BLANCO, font=font_value)
             if i < max(len(datos_izq), len(datos_der)) - 1:
-                draw.line([table_x, y + 58, card_x2 - 35, y + 58], fill=(55, 50, 40), width=1)
+                draw.line([table_x, y + 62, card_x2 - 40, y + 62], fill=(55, 50, 40), width=1)
             y += row_h
 
-        # ========== RECUADRO ESTADO (abajo derecha, dentro de la tarjeta) ==========
-        estado_y1 = y_start + 4 * row_h + 10
-        draw.rounded_rectangle([col2_x, estado_y1, card_x2 - 35, estado_y1 + 50], radius=12,
+        # ========== RECUADRO ESTADO ==========
+        estado_y1 = y_start + 4 * row_h - 10
+        draw.rounded_rectangle([col2_x - 34, estado_y1, card_x2 - 40, estado_y1 + 55], radius=12,
                                 fill=(20, 45, 30), outline=VERDE, width=2)
-        draw.ellipse([col2_x + 18, estado_y1 + 17, col2_x + 34, estado_y1 + 33], fill=VERDE)
-        draw.text((col2_x + 48, estado_y1 + 11), "ESTADO: ACTIVA", fill=VERDE, font=font_status, anchor="lt")
+        draw.ellipse([col2_x - 14, estado_y1 + 19, col2_x + 4, estado_y1 + 37], fill=VERDE)
+        draw.text((col2_x + 20, estado_y1 + 13), "ESTADO: ACTIVA", fill=VERDE, font=font_status, anchor="lt")
 
         # ========== PIE DE PÁGINA ==========
         draw.line([60, H - 70, W - 60, H - 70], fill=DORADO, width=1)
