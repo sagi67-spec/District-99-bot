@@ -136,92 +136,70 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
-        # ==================== FUNCIÓN PARA GENERAR LICENCIA (LUXURY EDITION) ====================
+        # ==================== FUNCIÓN PARA GENERAR LICENCIA (ESTILO PREMIUM DEFINITIVO) ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
         # ========== CONFIGURACIÓN ==========
-        W, H = 1000, 680
-        img = Image.new('RGB', (W, H), color=(248, 248, 252))
+        W, H = 800, 540
+        img = Image.new('RGB', (W, H), color=(8, 8, 12))
         draw = ImageDraw.Draw(img)
         
-        # ========== FONDO CON DEGRADADO LUXURY ==========
+        # ========== FONDO NEGRO CON DEGRADADO ==========
         for i in range(H):
-            r = 248 - int((15) * (i / H))
-            g = 248 - int((15) * (i / H))
-            b = 252 - int((20) * (i / H))
+            r = 8 + int((16 - 8) * (i / H))
+            g = 8 + int((16 - 8) * (i / H))
+            b = 12 + int((22 - 12) * (i / H))
             draw.line([(0, i), (W, i)], fill=(r, g, b))
         
-        # ========== BORDE DOBLE ORO PLATINO ==========
-        # Borde exterior grueso (dorado platino)
-        draw.rectangle([12, 12, W-12, H-12], outline=(200, 180, 120), width=4)
-        # Borde interior fino (plateado)
-        draw.rectangle([20, 20, W-20, H-20], outline=(180, 185, 195), width=2)
-        # Borde interior delicado
-        draw.rectangle([26, 26, W-26, H-26], outline=(210, 212, 218), width=1)
+        # ========== BORDE DOBLE ==========
+        draw.rectangle([12, 12, W-12, H-12], outline=(180, 185, 195), width=2)
+        draw.rectangle([18, 18, W-18, H-18], outline=(180, 185, 195), width=1)
+        draw.rectangle([22, 22, W-22, H-22], outline=(30, 30, 38), width=1)
         
-        # ========== ESQUINAS DECORATIVAS ELEGANTES ==========
-        def dibujar_esquina_lujo(x, y, size=50, invert=False):
-            # Línea principal dorada
-            if not invert:
-                draw.line([(x, y+size), (x, y), (x+size, y)], fill=(200, 180, 120), width=4)
-                draw.line([(x+6, y+size-6), (x+6, y+6), (x+size-6, y+6)], fill=(180, 185, 195), width=1)
-                # Detalle interior
-                draw.line([(x+12, y+size-12), (x+12, y+12), (x+size-12, y+12)], fill=(220, 222, 228), width=1)
-            else:
-                draw.line([(x, y-size), (x, y), (x-size, y)], fill=(200, 180, 120), width=4)
-                draw.line([(x-6, y-size+6), (x-6, y-6), (x-size+6, y-6)], fill=(180, 185, 195), width=1)
-                draw.line([(x-12, y-size+12), (x-12, y-12), (x-size+12, y-12)], fill=(220, 222, 228), width=1)
+        # ========== LÍNEA DECORATIVA SUPERIOR ==========
+        draw.line([40, 40, W-40, 40], fill=(180, 185, 195), width=1)
+        draw.line([40, 42, W-40, 42], fill=(30, 30, 38), width=1)
         
-        dibujar_esquina_lujo(18, 18)
-        dibujar_esquina_lujo(W-18, 18, 50, True)
-        dibujar_esquina_lujo(18, H-18, 50)
-        dibujar_esquina_lujo(W-18, H-18, 50, True)
-        
-        # ========== BANDA SUPERIOR ORO PLATINO ==========
-        draw.rectangle([36, 36, W-36, 90], fill=(30, 30, 40))
-        draw.rectangle([36, 90, W-36, 94], fill=(200, 180, 120))
-        draw.rectangle([36, 94, W-36, 96], fill=(160, 150, 120))
-        
-        # ========== FUENTES ELEGANTES ==========
+        # ========== FUENTES ==========
         try:
-            # Intenta usar fuentes más elegantes si están disponibles
-            font_title = ImageFont.truetype("arial.ttf", 46)
-            font_subtitle = ImageFont.truetype("arial.ttf", 22)
-            font_section = ImageFont.truetype("arial.ttf", 20)
-            font_data = ImageFont.truetype("arial.ttf", 18)
-            font_label = ImageFont.truetype("arial.ttf", 15)
-            font_footer = ImageFont.truetype("arial.ttf", 13)
-            font_status = ImageFont.truetype("arial.ttf", 28)
-            font_big = ImageFont.truetype("arial.ttf", 34)
-            font_lic = ImageFont.truetype("arial.ttf", 16)
+            font_title = ImageFont.truetype("arial.ttf", 28)
+            font_sub = ImageFont.truetype("arial.ttf", 14)
+            font_data = ImageFont.truetype("arial.ttf", 16)
+            font_label = ImageFont.truetype("arial.ttf", 10)
+            font_footer = ImageFont.truetype("arial.ttf", 9)
+            font_lic = ImageFont.truetype("arial.ttf", 13)
+            font_big = ImageFont.truetype("arial.ttf", 22)
         except:
             font_title = ImageFont.load_default()
-            font_subtitle = ImageFont.load_default()
-            font_section = ImageFont.load_default()
+            font_sub = ImageFont.load_default()
             font_data = ImageFont.load_default()
             font_label = ImageFont.load_default()
             font_footer = ImageFont.load_default()
-            font_status = ImageFont.load_default()
-            font_big = ImageFont.load_default()
             font_lic = ImageFont.load_default()
+            font_big = ImageFont.load_default()
+        
+        # ========== LOGO 99 (esquina superior izquierda) ==========
+        draw.text((35, 20), "99", fill=(180, 185, 195), font=font_big, anchor="lt")
+        draw.text((58, 30), "GVRP", fill=(120, 125, 135), font=font_sub, anchor="lt")
         
         # ========== TÍTULO PRINCIPAL ==========
-        # Sombra
-        draw.text((W//2 + 3, 52), "LICENCIA DE CONDUCIR", fill=(0, 0, 0, 50), font=font_title, anchor="mt")
-        draw.text((W//2, 49), "LICENCIA DE CONDUCIR", fill=(200, 180, 120), font=font_title, anchor="mt")
+        draw.text((W//2, 42), "LICENCIA DE CONDUCIR", fill=(255, 255, 255), font=font_title, anchor="mt")
         
-        # Subtítulo
-        draw.text((W//2 + 2, 78), "DISTRICT 99 - GVRP", fill=(0, 0, 0, 50), font=font_subtitle, anchor="mt")
-        draw.text((W//2, 76), "DISTRICT 99 - GVRP", fill=(180, 185, 195), font=font_subtitle, anchor="mt")
+        # ========== SUBTÍTULO ==========
+        draw.text((W//2, 68), "DISTRICT 99 - GVRP", fill=(150, 155, 165), font=font_sub, anchor="mt")
         
-        # ========== NÚMERO DE LICENCIA ==========
+        # ========== NÚMERO DE LICENCIA (esquina superior derecha) ==========
         licencia_id = datos_licencia.get('licencia_id', 'LIC-0000')
-        draw.text((W-50, 45), f"#{licencia_id}", fill=(200, 180, 120), font=font_big, anchor="rt")
-        draw.text((W-50, 78), "VALID", fill=(180, 185, 195), font=font_lic, anchor="rt")
+        draw.text((W-35, 28), f"#{licencia_id}", fill=(255, 255, 255), font=font_lic, anchor="rt")
+        draw.text((W-35, 45), "VALID", fill=(120, 125, 135), font=font_lic, anchor="rt")
+        
+        # ========== LÍNEA DECORATIVA DESPUÉS DEL TÍTULO ==========
+        draw.line([40, 85, W-40, 85], fill=(180, 185, 195), width=1)
+        draw.line([40, 87, W-40, 87], fill=(30, 30, 38), width=1)
         
         # ========== AVATAR DISCORD ==========
-        avatar_size = 125
-        avatar_x, avatar_y = 70, 140
+        avatar_size = 75
+        avatar_x, avatar_y = 35, 110
         
         try:
             avatar_url = usuario.display_avatar.url
@@ -229,7 +207,6 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             avatar_img = Image.open(BytesIO(avatar_response.content))
             avatar_img = avatar_img.resize((avatar_size, avatar_size))
             
-            # Máscara circular
             mask = Image.new('L', (avatar_size, avatar_size), 0)
             mask_draw = ImageDraw.Draw(mask)
             mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
@@ -237,35 +214,18 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
             avatar_circular.paste(avatar_img, (0, 0), mask)
             
-            # Sombra suave
-            shadow = Image.new('RGBA', (avatar_size+14, avatar_size+14), (0, 0, 0, 20))
-            img.paste(shadow, (avatar_x-7, avatar_y-7), shadow)
-            
             img.paste(avatar_circular, (avatar_x, avatar_y), avatar_circular)
-            
-            # Círculo dorado
-            draw.ellipse([avatar_x-6, avatar_y-6, avatar_x+avatar_size+6, avatar_y+avatar_size+6],
-                         outline=(200, 180, 120), width=3)
-            draw.ellipse([avatar_x-2, avatar_y-2, avatar_x+avatar_size+2, avatar_y+avatar_size+2],
-                         outline=(160, 165, 175), width=1)
-            
-            draw.text((avatar_x + avatar_size//2, avatar_y + avatar_size + 18),
-                     "DISCORD", fill=(160, 165, 175), font=font_label, anchor="mt")
-            draw.text((avatar_x + avatar_size//2, avatar_y + avatar_size + 38),
-                     f"@{usuario.name}", fill=(200, 180, 120), font=font_data, anchor="mt")
+            draw.ellipse([avatar_x-3, avatar_y-3, avatar_x+avatar_size+3, avatar_y+avatar_size+3],
+                         outline=(180, 185, 195), width=1)
         except:
             draw.ellipse([avatar_x, avatar_y, avatar_x+avatar_size, avatar_y+avatar_size],
-                         outline=(200, 180, 120), width=3)
-            draw.text((avatar_x + avatar_size//2, avatar_y + avatar_size//2),
-                     "DISCORD", fill=(160, 165, 175), font=font_data, anchor="mm")
+                         outline=(180, 185, 195), width=1)
         
         # ========== AVATAR ROBLOX ==========
-        avatar_x2, avatar_y2 = 805, 140
+        avatar_x2, avatar_y2 = 35, 215
         
         try:
             user_roblox = datos_licencia.get('user_roblox', '')
-            avatar_cargado = False
-            
             if user_roblox:
                 search_url = f"https://users.roblox.com/v1/users/search?keyword={user_roblox}"
                 search_response = requests.get(search_url, timeout=5)
@@ -290,126 +250,76 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                         foto_circular = Image.new('RGBA', (avatar_size, avatar_size))
                         foto_circular.paste(foto_img, (0, 0), mask)
                         
-                        shadow = Image.new('RGBA', (avatar_size+14, avatar_size+14), (0, 0, 0, 20))
-                        img.paste(shadow, (avatar_x2-7, avatar_y2-7), shadow)
-                        
                         img.paste(foto_circular, (avatar_x2, avatar_y2), foto_circular)
-                        draw.ellipse([avatar_x2-6, avatar_y2-6, avatar_x2+avatar_size+6, avatar_y2+avatar_size+6],
-                                     outline=(200, 180, 120), width=3)
-                        draw.ellipse([avatar_x2-2, avatar_y2-2, avatar_x2+avatar_size+2, avatar_y2+avatar_size+2],
-                                     outline=(160, 165, 175), width=1)
-                        avatar_cargado = True
-            
-            if avatar_cargado:
-                draw.text((avatar_x2 + avatar_size//2, avatar_y2 + avatar_size + 18),
-                         "ROBLOX", fill=(160, 165, 175), font=font_label, anchor="mt")
-                draw.text((avatar_x2 + avatar_size//2, avatar_y2 + avatar_size + 38),
-                         user_roblox, fill=(200, 180, 120), font=font_data, anchor="mt")
+                        draw.ellipse([avatar_x2-3, avatar_y2-3, avatar_x2+avatar_size+3, avatar_y2+avatar_size+3],
+                                     outline=(180, 185, 195), width=1)
+                    else:
+                        draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
+                                     outline=(180, 185, 195), width=1)
+                else:
+                    draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
+                                 outline=(180, 185, 195), width=1)
             else:
                 draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
-                             outline=(200, 180, 120), width=3)
-                draw.text((avatar_x2 + avatar_size//2, avatar_y2 + avatar_size//2),
-                         "ROBLOX", fill=(160, 165, 175), font=font_data, anchor="mm")
+                             outline=(180, 185, 195), width=1)
         except:
             draw.ellipse([avatar_x2, avatar_y2, avatar_x2+avatar_size, avatar_y2+avatar_size],
-                         outline=(200, 180, 120), width=3)
-            draw.text((avatar_x2 + avatar_size//2, avatar_y2 + avatar_size//2),
-                     "ROBLOX", fill=(160, 165, 175), font=font_data, anchor="mm")
+                         outline=(180, 185, 195), width=1)
         
-        # ========== TABLA DE DATOS LUXURY ==========
-        table_x, table_y = 220, 135
-        table_w, table_h = 560, 430
+        # ========== TABLA DE DATOS ==========
+        table_x = 145
+        table_y = 105
+        col1_w = 150
+        col2_w = 150
+        row_h = 32
         
-        # Fondo de la tabla con efecto glass
-        draw.rectangle([table_x, table_y, table_x+table_w, table_y+table_h],
-                       fill=(250, 250, 254), outline=(200, 180, 120), width=2)
-        draw.rectangle([table_x+6, table_y+6, table_x+table_w-6, table_y+table_h-6],
-                       fill=None, outline=(220, 222, 228), width=1)
+        # Línea superior de la tabla
+        draw.line([table_x, table_y, table_x + col1_w + col2_w, table_y], fill=(40, 40, 48), width=1)
         
-        # Encabezado de la tabla
-        draw.rectangle([table_x, table_y, table_x+table_w, table_y+48],
-                       fill=(30, 30, 40))
-        draw.rectangle([table_x, table_y+46, table_x+table_w, table_y+50],
-                       fill=(200, 180, 120))
+        # Datos en pares (etiqueta izquierda, valor izquierdo, etiqueta derecha, valor derecho)
+        datos_pares = [
+            ("NOMBRE COMPLETO", f"{datos_licencia.get('nombre', '')} {datos_licencia.get('apellidos', '')}", 
+             "LICENCIA", datos_licencia.get('licencia_id', '')),
+            ("EDAD", f"{datos_licencia.get('edad', '')} AÑOS", 
+             "EXPEDICIÓN", datos_licencia.get('fecha_expedicion', '')),
+            ("OFICIO", datos_licencia.get('oficio', ''), 
+             "EXPIRACIÓN", datos_licencia.get('fecha_expiracion', '')),
+            ("POBLACIÓN", "GREENVILLE", 
+             "ESTADO", "ACTIVA"),
+            ("DNI", datos_licencia.get('dni', ''), 
+             "", ""),
+        ]
         
-        draw.text((table_x + table_w//2, table_y + 24),
-                 "DATOS DEL CIUDADANO", fill=(200, 180, 120), font=font_section, anchor="mt")
+        y = table_y + 5
+        for idx, (label1, val1, label2, val2) in enumerate(datos_pares):
+            y += 5
+            
+            # Columna izquierda
+            draw.text((table_x, y), label1, fill=(120, 125, 135), font=font_label)
+            draw.text((table_x, y + 14), val1, fill=(255, 255, 255), font=font_data)
+            
+            # Columna derecha (si tiene datos)
+            if label2:
+                draw.text((table_x + col1_w + 10, y), label2, fill=(120, 125, 135), font=font_label)
+                draw.text((table_x + col1_w + 10, y + 14), val2, fill=(255, 255, 255), font=font_data)
+            
+            # Línea separadora
+            draw.line([table_x, y + 32, table_x + col1_w + col2_w, y + 32], fill=(30, 30, 38), width=1)
+            y += 32
+            
+        # ========== ESTADO INFERIOR ==========
+        status_y = H - 52
         
-        # ========== DATOS EN 2 COLUMNAS ==========
-        y_start = table_y + 70
-        spacing = 42
-        col1_x = table_x + 30
-        col2_x = table_x + table_w//2 + 20
+        # Línea decorativa
+        draw.line([40, status_y-5, W-40, status_y-5], fill=(30, 30, 38), width=1)
         
-        def dibujar_campo_lujo(label, valor, x, y, es_destacado=False):
-            # Etiqueta
-            draw.text((x, y), label, fill=(160, 165, 175), font=font_label)
-            # Valor
-            color = (200, 180, 120) if es_destacado else (30, 30, 40)
-            draw.text((x + 120, y), valor, fill=color, font=font_data)
-            # Línea divisoria sutil
-            draw.line([x, y+32, x+230, y+32], fill=(235, 236, 242), width=1)
+        # Círculo verde
+        draw.ellipse([W//2 - 65, status_y, W//2 - 51, status_y+14], fill=(0, 200, 80), outline=(0, 180, 70), width=1)
         
-        # Columna Izquierda
-        nombre_completo = f"{datos_licencia.get('nombre', '')} {datos_licencia.get('apellidos', '')}"
-        dibujar_campo_lujo("NOMBRE", nombre_completo, col1_x, y_start, True)
-        y_start += spacing
-        dibujar_campo_lujo("EDAD", f"{datos_licencia.get('edad', '')} AÑOS", col1_x, y_start)
-        y_start += spacing
-        dibujar_campo_lujo("OFICIO", datos_licencia.get('oficio', ''), col1_x, y_start)
-        y_start += spacing
-        dibujar_campo_lujo("POBLACIÓN", "GREENVILLE", col1_x, y_start)
-        y_start += spacing
-        dibujar_campo_lujo("DNI", datos_licencia.get('dni', ''), col1_x, y_start, True)
-        
-        # Columna Derecha
-        y_start = table_y + 70
-        dibujar_campo_lujo("ROBLOX", datos_licencia.get('user_roblox', ''), col2_x, y_start)
-        y_start += spacing
-        dibujar_campo_lujo("LICENCIA", datos_licencia.get('licencia_id', ''), col2_x, y_start, True)
-        y_start += spacing
-        dibujar_campo_lujo("EXPEDICIÓN", datos_licencia.get('fecha_expedicion', ''), col2_x, y_start)
-        y_start += spacing
-        dibujar_campo_lujo("EXPIRACIÓN", datos_licencia.get('fecha_expiracion', ''), col2_x, y_start)
-        y_start += spacing
-        dibujar_campo_lujo("ESTADO", "ACTIVA", col2_x, y_start, True)
-        
-        # ========== SELLO DE VALIDEZ ==========
-        seal_x, seal_y = W - 120, H - 105
-        draw.ellipse([seal_x, seal_y, seal_x+80, seal_y+80],
-                     outline=(200, 180, 120), width=3, fill=(248, 248, 252))
-        draw.ellipse([seal_x+10, seal_y+10, seal_x+70, seal_y+70],
-                     outline=(180, 185, 195), width=1)
-        draw.text((seal_x+40, seal_y+30), "✓", fill=(200, 180, 120), font=font_title, anchor="mt")
-        draw.text((seal_x+40, seal_y+60), "VALIDA", fill=(160, 165, 175), font=font_label, anchor="mt")
-        
-        # ========== BARRA DE ESTADO ==========
-        status_y = H - 58
-        draw.rectangle([50, status_y, W-50, status_y+38],
-                       fill=(248, 248, 252), outline=(200, 180, 120), width=2)
-        draw.rectangle([56, status_y+6, W-56, status_y+32],
-                       fill=(245, 245, 250), outline=(220, 222, 228), width=1)
-        
-        # Círculo de estado
-        draw.ellipse([W//2 - 130, status_y+9, W//2 - 110, status_y+29],
-                     fill=(0, 200, 80), outline=(0, 180, 70), width=1)
-        
-        draw.text((W//2 - 95, status_y + 19), "ESTADO: ACTIVA", 
-                 fill=(0, 200, 80), font=font_status, anchor="mt")
+        draw.text((W//2 - 38, status_y + 7), "ESTADO: ACTIVA", fill=(0, 200, 80), font=font_lic, anchor="lt")
         
         # ========== PIE DE PÁGINA ==========
-        draw.line([180, H-28, W-180, H-28], fill=(200, 180, 120), width=1)
-        draw.text((W//2, H-18), "DISTRICT 99 - GVRP © 2026", 
-                 fill=(160, 165, 175), font=font_footer, anchor="mt")
-        
-        # ========== PATRÓN DECORATIVO (esquina inferior izquierda) ==========
-        pattern_x, pattern_y = 50, H-85
-        for i in range(5):
-            for j in range(5):
-                if (i + j) % 2 == 0:
-                    draw.rectangle([pattern_x + i*7, pattern_y + j*7, 
-                                   pattern_x + i*7 + 4, pattern_y + j*7 + 4],
-                                   fill=(200, 180, 120, 100))
+        draw.text((W//2, H-20), "DISTRICT 99 - GVRP © 2026", fill=(70, 75, 85), font=font_footer, anchor="mt")
         
         # ========== GUARDAR IMAGEN ==========
         img_bytes = BytesIO()
