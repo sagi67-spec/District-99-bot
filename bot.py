@@ -292,16 +292,21 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.rounded_rectangle([14, 14, W - 6, H - 6], radius=26, fill=(0, 0, 0))
         draw.rounded_rectangle([6, 6, W - 14, H - 14], radius=26, fill=NEGRO_CARD)
 
-        # ========== FRANJA HOLOGRÁFICA IZQUIERDA (dorado/negro metálico) ==========
+        # ========== FRANJA HOLOGRÁFICA IZQUIERDA (clara, tipo carnet oficial) ==========
         strip_w = 34
+        holo_layer = Image.new('RGB', (strip_w, H - 20), (235, 232, 225))
+        holo_draw = ImageDraw.Draw(holo_layer)
         for x in range(strip_w):
             t = x / strip_w
-            r = int(60 + 120 * abs(0.5 - (t * 3) % 1 - 0.5))
-            g = int(50 + 95 * abs(0.5 - (t * 2.3 + 0.3) % 1 - 0.5))
-            b = int(20 + 40 * abs(0.5 - (t * 2.7 + 0.6) % 1 - 0.5))
-            draw.line([(6 + x, 6), (6 + x, H - 14)], fill=(r, g, b))
-        for i in range(-H, W, 16):
-            draw.line([(6 + i, 6), (6 + i + H, H - 14)], fill=(255, 235, 190), width=1)
+            r = int(215 + 35 * abs(0.5 - (t * 3) % 1 - 0.5))
+            g = int(210 + 38 * abs(0.5 - (t * 2.3 + 0.3) % 1 - 0.5))
+            b = int(225 + 25 * abs(0.5 - (t * 2.7 + 0.6) % 1 - 0.5))
+            holo_draw.line([(x, 0), (x, H - 20)], fill=(r, g, b))
+        # líneas diagonales SOLO dentro de esta franja (clip natural por el tamaño de la capa)
+        for i in range(-H, strip_w + H, 16):
+            holo_draw.line([(i, 0), (i + H, H - 20)], fill=(255, 255, 255), width=1)
+        img.paste(holo_layer, (6, 6))
+        draw = ImageDraw.Draw(img)
 
         # ========== FUENTES ==========
         FUENTE_BASE = "fonts/Montserrat-Bold.ttf"
@@ -322,10 +327,10 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             print(f"⚠️ Error cargando fuentes: {e}")
             font_title = font_sub = font_label = font_value = font_footer = font_footer_b = font_status = font_num = font_avatar_label = font_watermark = font_logo = ImageFont.load_default()
 
-        # ========== WATERMARK CENTRAL "99" (muy sutil, dorado tenue) ==========
-        wm_cx, wm_cy, wm_r = 780, 400, 175
-        wm_color = (28, 26, 22)
-        draw.ellipse([wm_cx - wm_r, wm_cy - wm_r, wm_cx + wm_r, wm_cy + wm_r], outline=(35, 32, 26), width=2)
+        # ========== WATERMARK CENTRAL "99" (muy sutil, casi invisible) ==========
+        wm_cx, wm_cy, wm_r = 820, 420, 150
+        wm_color = (22, 21, 18)
+        draw.ellipse([wm_cx - wm_r, wm_cy - wm_r, wm_cx + wm_r, wm_cy + wm_r], outline=(26, 24, 20), width=2)
         draw.text((wm_cx, wm_cy), "99", fill=wm_color, font=font_watermark, anchor="mm")
 
         # ========== HEADER: LOGO CIRCULAR + TÍTULO ==========
