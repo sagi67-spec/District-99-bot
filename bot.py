@@ -439,11 +439,11 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             draw.line([campo_x_valor, y + 24, campo_x_fin, y + 24], fill=LINEA, width=1)
             y += row_h
 
-        # ========== FOOTER BAR (negro con borde dorado) ==========
+        # ========== FOOTER BAR (negro con borde dorado) — NO TAPA LA FRANJA ==========
         footer_y1 = H - 115
         footer_y2 = H - 20
-        draw.rectangle([6, footer_y1, W - 14, footer_y2], fill=(16, 15, 13))
-        draw.line([6, footer_y1, W - 14, footer_y1], fill=DORADO, width=2)
+        draw.rectangle([strip_w + 12, footer_y1, W - 14, footer_y2], fill=(16, 15, 22))
+        draw.line([strip_w + 12, footer_y1, W - 14, footer_y1], fill=DORADO, width=2)
 
         fx = strip_w + 60
         draw.text((fx, footer_y1 + 18), "EXPEDICIÓN", fill=DORADO_OSCURO, font=font_footer)
