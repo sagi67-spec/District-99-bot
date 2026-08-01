@@ -279,11 +279,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops, ImageOps
 # ==================== CONSTANTES DE DISEÑO ====================
 class LicenciaConfig:
     """Configuración central del diseño de la licencia"""
-    # Tamaño
     WIDTH = 1400
     HEIGHT = 900
     
-    # Colores principales (Paleta de Alta Seguridad)
     COLORES = {
         'fondo_principal': (248, 246, 242),
         'fondo_secundario': (238, 235, 228),
@@ -304,20 +302,15 @@ class LicenciaConfig:
         'azul_seguridad': (35, 80, 160),
         'blanco_puro': (255, 255, 255),
         'negro_puro': (0, 0, 0),
-        'transparente': (0, 0, 0, 0),
     }
     
-    # Fuentes
     FUENTES = {
         'display': 'fonts/Montserrat-Bold.ttf',
         'display_light': 'fonts/Montserrat-Light.ttf',
         'body': 'fonts/Montserrat-Regular.ttf',
-        'body_italic': 'fonts/Montserrat-Italic.ttf',
-        'condensed': 'fonts/Montserrat-Condensed.ttf',
         'mono': 'fonts/JetBrainsMono-Regular.ttf',
     }
     
-    # Tamaños de fuente
     FONT_SIZES = {
         'title': 48,
         'subtitle': 22,
@@ -329,7 +322,6 @@ class LicenciaConfig:
         'footer_value': 18,
         'mrz': 20,
         'watermark': 200,
-        'hologram_text': 8,
     }
 
 
@@ -345,7 +337,6 @@ class LicenciaRenderer:
         self._cargar_fuentes()
         
     def _cargar_fuentes(self):
-        """Carga todas las fuentes necesarias"""
         for nombre, ruta in self.config.FUENTES.items():
             try:
                 if nombre == 'display':
@@ -362,22 +353,21 @@ class LicenciaRenderer:
                 self.fonts = self._fallback_fonts()
                 
     def _fallback_fonts(self):
+        default = ImageFont.load_default()
         return {
-            'title': ImageFont.load_default(),
-            'subtitle': ImageFont.load_default(),
-            'body_value': ImageFont.load_default(),
-            'body_label': ImageFont.load_default(),
-            'mono': ImageFont.load_default(),
-            'condensed': ImageFont.load_default(),
+            'title': default,
+            'subtitle': default,
+            'body_value': default,
+            'body_label': default,
+            'mono': default,
     }
         def generar(self, usuario: discord.Member, datos: dict) -> discord.File:
     """Método principal para generar la licencia"""
     try:
-        # Crear lienzo base
         img = Image.new('RGB', (self.W, self.H), self.colores['fondo_principal'])
         draw = ImageDraw.Draw(img)
         
-        # Aplicar degradado PVC
+        # Degradado PVC
         for i in range(self.H):
             factor = i / self.H
             r = int(self.colores['fondo_principal'][0] - 15 * factor)
@@ -385,38 +375,20 @@ class LicenciaRenderer:
             b = int(self.colores['fondo_principal'][2] - 10 * factor)
             draw.line([(0, i), (self.W, i)], fill=(r, g, b))
         
-        # Borde exterior premium (doble borde con sombra)
         self._dibujar_borde_premium(img, draw)
         
-        # Fondo con textura y elementos de seguridad
         img = self._aplicar_fondo_seguridad(img, draw)
         draw = ImageDraw.Draw(img)
         
-        # Header con escudo metálico
         self._dibujar_header(img, draw, datos)
-        
-        # Avatar Discord profesional
         self._dibujar_avatar_discord(img, draw, usuario)
-        
-        # Avatar Roblox integrado
         self._dibujar_avatar_roblox(img, draw, datos)
-        
-        # Campos de información
         self._dibujar_campos_info(img, draw, datos)
-        
-        # Footer premium
         self._dibujar_footer(img, draw, datos)
-        
-        # MRZ (Machine Readable Zone)
         self._dibujar_mrz(img, draw, datos)
-        
-        # Sellos de seguridad
         self._dibujar_sellos_seguridad(img, draw, datos)
-        
-        # QR y códigos de verificación
         self._dibujar_codigos_verificacion(img, draw, datos)
         
-        # Guardar
         img_bytes = BytesIO()
         img.save(img_bytes, format='PNG', quality=100, compress_level=0)
         img_bytes.seek(0)
@@ -432,25 +404,20 @@ def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
     """Dibuja borde premium con doble capa y sombra"""
     margen = 25
     
-    # Sombra exterior
     for i in range(12):
         offset = margen - i
         draw.rectangle([offset, offset, self.W - offset, self.H - offset],
                       outline=(0, 0, 0, 30 - i*2), width=1)
     
-    # Borde exterior dorado
     draw.rectangle([margen, margen, self.W - margen, self.H - margen],
                   outline=self.colores['dorado_principal'], width=4)
     
-    # Borde interior navy
     draw.rectangle([margen + 10, margen + 10, self.W - margen - 10, self.H - margen - 10],
                   outline=self.colores['navy_medio'], width=2)
     
-    # Borde interior fino dorado
     draw.rectangle([margen + 16, margen + 16, self.W - margen - 16, self.H - margen - 16],
                   outline=self.colores['dorado_claro'], width=1)
     
-    # Esquinas decorativas (ángulos metálicos)
     self._dibujar_esquinas_premium(img, draw, margen + 8)
 
 def _dibujar_esquinas_premium(self, img: Image.Image, draw: ImageDraw.Draw, base: int):
@@ -466,11 +433,9 @@ def _dibujar_esquinas_premium(self, img: Image.Image, draw: ImageDraw.Draw, base
     ]
     
     for cx, cy, dx, dy in esquinas:
-        # Línea exterior dorada
         draw.line([(cx, cy), (cx + size * dx, cy)], fill=self.colores['dorado_principal'], width=grosor)
         draw.line([(cx, cy), (cx, cy + size * dy)], fill=self.colores['dorado_principal'], width=grosor)
         
-        # Línea interior navy
         offset = 12
         draw.line([(cx + offset*dx, cy + offset*dy), (cx + (size-15) * dx, cy + offset*dy)],
                  fill=self.colores['navy_medio'], width=2)
@@ -478,20 +443,15 @@ def _dibujar_esquinas_premium(self, img: Image.Image, draw: ImageDraw.Draw, base
                  fill=self.colores['navy_medio'], width=2)
         def _aplicar_fondo_seguridad(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
     """Aplica patrones de seguridad al fondo"""
-    
-    # 1. Patrón guilloché (ondas concéntricas)
     img = self._aplicar_guilloche(img, draw)
     draw = ImageDraw.Draw(img)
     
-    # 2. Microtexto repetitivo
     img = self._aplicar_microtexto(img, draw)
     draw = ImageDraw.Draw(img)
     
-    # 3. Watermark "99" transparente
     self._dibujar_watermark_99(img, draw)
     draw = ImageDraw.Draw(img)
     
-    # 4. Patrón de hexágonos de seguridad
     self._dibujar_hexagonos_seguridad(img, draw)
     draw = ImageDraw.Draw(img)
     
@@ -501,7 +461,6 @@ def _aplicar_guilloche(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Im
     """Dibuja patrones guilloché (ondas de seguridad)"""
     centro_x, centro_y = self.W // 2, self.H // 2
     
-    # Ondas concéntricas elípticas
     for radio in range(40, 700, 30):
         alpha = int(8 * (1 - radio / 700))
         color = (200 - alpha, 198 - alpha, 190 - alpha)
@@ -509,7 +468,6 @@ def _aplicar_guilloche(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Im
                      centro_x + radio, centro_y + int(radio * 0.7)],
                     outline=color, width=1)
     
-    # Ondas diagonales de seguridad
     for i in range(-self.H, self.W + self.H, 40):
         draw.line([(i, 0), (i + self.H, self.H)], fill=(215, 212, 205), width=1)
         draw.line([(i, 0), (i - self.H, self.H)], fill=(215, 212, 205), width=1)
@@ -526,11 +484,9 @@ def _aplicar_microtexto(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.I
     texto = "DISTRICT99 GVRP • DOCUMENTO OFICIAL • VALID LICENSE • "
     texto_repetido = texto * 60
     
-    # Microtexto superior e inferior
     draw.text((50, 18), texto_repetido[:500], fill=(200, 198, 190), font=fuente)
     draw.text((50, self.H - 28), texto_repetido[:500], fill=(200, 198, 190), font=fuente)
     
-    # Microtexto en los costados (vertical)
     for i in range(0, self.H - 100, 15):
         draw.text((12, 50 + i), "D99", fill=(200, 198, 190), font=fuente)
         draw.text((self.W - 30, 50 + i), "GVRP", fill=(200, 198, 190), font=fuente)
@@ -544,11 +500,9 @@ def _dibujar_watermark_99(self, img: Image.Image, draw: ImageDraw.Draw):
     except:
         fuente = ImageFont.load_default()
         
-    # Watermark principal
     draw.text((self.W // 2, self.H // 2 - 20), "99",
              fill=(215, 212, 205, 40), font=fuente, anchor="mm")
     
-    # Watermark secundario "DISTRICT 99"
     try:
         fuente2 = ImageFont.truetype("fonts/Montserrat-Light.ttf", 40)
         draw.text((self.W // 2, self.H // 2 + 100), "DISTRICT 99",
@@ -578,81 +532,69 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
                 py = y + size * math.sin(math.radians(angulo))
                 puntos.append((px, py))
             
-            # Solo dibujar algunos (patrón de seguridad)
             if (row + col) % 2 == 0:
                 draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
                 def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     """Dibuja el header premium con escudo y título metálico"""
-    # ========== BANDA SUPERIOR NAVY ==========
+    # Banda superior NAVY
     banda_y1 = 45
     banda_y2 = 130
     draw.rectangle([35, banda_y1, self.W - 35, banda_y2],
                   fill=self.colores['navy_oscuro'])
     
-    # Borde inferior dorado de la banda
     draw.line([35, banda_y2, self.W - 35, banda_y2],
              fill=self.colores['dorado_principal'], width=3)
     draw.line([35, banda_y2 + 4, self.W - 35, banda_y2 + 4],
              fill=self.colores['dorado_claro'], width=1)
     
-    # ========== ESCUDO METÁLICO ==========
+    # Escudo metálico
     escudo_x, escudo_y = 65, 48
     escudo_size = 78
     
-    # Base del escudo
     draw.ellipse([escudo_x, escudo_y, escudo_x + escudo_size, escudo_y + escudo_size],
                 fill=self.colores['dorado_claro'], outline=self.colores['dorado_oscuro'], width=3)
     
-    # Sombra interior
     draw.ellipse([escudo_x + 5, escudo_y + 5, escudo_x + escudo_size - 5, escudo_y + escudo_size - 5],
                 outline=self.colores['blanco_puro'], width=1)
     
-    # Número "99" dentro del escudo
     draw.text((escudo_x + escudo_size // 2, escudo_y + escudo_size // 2 + 2),
              "99", fill=self.colores['navy_oscuro'],
              font=self.fonts['title'], anchor="mm")
     
-    # ========== TÍTULO CON EFECTO METÁLICO ==========
+    # Título
     titulo_x = escudo_x + escudo_size + 25
     titulo_y = 58
     
-    # Sombra del título
     draw.text((titulo_x + 2, titulo_y + 2), "LICENCIA DE CONDUCIR",
              fill=self.colores['dorado_oscuro'],
              font=self.fonts['title'], anchor="lt")
     
-    # Título principal
     draw.text((titulo_x, titulo_y), "LICENCIA DE CONDUCIR",
              fill=self.colores['blanco_puro'],
              font=self.fonts['title'], anchor="lt")
     
-    # Subtítulo con efecto metálico
     subtitulo_y = titulo_y + 52
     draw.text((titulo_x, subtitulo_y), "✦ DISTRICT 99 - GVRP ✦",
              fill=self.colores['dorado_claro'],
              font=self.fonts['subtitle'], anchor="lt")
     
-    # ========== NÚMERO DE LICENCIA METÁLICO ==========
+    # Número de licencia metálico
     licencia_id = datos.get('licencia_id', 'LIC-0000')
     num_x = self.W - 120
     num_y = 52
     
-    # Placa metálica
     draw.rectangle([num_x - 140, num_y - 8, num_x + 140, num_y + 62],
                   fill=self.colores['dorado_claro'],
                   outline=self.colores['dorado_oscuro'], width=2)
     
-    # Efecto cepillado
     for i in range(0, 280, 4):
         draw.line([num_x - 140 + i, num_y - 8, num_x - 140 + i, num_y + 62],
                  fill=(230, 220, 200, 30), width=1)
     
-    # Número
     draw.text((num_x, num_y + 10), f"#{licencia_id}",
              fill=self.colores['navy_oscuro'],
              font=self.fonts['body_value'], anchor="mt")
     
-    # "VALID" en la placa
     draw.text((num_x, num_y + 42), "VALID",
              fill=self.colores['dorado_oscuro'],
              font=self.fonts['body_label'], anchor="mt")
@@ -662,7 +604,6 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
     avatar_x = 65
     avatar_y = 175
     
-    # Sombra del avatar
     for i in range(8):
         shadow_offset = 8 - i
         draw.rectangle([avatar_x - shadow_offset, avatar_y - shadow_offset,
@@ -675,28 +616,23 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
         avatar_img = Image.open(BytesIO(avatar_response.content)).convert("RGBA")
         avatar_img = avatar_img.resize((avatar_size, avatar_size))
         
-        # Máscara redondeada
         mask = Image.new('L', (avatar_size, avatar_size), 0)
         mask_draw = ImageDraw.Draw(mask)
         mask_draw.rounded_rectangle((0, 0, avatar_size, avatar_size), radius=20, fill=255)
         
-        # Aplicar máscara
         avatar_recortado = Image.new('RGBA', (avatar_size, avatar_size))
         avatar_recortado.paste(avatar_img, (0, 0), mask)
         
-        # Marco exterior dorado
         marco_outer = Image.new('RGBA', (avatar_size + 12, avatar_size + 12))
         marco_draw = ImageDraw.Draw(marco_outer)
         marco_draw.rounded_rectangle((0, 0, avatar_size + 12, avatar_size + 12),
                                     radius=22, fill=None,
                                     outline=self.colores['dorado_principal'], width=4)
         
-        # Marco interior navy
         marco_draw.rounded_rectangle((4, 4, avatar_size + 8, avatar_size + 8),
                                     radius=20, fill=None,
                                     outline=self.colores['navy_medio'], width=2)
         
-        # Pegar avatar con marcos
         img.paste(marco_outer, (avatar_x - 6, avatar_y - 6), marco_outer)
         img.paste(avatar_recortado, (avatar_x, avatar_y), avatar_recortado)
         
@@ -706,13 +642,11 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
                               radius=20, fill=(200, 200, 200),
                               outline=self.colores['dorado_principal'], width=3)
     
-    # Etiqueta "DISCORD" profesional
     label_y = avatar_y + avatar_size + 15
     draw.text((avatar_x + avatar_size // 2, label_y), "DISCORD",
              fill=self.colores['texto_secundario'],
              font=self.fonts['body_label'], anchor="mt")
     
-    # Nombre de usuario
     draw.text((avatar_x + avatar_size // 2, label_y + 20),
              f"@{usuario.name}",
              fill=self.colores['texto_principal'],
@@ -737,7 +671,6 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
                 foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content))
                 foto_img = foto_img.resize((avatar_size, avatar_size))
                 
-                # Máscara circular
                 mask = Image.new('L', (avatar_size, avatar_size), 0)
                 mask_draw = ImageDraw.Draw(mask)
                 mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
@@ -745,7 +678,6 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
                 avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
                 avatar_circular.paste(foto_img, (0, 0), mask)
                 
-                # Fondo circular decorativo
                 fondo_circ = Image.new('RGBA', (avatar_size + 20, avatar_size + 20))
                 fondo_draw = ImageDraw.Draw(fondo_circ)
                 fondo_draw.ellipse((0, 0, avatar_size + 20, avatar_size + 20),
@@ -763,41 +695,33 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
         draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size],
                     outline=self.colores['dorado_principal'], width=3)
     
-    # Etiqueta "ROBLOX"
     label_y = avatar_y + avatar_size + 12
     draw.text((avatar_x + avatar_size // 2, label_y), "ROBLOX",
              fill=self.colores['texto_secundario'],
              font=self.fonts['body_label'], anchor="mt")
     def _dibujar_campos_info(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     """Dibuja los campos de información con diseño premium"""
-    
-    # ========== FONDO DE LA TABLA ==========
     tabla_x1 = 310
     tabla_y1 = 170
     tabla_x2 = self.W - 50
     tabla_y2 = 510
     
-    # Sombra de la tabla
     draw.rectangle([tabla_x1 + 3, tabla_y1 + 3, tabla_x2 + 3, tabla_y2 + 3],
                   fill=(0, 0, 0, 15))
     
-    # Fondo de la tabla (casi transparente)
     draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2],
                   fill=(255, 255, 255, 80))
     
-    # Borde de la tabla
     draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2],
                   outline=self.colores['dorado_principal'], width=2)
     draw.rectangle([tabla_x1 + 6, tabla_y1 + 6, tabla_x2 - 6, tabla_y2 - 6],
                   outline=self.colores['navy_medio'], width=1)
     
-    # ========== CAMPOS EN 2 COLUMNAS ==========
     col1_x = tabla_x1 + 30
     col2_x = tabla_x1 + (tabla_x2 - tabla_x1) // 2 + 20
     y_start = tabla_y1 + 25
     row_height = 60
     
-    # Definición de campos
     campos = [
         ("NOMBRE COMPLETO", f"{datos.get('nombre', '')} {datos.get('apellidos', '')}".upper()),
         ("FECHA NACIMIENTO", datos.get('fecha_nacimiento', '')),
@@ -809,49 +733,44 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
         ("FECHA EXPIR.", datos.get('fecha_expiracion', '')),
     ]
     
-    # Dividir en dos columnas
     col1_campos = campos[:4]
     col2_campos = campos[4:]
     
-    # Dibujar columna 1
     for i, (label, value) in enumerate(col1_campos):
         y = y_start + i * row_height
         
-        # Línea separadora
         if i > 0:
             draw.line([col1_x, y - 8, col1_x + 280, y - 8],
                      fill=(220, 218, 210), width=1)
         
-        # Label
         draw.text((col1_x, y), label,
                  fill=self.colores['texto_terciario'],
                  font=self.fonts['body_label'])
         
-        # Value (más grande y en negrita)
         draw.text((col1_x, y + 20), value,
                  fill=self.colores['texto_principal'],
                  font=self.fonts['body_value'])
     
-    # Dibujar columna 2
     for i, (label, value) in enumerate(col2_campos):
         y = y_start + i * row_height
         
-        # Línea separadora
         if i > 0:
             draw.line([col2_x, y - 8, col2_x + 280, y - 8],
                      fill=(220, 218, 210), width=1)
         
-        # Label
         draw.text((col2_x, y), label,
                  fill=self.colores['texto_terciario'],
                  font=self.fonts['body_label'])
         
-        # Value
         draw.text((col2_x, y + 20), value,
                  fill=self.colores['texto_principal'],
                  font=self.fonts['body_value'])
     
-    # ========== ICONOS DECORATIVOS ==========
+    try:
+        font_icon = ImageFont.truetype("fonts/NotoEmoji-Regular.ttf", 20)
+    except:
+        font_icon = ImageFont.load_default()
+    
     iconos = [
         ("👤", col1_x - 30, y_start + 10),
         ("🎂", col1_x - 30, y_start + 70),
@@ -862,11 +781,6 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
         ("📅", col2_x - 30, y_start + 130),
     ]
     
-    try:
-        font_icon = ImageFont.truetype("fonts/NotoEmoji-Regular.ttf", 20)
-    except:
-        font_icon = ImageFont.load_default()
-        
     for icon, x, y in iconos:
         draw.text((x, y), icon, fill=self.colores['dorado_principal'], font=font_icon)
         def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
@@ -874,21 +788,17 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
     footer_y1 = self.H - 140
     footer_y2 = self.H - 30
     
-    # ========== BANDA FOOTER NAVY ==========
     draw.rectangle([35, footer_y1, self.W - 35, footer_y2],
                   fill=self.colores['navy_oscuro'])
     
-    # Borde superior dorado
     draw.line([35, footer_y1, self.W - 35, footer_y1],
              fill=self.colores['dorado_principal'], width=3)
     draw.line([35, footer_y1 + 4, self.W - 35, footer_y1 + 4],
              fill=self.colores['dorado_claro'], width=1)
     
-    # ========== FECHAS ==========
     fecha_x = 65
     fecha_y = footer_y1 + 20
     
-    # Expedición
     draw.text((fecha_x, fecha_y), "EXPEDICIÓN",
              fill=self.colores['dorado_claro'],
              font=self.fonts['footer_label'])
@@ -897,7 +807,6 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
              fill=self.colores['blanco_puro'],
              font=self.fonts['footer_value'])
     
-    # Expiración
     fecha_x2 = fecha_x + 230
     draw.text((fecha_x2, fecha_y), "EXPIRACIÓN",
              fill=self.colores['dorado_claro'],
@@ -907,20 +816,16 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
              fill=self.colores['blanco_puro'],
              font=self.fonts['footer_value'])
     
-    # ========== ESTADO PREMIUM ==========
     estado_x = self.W - 320
     estado_y = footer_y1 + 12
     
-    # Fondo del estado
     draw.rounded_rectangle([estado_x, estado_y, self.W - 55, estado_y + 70],
                           radius=12, fill=(20, 60, 35),
                           outline=self.colores['verde_brillante'], width=3)
     
-    # Círculo de estado
     draw.ellipse([estado_x + 18, estado_y + 23, estado_x + 40, estado_y + 45],
                 fill=self.colores['verde_brillante'])
     
-    # Texto "ACTIVA"
     draw.text((estado_x + 52, estado_y + 20), "ESTADO:",
              fill=self.colores['dorado_claro'],
              font=self.fonts['footer_label'])
@@ -928,11 +833,9 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
              fill=self.colores['verde_brillante'],
              font=self.fonts['body_value'])
     
-    # ========== SELLO DE VALIDACIÓN ==========
     sello_x = self.W - 170
     sello_y = footer_y1 + 20
     
-    # Sello circular
     draw.ellipse([sello_x, sello_y, sello_x + 55, sello_y + 55],
                 outline=self.colores['dorado_principal'], width=3,
                 fill=self.colores['navy_oscuro'])
@@ -948,116 +851,105 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
              fill=self.colores['dorado_claro'],
              font=self.fonts['body_label'], anchor="mm")
     
-    # ========== PIE DE PÁGINA ==========
     draw.text((self.W // 2, footer_y2 - 5),
-             "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY  •  www.district99.gvrp",
+             "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY",
              fill=self.colores['dorado_claro'],
              font=self.fonts['body_label'], anchor="mm")
-    def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    """Dibuja zona MRZ (Machine Readable Zone) estilo pasaporte"""
-    mrz_y = self.H - 25
-    mrz_x = 50
-    
-    # Fondo de la MRZ
-    draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10],
-                  fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
-    
-    # Generar código MRZ
-    nombre = datos.get('nombre', '').upper()[:20].ljust(20)
-    apellido = datos.get('apellidos', '').upper()[:20].ljust(20)
-    dni = datos.get('dni', '').zfill(8)
-    licencia = datos.get('licencia_id', 'LIC-0000')
-    
-    mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia}<<<D99<<<<<<<"
-    mrz_texto = mrz_texto[:44].ljust(44)
-    
-    draw.text((mrz_x, mrz_y), mrz_texto,
-             fill=self.colores['texto_principal'],
-             font=self.fonts['mono'], anchor="mm")
+        def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+        """Dibuja zona MRZ (Machine Readable Zone) estilo pasaporte"""
+        mrz_y = self.H - 25
+        mrz_x = 50
+        
+        draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10],
+                      fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
+        
+        nombre = datos.get('nombre', '').upper()[:20].ljust(20)
+        apellido = datos.get('apellidos', '').upper()[:20].ljust(20)
+        dni = datos.get('dni', '').zfill(8)
+        licencia = datos.get('licencia_id', 'LIC-0000')
+        
+        mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia}<<<D99<<<<<<<"
+        mrz_texto = mrz_texto[:44].ljust(44)
+        
+        draw.text((mrz_x, mrz_y), mrz_texto,
+                 fill=self.colores['texto_principal'],
+                 font=self.fonts['mono'], anchor="mm")
 
-def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    """Dibuja sellos de seguridad adicionales"""
-    
-    # ========== SELLO DEL DEPARTAMENTO ==========
-    sello_x = self.W - 200
-    sello_y = 350
-    
-    # Sello grande
-    draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90],
-                outline=self.colores['azul_seguridad'], width=2,
-                fill=(240, 248, 255, 80))
-    
-    draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82],
-                outline=self.colores['azul_seguridad'], width=1)
-    
-    # Texto del sello
-    draw.text((sello_x + 45, sello_y + 35), "D99",
-             fill=self.colores['azul_seguridad'],
-             font=self.fonts['body_value'], anchor="mm")
-    draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT",
-             fill=self.colores['texto_terciario'],
-             font=self.fonts['body_label'], anchor="mm")
-    
-    # ========== FIRMA DIGITAL SIMULADA ==========
-    firma_x = 65
-    firma_y = self.H - 180
-    
-    draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO",
-             fill=self.colores['texto_terciario'],
-             font=self.fonts['body_label'])
-    
-    # Firma generada
-    firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
-    draw.text((firma_x, firma_y + 20), f"__________________ {firma}",
-             fill=self.colores['texto_principal'],
-             font=self.fonts['body_value'])
+    def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+        """Dibuja sellos de seguridad adicionales"""
+        sello_x = self.W - 200
+        sello_y = 350
+        
+        draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90],
+                    outline=self.colores['azul_seguridad'], width=2,
+                    fill=(240, 248, 255, 80))
+        
+        draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82],
+                    outline=self.colores['azul_seguridad'], width=1)
+        
+        draw.text((sello_x + 45, sello_y + 35), "D99",
+                 fill=self.colores['azul_seguridad'],
+                 font=self.fonts['body_value'], anchor="mm")
+        draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT",
+                 fill=self.colores['texto_terciario'],
+                 font=self.fonts['body_label'], anchor="mm")
+        
+        firma_x = 65
+        firma_y = self.H - 180
+        
+        draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO",
+                 fill=self.colores['texto_terciario'],
+                 font=self.fonts['body_label'])
+        
+        firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
+        draw.text((firma_x, firma_y + 20), f"__________________ {firma}",
+                 fill=self.colores['texto_principal'],
+                 font=self.fonts['body_value'])
 
-def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    """Dibuja códigos de verificación (QR simulado, código de barras)"""
-    
-    # ========== CÓDIGO DE BARRAS SIMULADO ==========
-    bar_x = 65
-    bar_y = self.H - 105
-    bar_width = 250
-    bar_height = 35
-    
-    # Fondo del código de barras
-    draw.rectangle([bar_x, bar_y, bar_x + bar_width, bar_y + bar_height],
-                  fill=(255, 255, 255), outline=(200, 200, 200), width=1)
-    
-    # Generar barras
-    for i in range(0, bar_width, 3):
-        height_var = random.randint(20, bar_height)
-        draw.rectangle([bar_x + i, bar_y + (bar_height - height_var),
-                       bar_x + i + 1, bar_y + bar_height],
-                      fill=(0, 0, 0))
-    
-    # Número debajo del código de barras
-    numero = datos.get('dni', '00000000') + datos.get('licencia_id', 'LIC-0000')[-4:]
-    draw.text((bar_x + bar_width // 2, bar_y + bar_height + 5),
-             numero,
-             fill=self.colores['texto_terciario'],
-             font=self.fonts['body_label'], anchor="mt")
-    
-    # ========== QR SIMULADO ==========
-    qr_x = self.W - 160
-    qr_y = self.H - 155
-    qr_size = 40
-    
-    # Fondo QR
-    draw.rectangle([qr_x, qr_y, qr_x + qr_size, qr_y + qr_size],
-                  fill=(255, 255, 255), outline=(200, 200, 200), width=1)
-    
-    # Patrón QR simulado
-    for i in range(0, qr_size, 6):
-        for j in range(0, qr_size, 6):
-            if (i + j) % 7 == 0 or (i * j) % 11 == 0:
-                draw.rectangle([qr_x + i, qr_y + j, qr_x + i + 4, qr_y + j + 4],
-                              fill=(0, 0, 0))
-    
-    # Esquinas QR
-    for cx, cy in [(qr_x + 3, qr_y + 3), (qr_x + qr_size - 10, qr_y + 3), (qr_x + 3, qr_y + qr_size - 10)]:
-        draw.rectangle([cx, cy, cx + 7, cy + 7], fill=(0, 0, 0))
+    def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+        """Dibuja códigos de verificación (QR simulado, código de barras)"""
+        bar_x = 65
+        bar_y = self.H - 105
+        bar_width = 250
+        bar_height = 35
+        
+        draw.rectangle([bar_x, bar_y, bar_x + bar_width, bar_y + bar_height],
+                      fill=(255, 255, 255), outline=(200, 200, 200), width=1)
+        
+        for i in range(0, bar_width, 3):
+            height_var = random.randint(20, bar_height)
+            draw.rectangle([bar_x + i, bar_y + (bar_height - height_var),
+                           bar_x + i + 1, bar_y + bar_height],
+                          fill=(0, 0, 0))
+        
+        numero = datos.get('dni', '00000000') + datos.get('licencia_id', 'LIC-0000')[-4:]
+        draw.text((bar_x + bar_width // 2, bar_y + bar_height + 5),
+                 numero,
+                 fill=self.colores['texto_terciario'],
+                 font=self.fonts['body_label'], anchor="mt")
+        
+        qr_x = self.W - 160
+        qr_y = self.H - 155
+        qr_size = 40
+        
+        draw.rectangle([qr_x, qr_y, qr_x + qr_size, qr_y + qr_size],
+                      fill=(255, 255, 255), outline=(200, 200, 200), width=1)
+        
+        for i in range(0, qr_size, 6):
+            for j in range(0, qr_size, 6):
+                if (i + j) % 7 == 0 or (i * j) % 11 == 0:
+                    draw.rectangle([qr_x + i, qr_y + j, qr_x + i + 4, qr_y + j + 4],
+                                  fill=(0, 0, 0))
+        
+        for cx, cy in [(qr_x + 3, qr_y + 3), (qr_x + qr_size - 10, qr_y + 3), (qr_x + 3, qr_y + qr_size - 10)]:
+            draw.rectangle([cx, cy, cx + 7, cy + 7], fill=(0, 0, 0))
+
+
+# ==================== FUNCIÓN PRINCIPAL ====================
+async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
+    """Función principal que mantiene compatibilidad con el bot"""
+    renderer = LicenciaRenderer()
+    return renderer.generar(usuario, datos_licencia)
         # ==================== BOT ====================
 intents = discord.Intents.default()
 intents.members = True
