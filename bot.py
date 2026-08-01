@@ -274,38 +274,58 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
         W, H = 1200, 750
-        img = Image.new('RGB', (W, H), color=(8, 8, 10))
+        img = Image.new('RGB', (W, H), color=(6, 6, 9))
         draw = ImageDraw.Draw(img)
 
         # ========== COLORES ==========
-        NEGRO_CARD = (14, 14, 17)
         DORADO = (198, 162, 90)
         DORADO_CLARO = (228, 198, 135)
         DORADO_OSCURO = (120, 95, 45)
         BLANCO = (240, 240, 238)
         GRIS_TEXTO = (150, 150, 158)
         GRIS_LABEL = (120, 118, 128)
-        LINEA = (45, 43, 40)
+        LINEA = (55, 50, 65)
         VERDE = (80, 220, 150)
 
-        # ========== SOMBRA + TARJETA REDONDEADA ==========
+        # ========== SOMBRA + TARJETA CON DEGRADADO AZUL-MORADO OSCURO ==========
         draw.rounded_rectangle([14, 14, W - 6, H - 6], radius=26, fill=(0, 0, 0))
-        draw.rounded_rectangle([6, 6, W - 14, H - 14], radius=26, fill=NEGRO_CARD)
+        card_layer = Image.new('RGB', (W, H))
+        card_draw = ImageDraw.Draw(card_layer)
+        for i in range(H):
+            t = i / H
+            r = int(12 + 10 * t)
+            g = int(11 + 8 * t)
+            b = int(20 + 22 * t)
+            card_draw.line([(0, i), (W, i)], fill=(r, g, b))
+        mask_card_base = Image.new('L', (W, H), 0)
+        ImageDraw.Draw(mask_card_base).rounded_rectangle([6, 6, W - 14, H - 14], radius=26, fill=255)
+        img = Image.composite(card_layer, img, mask_card_base)
+        draw = ImageDraw.Draw(img)
+        NEGRO_CARD = (16, 15, 22)
 
-        # ========== FRANJA HOLOGRÁFICA IZQUIERDA (clara, tipo carnet oficial) ==========
+        # ========== FRANJA HOLOGRÁFICA IZQUIERDA (clara, altura completa) ==========
         strip_w = 34
-        holo_layer = Image.new('RGB', (strip_w, H - 20), (235, 232, 225))
+        strip_h = H - 20
+        holo_layer = Image.new('RGB', (strip_w, strip_h), (235, 232, 225))
         holo_draw = ImageDraw.Draw(holo_layer)
         for x in range(strip_w):
             t = x / strip_w
             r = int(215 + 35 * abs(0.5 - (t * 3) % 1 - 0.5))
             g = int(210 + 38 * abs(0.5 - (t * 2.3 + 0.3) % 1 - 0.5))
             b = int(225 + 25 * abs(0.5 - (t * 2.7 + 0.6) % 1 - 0.5))
-            holo_draw.line([(x, 0), (x, H - 20)], fill=(r, g, b))
-        # líneas diagonales SOLO dentro de esta franja (clip natural por el tamaño de la capa)
-        for i in range(-H, strip_w + H, 16):
-            holo_draw.line([(i, 0), (i + H, H - 20)], fill=(255, 255, 255), width=1)
-        img.paste(holo_layer, (6, 6))
+            holo_draw.line([(x, 0), (x, strip_h)], fill=(r, g, b))
+        for i in range(-strip_h, strip_w + strip_h, 16):
+            holo_draw.line([(i, 0), (i + strip_h, strip_h)], fill=(255, 255, 255), width=1)
+
+        # Pegar la franja directamente (la tarjeta ya está redondeada de fondo)
+        img.paste(holo_layer, (6, 10))
+        draw = ImageDraw.Draw(img)
+
+        # Re-aplicar máscara redondeada general para recortar cualquier esquina que se salga
+        mask_final = Image.new('L', (W, H), 0)
+        ImageDraw.Draw(mask_final).rounded_rectangle([6, 6, W - 14, H - 14], radius=26, fill=255)
+        fondo_negro_total = Image.new('RGB', (W, H), (0, 0, 0))
+        img = Image.composite(img, fondo_negro_total, mask_final)
         draw = ImageDraw.Draw(img)
 
         # ========== FUENTES ==========
