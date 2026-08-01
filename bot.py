@@ -313,7 +313,7 @@ class LicenciaConfig:
         'mrz': 20,
         'watermark': 200,
     }
-    class LicenciaRenderer:
+class LicenciaRenderer:
     def __init__(self):
         self.config = LicenciaConfig()
         self.colores = self.config.COLORES
