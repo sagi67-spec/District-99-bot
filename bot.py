@@ -1,14 +1,17 @@
 """
 Bot de Discord para servidor de rol (RP) — DISTRICT 99
-CÓDIGO COMPLETO - PARTE 1/16
+CÓDIGO COMPLETO - PARTE 1/22
 """
 
 import json
 import os
 import re
 import asyncio
+import math
+import random
 from datetime import datetime, timezone, timedelta
-from PIL import Image, ImageDraw, ImageFont
+from typing import Dict, Any, Tuple, List, Optional
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops, ImageOps
 import requests
 from io import BytesIO
 
@@ -137,7 +140,7 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
-        # ==================== FUNCIÓN PARA GENERAR DNI (CLAUDE) ====================
+        # ==================== FUNCIÓN PARA GENERAR DNI ====================
 async def generar_dni(usuario: discord.Member, datos_dni: dict):
     try:
         W, H = 1200, 750
@@ -151,7 +154,7 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
         VERDE = (60, 210, 130)
         LINEA = (48, 48, 55)
 
-        # ========== FONDO DEGRADADO SUAVE ==========
+        # ========== FONDO DEGRADADO ==========
         radio_card = 30
         draw.rounded_rectangle([0, 0, W, H], radius=radio_card, fill=(20, 20, 24))
         overlay = Image.new('L', (W, H), 0)
@@ -168,18 +171,15 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
         draw = ImageDraw.Draw(img)
 
         # ========== FUENTES ==========
-        FUENTE_BASE = "fonts/Montserrat-Bold.ttf"
-        FUENTE_NORMAL = "fonts/Montserrat-Regular.ttf"
         try:
-            font_title = ImageFont.truetype(FUENTE_BASE, 34)
-            font_sub = ImageFont.truetype(FUENTE_NORMAL, 20)
-            font_num = ImageFont.truetype(FUENTE_BASE, 22)
-            font_label = ImageFont.truetype(FUENTE_NORMAL, 17)
-            font_value = ImageFont.truetype(FUENTE_BASE, 27)
-            font_status = ImageFont.truetype(FUENTE_BASE, 30)
-            font_footer = ImageFont.truetype(FUENTE_NORMAL, 15)
-        except Exception as e:
-            print(f"⚠️ Error cargando fuentes: {e}")
+            font_title = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 34)
+            font_sub = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 20)
+            font_num = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 22)
+            font_label = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 17)
+            font_value = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 27)
+            font_status = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 30)
+            font_footer = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 15)
+        except:
             font_title = font_sub = font_num = font_label = font_value = font_status = font_footer = ImageFont.load_default()
 
         # ========== TÍTULO ==========
@@ -203,8 +203,8 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
             circular = Image.new('RGBA', (avatar_size, avatar_size))
             circular.paste(avatar_img, (0, 0), mask)
             img.paste(circular, (avatar_x, avatar_y), circular)
-        except Exception as e:
-            print(f"⚠️ Error avatar: {e}")
+        except:
+            pass
         draw.ellipse([avatar_x - 3, avatar_y - 3, avatar_x + avatar_size + 3, avatar_y + avatar_size + 3], outline=(70, 70, 78), width=3)
 
         # ========== TARJETA DE DATOS ==========
@@ -244,9 +244,6 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
 
         draw.text((col1_x, y), "EXPEDICIÓN", fill=GRIS_LABEL, font=font_label)
         draw.text((col1_x, y + 24), datos_dni.get('fecha_expedicion', ''), fill=BLANCO, font=font_value)
-        if datos_dni.get('fecha_expiracion'):
-            draw.text((col2_x, y), "EXPIRACIÓN", fill=GRIS_LABEL, font=font_label)
-            draw.text((col2_x, y + 24), datos_dni.get('fecha_expiracion', ''), fill=BLANCO, font=font_value)
 
         # ========== BARRA DE ESTADO ==========
         barra_y1 = H - 115
@@ -270,15 +267,8 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
         import traceback
         traceback.print_exc()
         return None
-        # ==================== FUNCIÓN PARA GENERAR LICENCIA (CLAUDE) ====================
-import math
-import random
-from typing import Dict, Any, Tuple, List, Optional
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops, ImageOps
-
-# ==================== CONSTANTES DE DISEÑO ====================
+        # ==================== CONFIGURACIÓN LICENCIA PREMIUM ====================
 class LicenciaConfig:
-    """Configuración central del diseño de la licencia"""
     WIDTH = 1400
     HEIGHT = 900
     
@@ -323,11 +313,7 @@ class LicenciaConfig:
         'mrz': 20,
         'watermark': 200,
     }
-
-
-class LicenciaRenderer:
-    """Renderer principal de la licencia"""
-    
+    class LicenciaRenderer:
     def __init__(self):
         self.config = LicenciaConfig()
         self.colores = self.config.COLORES
@@ -360,14 +346,12 @@ class LicenciaRenderer:
             'body_value': default,
             'body_label': default,
             'mono': default,
-    }
+        }
         def generar(self, usuario: discord.Member, datos: dict) -> discord.File:
-    """Método principal para generar la licencia"""
     try:
         img = Image.new('RGB', (self.W, self.H), self.colores['fondo_principal'])
         draw = ImageDraw.Draw(img)
         
-        # Degradado PVC
         for i in range(self.H):
             factor = i / self.H
             r = int(self.colores['fondo_principal'][0] - 15 * factor)
@@ -399,9 +383,7 @@ class LicenciaRenderer:
         import traceback
         traceback.print_exc()
         return None
-
-def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
-    """Dibuja borde premium con doble capa y sombra"""
+        def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
     margen = 25
     
     for i in range(12):
@@ -421,7 +403,6 @@ def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
     self._dibujar_esquinas_premium(img, draw, margen + 8)
 
 def _dibujar_esquinas_premium(self, img: Image.Image, draw: ImageDraw.Draw, base: int):
-    """Dibuja esquinas decorativas estilo documento oficial"""
     size = 55
     grosor = 5
     
@@ -442,7 +423,6 @@ def _dibujar_esquinas_premium(self, img: Image.Image, draw: ImageDraw.Draw, base
         draw.line([(cx + offset*dx, cy + offset*dy), (cx + offset*dx, cy + (size-15) * dy)],
                  fill=self.colores['navy_medio'], width=2)
         def _aplicar_fondo_seguridad(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
-    """Aplica patrones de seguridad al fondo"""
     img = self._aplicar_guilloche(img, draw)
     draw = ImageDraw.Draw(img)
     
@@ -458,7 +438,6 @@ def _dibujar_esquinas_premium(self, img: Image.Image, draw: ImageDraw.Draw, base
     return img
 
 def _aplicar_guilloche(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
-    """Dibuja patrones guilloché (ondas de seguridad)"""
     centro_x, centro_y = self.W // 2, self.H // 2
     
     for radio in range(40, 700, 30):
@@ -475,7 +454,6 @@ def _aplicar_guilloche(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Im
     return img
 
 def _aplicar_microtexto(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
-    """Aplica microtexto de seguridad en los bordes"""
     try:
         fuente = ImageFont.truetype("fonts/Montserrat-Light.ttf", 6)
     except:
@@ -492,9 +470,7 @@ def _aplicar_microtexto(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.I
         draw.text((self.W - 30, 50 + i), "GVRP", fill=(200, 198, 190), font=fuente)
         
     return img
-
-def _dibujar_watermark_99(self, img: Image.Image, draw: ImageDraw.Draw):
-    """Dibuja watermark transparente '99'"""
+    def _dibujar_watermark_99(self, img: Image.Image, draw: ImageDraw.Draw):
     try:
         fuente = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 180)
     except:
@@ -511,7 +487,6 @@ def _dibujar_watermark_99(self, img: Image.Image, draw: ImageDraw.Draw):
         pass
 
 def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
-    """Dibuja patrón de hexágonos como elemento de seguridad"""
     size = 18
     spacing = 35
     offset_x = 30
@@ -535,8 +510,6 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
             if (row + col) % 2 == 0:
                 draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
                 def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    """Dibuja el header premium con escudo y título metálico"""
-    # Banda superior NAVY
     banda_y1 = 45
     banda_y2 = 130
     draw.rectangle([35, banda_y1, self.W - 35, banda_y2],
@@ -547,7 +520,6 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
     draw.line([35, banda_y2 + 4, self.W - 35, banda_y2 + 4],
              fill=self.colores['dorado_claro'], width=1)
     
-    # Escudo metálico
     escudo_x, escudo_y = 65, 48
     escudo_size = 78
     
@@ -561,7 +533,6 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
              "99", fill=self.colores['navy_oscuro'],
              font=self.fonts['title'], anchor="mm")
     
-    # Título
     titulo_x = escudo_x + escudo_size + 25
     titulo_y = 58
     
@@ -577,29 +548,26 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
     draw.text((titulo_x, subtitulo_y), "✦ DISTRICT 99 - GVRP ✦",
              fill=self.colores['dorado_claro'],
              font=self.fonts['subtitle'], anchor="lt")
-    
-    # Número de licencia metálico
     licencia_id = datos.get('licencia_id', 'LIC-0000')
-    num_x = self.W - 120
-    num_y = 52
-    
-    draw.rectangle([num_x - 140, num_y - 8, num_x + 140, num_y + 62],
-                  fill=self.colores['dorado_claro'],
-                  outline=self.colores['dorado_oscuro'], width=2)
-    
-    for i in range(0, 280, 4):
-        draw.line([num_x - 140 + i, num_y - 8, num_x - 140 + i, num_y + 62],
-                 fill=(230, 220, 200, 30), width=1)
-    
-    draw.text((num_x, num_y + 10), f"#{licencia_id}",
-             fill=self.colores['navy_oscuro'],
-             font=self.fonts['body_value'], anchor="mt")
-    
-    draw.text((num_x, num_y + 42), "VALID",
-             fill=self.colores['dorado_oscuro'],
-             font=self.fonts['body_label'], anchor="mt")
-    def _dibujar_avatar_discord(self, img: Image.Image, draw: ImageDraw.Draw, usuario: discord.Member):
-    """Dibuja avatar de Discord con marco profesional"""
+num_x = self.W - 120
+num_y = 52
+
+draw.rectangle([num_x - 140, num_y - 8, num_x + 140, num_y + 62],
+              fill=self.colores['dorado_claro'],
+              outline=self.colores['dorado_oscuro'], width=2)
+
+for i in range(0, 280, 4):
+    draw.line([num_x - 140 + i, num_y - 8, num_x - 140 + i, num_y + 62],
+             fill=(230, 220, 200, 30), width=1)
+
+draw.text((num_x, num_y + 10), f"#{licencia_id}",
+         fill=self.colores['navy_oscuro'],
+         font=self.fonts['body_value'], anchor="mt")
+
+draw.text((num_x, num_y + 42), "VALID",
+         fill=self.colores['dorado_oscuro'],
+         font=self.fonts['body_label'], anchor="mt")
+def _dibujar_avatar_discord(self, img: Image.Image, draw: ImageDraw.Draw, usuario: discord.Member):
     avatar_size = 175
     avatar_x = 65
     avatar_y = 175
@@ -636,8 +604,7 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
         img.paste(marco_outer, (avatar_x - 6, avatar_y - 6), marco_outer)
         img.paste(avatar_recortado, (avatar_x, avatar_y), avatar_recortado)
         
-    except Exception as e:
-        print(f"⚠️ Error avatar Discord: {e}")
+    except:
         draw.rounded_rectangle([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size],
                               radius=20, fill=(200, 200, 200),
                               outline=self.colores['dorado_principal'], width=3)
@@ -651,9 +618,7 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
              f"@{usuario.name}",
              fill=self.colores['texto_principal'],
              font=self.fonts['body_value'], anchor="mt")
-
-def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    """Dibuja avatar de Roblox integrado profesionalmente"""
+    def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     avatar_size = 85
     avatar_x = 200
     avatar_y = 325
@@ -690,8 +655,7 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
                 img.paste(fondo_circ, (avatar_x - 10, avatar_y - 10), fondo_circ)
                 img.paste(avatar_circular, (avatar_x, avatar_y), avatar_circular)
                 
-    except Exception as e:
-        print(f"⚠️ Error avatar Roblox: {e}")
+    except:
         draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size],
                     outline=self.colores['dorado_principal'], width=3)
     
@@ -700,7 +664,6 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
              fill=self.colores['texto_secundario'],
              font=self.fonts['body_label'], anchor="mt")
     def _dibujar_campos_info(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    """Dibuja los campos de información con diseño premium"""
     tabla_x1 = 310
     tabla_y1 = 170
     tabla_x2 = self.W - 50
@@ -765,26 +728,7 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
         draw.text((col2_x, y + 20), value,
                  fill=self.colores['texto_principal'],
                  font=self.fonts['body_value'])
-    
-    try:
-        font_icon = ImageFont.truetype("fonts/NotoEmoji-Regular.ttf", 20)
-    except:
-        font_icon = ImageFont.load_default()
-    
-    iconos = [
-        ("👤", col1_x - 30, y_start + 10),
-        ("🎂", col1_x - 30, y_start + 70),
-        ("💼", col1_x - 30, y_start + 130),
-        ("🪪", col1_x - 30, y_start + 190),
-        ("📋", col2_x - 30, y_start + 10),
-        ("📅", col2_x - 30, y_start + 70),
-        ("📅", col2_x - 30, y_start + 130),
-    ]
-    
-    for icon, x, y in iconos:
-        draw.text((x, y), icon, fill=self.colores['dorado_principal'], font=font_icon)
         def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    """Dibuja footer premium con estado y fechas"""
     footer_y1 = self.H - 140
     footer_y2 = self.H - 30
     
@@ -815,99 +759,94 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
              datos.get('fecha_expiracion', ''),
              fill=self.colores['blanco_puro'],
              font=self.fonts['footer_value'])
-    
     estado_x = self.W - 320
-    estado_y = footer_y1 + 12
+estado_y = footer_y1 + 12
+
+draw.rounded_rectangle([estado_x, estado_y, self.W - 55, estado_y + 70],
+                      radius=12, fill=(20, 60, 35),
+                      outline=self.colores['verde_brillante'], width=3)
+
+draw.ellipse([estado_x + 18, estado_y + 23, estado_x + 40, estado_y + 45],
+            fill=self.colores['verde_brillante'])
+
+draw.text((estado_x + 52, estado_y + 20), "ESTADO:",
+         fill=self.colores['dorado_claro'],
+         font=self.fonts['footer_label'])
+draw.text((estado_x + 52, estado_y + 40), "ACTIVA",
+         fill=self.colores['verde_brillante'],
+         font=self.fonts['body_value'])
+
+sello_x = self.W - 170
+sello_y = footer_y1 + 20
+
+draw.ellipse([sello_x, sello_y, sello_x + 55, sello_y + 55],
+            outline=self.colores['dorado_principal'], width=3,
+            fill=self.colores['navy_oscuro'])
+
+draw.ellipse([sello_x + 5, sello_y + 5, sello_x + 50, sello_y + 50],
+            outline=self.colores['dorado_claro'], width=1)
+
+draw.text((sello_x + 28, sello_y + 28), "✓",
+         fill=self.colores['dorado_principal'],
+         font=self.fonts['title'], anchor="mm")
+
+draw.text((sello_x + 28, sello_y + 48), "VALID",
+         fill=self.colores['dorado_claro'],
+         font=self.fonts['body_label'], anchor="mm")
+
+draw.text((self.W // 2, footer_y2 - 5),
+         "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY",
+         fill=self.colores['dorado_claro'],
+         font=self.fonts['body_label'], anchor="mm")
+def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    mrz_y = self.H - 25
+    mrz_x = 50
     
-    draw.rounded_rectangle([estado_x, estado_y, self.W - 55, estado_y + 70],
-                          radius=12, fill=(20, 60, 35),
-                          outline=self.colores['verde_brillante'], width=3)
+    draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10],
+                  fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
     
-    draw.ellipse([estado_x + 18, estado_y + 23, estado_x + 40, estado_y + 45],
-                fill=self.colores['verde_brillante'])
+    nombre = datos.get('nombre', '').upper()[:20].ljust(20)
+    apellido = datos.get('apellidos', '').upper()[:20].ljust(20)
+    dni = datos.get('dni', '').zfill(8)
+    licencia = datos.get('licencia_id', 'LIC-0000')
     
-    draw.text((estado_x + 52, estado_y + 20), "ESTADO:",
-             fill=self.colores['dorado_claro'],
-             font=self.fonts['footer_label'])
-    draw.text((estado_x + 52, estado_y + 40), "ACTIVA",
-             fill=self.colores['verde_brillante'],
+    mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia}<<<D99<<<<<<<"
+    mrz_texto = mrz_texto[:44].ljust(44)
+    
+    draw.text((mrz_x, mrz_y), mrz_texto,
+             fill=self.colores['texto_principal'],
+             font=self.fonts['mono'], anchor="mm")
+
+def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    sello_x = self.W - 200
+    sello_y = 350
+    
+    draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90],
+                outline=self.colores['azul_seguridad'], width=2,
+                fill=(240, 248, 255, 80))
+    
+    draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82],
+                outline=self.colores['azul_seguridad'], width=1)
+    
+    draw.text((sello_x + 45, sello_y + 35), "D99",
+             fill=self.colores['azul_seguridad'],
+             font=self.fonts['body_value'], anchor="mm")
+    draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT",
+             fill=self.colores['texto_terciario'],
+             font=self.fonts['body_label'], anchor="mm")
+    
+    firma_x = 65
+    firma_y = self.H - 180
+    
+    draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO",
+             fill=self.colores['texto_terciario'],
+             font=self.fonts['body_label'])
+    
+    firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
+    draw.text((firma_x, firma_y + 20), f"__________________ {firma}",
+             fill=self.colores['texto_principal'],
              font=self.fonts['body_value'])
-    
-    sello_x = self.W - 170
-    sello_y = footer_y1 + 20
-    
-    draw.ellipse([sello_x, sello_y, sello_x + 55, sello_y + 55],
-                outline=self.colores['dorado_principal'], width=3,
-                fill=self.colores['navy_oscuro'])
-    
-    draw.ellipse([sello_x + 5, sello_y + 5, sello_x + 50, sello_y + 50],
-                outline=self.colores['dorado_claro'], width=1)
-    
-    draw.text((sello_x + 28, sello_y + 28), "✓",
-             fill=self.colores['dorado_principal'],
-             font=self.fonts['title'], anchor="mm")
-    
-    draw.text((sello_x + 28, sello_y + 48), "VALID",
-             fill=self.colores['dorado_claro'],
-             font=self.fonts['body_label'], anchor="mm")
-    
-    draw.text((self.W // 2, footer_y2 - 5),
-             "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY",
-             fill=self.colores['dorado_claro'],
-             font=self.fonts['body_label'], anchor="mm")
-        def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-        """Dibuja zona MRZ (Machine Readable Zone) estilo pasaporte"""
-        mrz_y = self.H - 25
-        mrz_x = 50
-        
-        draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10],
-                      fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
-        
-        nombre = datos.get('nombre', '').upper()[:20].ljust(20)
-        apellido = datos.get('apellidos', '').upper()[:20].ljust(20)
-        dni = datos.get('dni', '').zfill(8)
-        licencia = datos.get('licencia_id', 'LIC-0000')
-        
-        mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia}<<<D99<<<<<<<"
-        mrz_texto = mrz_texto[:44].ljust(44)
-        
-        draw.text((mrz_x, mrz_y), mrz_texto,
-                 fill=self.colores['texto_principal'],
-                 font=self.fonts['mono'], anchor="mm")
-
-    def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-        """Dibuja sellos de seguridad adicionales"""
-        sello_x = self.W - 200
-        sello_y = 350
-        
-        draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90],
-                    outline=self.colores['azul_seguridad'], width=2,
-                    fill=(240, 248, 255, 80))
-        
-        draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82],
-                    outline=self.colores['azul_seguridad'], width=1)
-        
-        draw.text((sello_x + 45, sello_y + 35), "D99",
-                 fill=self.colores['azul_seguridad'],
-                 font=self.fonts['body_value'], anchor="mm")
-        draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT",
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'], anchor="mm")
-        
-        firma_x = 65
-        firma_y = self.H - 180
-        
-        draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO",
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'])
-        
-        firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
-        draw.text((firma_x, firma_y + 20), f"__________________ {firma}",
-                 fill=self.colores['texto_principal'],
-                 font=self.fonts['body_value'])
-
-    def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-        """Dibuja códigos de verificación (QR simulado, código de barras)"""
+        def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
         bar_x = 65
         bar_y = self.H - 105
         bar_width = 250
@@ -945,18 +884,15 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
             draw.rectangle([cx, cy, cx + 7, cy + 7], fill=(0, 0, 0))
 
 
-# ==================== FUNCIÓN PRINCIPAL ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
-    """Función principal que mantiene compatibilidad con el bot"""
     renderer = LicenciaRenderer()
     return renderer.generar(usuario, datos_licencia)
-        # ==================== BOT ====================
+# ==================== BOT ====================
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Crear archivos
 ARCHIVOS_JSON = [DNI_FILE, ESCENAS_FILE, EVALUACIONES_FILE, AUTOS_FILE, MULTAS_FILE, LICENCIAS_FILE, TURNOS_FILE]
 for archivo in ARCHIVOS_JSON:
     if not os.path.exists(archivo):
@@ -1133,36 +1069,11 @@ class PanelDNIView(discord.ui.View):
     @discord.ui.button(label="🪪 Crear DNI", style=discord.ButtonStyle.success)
     async def crear_dni(self, interaction: discord.Interaction, button: discord.ui.Button):
         class DNIModal(discord.ui.Modal, title="🪪 Crear DNI"):
-            nombre = discord.ui.TextInput(
-                label="Nombre",
-                placeholder="Ej: Juan",
-                max_length=50,
-                required=True
-            )
-            apellidos = discord.ui.TextInput(
-                label="Apellidos",
-                placeholder="Ej: Pérez García",
-                max_length=50,
-                required=True
-            )
-            fecha_nacimiento = discord.ui.TextInput(
-                label="📅 Fecha Nacimiento (DD/MM/YYYY)",
-                placeholder="Ej: 15/05/1998 (Edad automática)",
-                max_length=10,
-                required=True
-            )
-            oficio = discord.ui.TextInput(
-                label="Oficio",
-                placeholder="Ej: Conductor",
-                max_length=50,
-                required=True
-            )
-            user_roblox = discord.ui.TextInput(
-                label="Usuario Roblox",
-                placeholder="Ej: Juanito_99",
-                max_length=50,
-                required=True
-            )
+            nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
+            apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
+            fecha_nacimiento = discord.ui.TextInput(label="📅 Fecha Nacimiento (DD/MM/YYYY)", placeholder="Ej: 15/05/1998 (Edad automática)", max_length=10, required=True)
+            oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
+            user_roblox = discord.ui.TextInput(label="Usuario Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
 
             async def on_submit(self, modal_interaction: discord.Interaction):
                 try:
@@ -1212,30 +1123,15 @@ class PanelDNIView(discord.ui.View):
                         await modal_interaction.response.send_message("❌ Error al generar la imagen del DNI.", ephemeral=True)
                         return
 
-                    embed = discord.Embed(
-                        title="🪪 **DNI GENERADO**",
-                        description=f"{modal_interaction.user.mention}",
-                        color=discord.Color.blue()
-                    )
+                    embed = discord.Embed(title="🪪 **DNI GENERADO**", description=f"{modal_interaction.user.mention}", color=discord.Color.blue())
                     embed.set_image(url="attachment://dni.png")
-                    embed.add_field(
-                        name="📌 ¿Dónde se envió?",
-                        value=f"Este DNI se ha enviado al canal <#{CANAL_REGISTRO_DNI_ID}>",
-                        inline=False
-                    )
+                    embed.add_field(name="📌 ¿Dónde se envió?", value=f"Este DNI se ha enviado al canal <#{CANAL_REGISTRO_DNI_ID}>", inline=False)
                     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
 
                     canal_dni = bot.get_channel(CANAL_REGISTRO_DNI_ID)
                     if canal_dni:
-                        await canal_dni.send(
-                            content=f"📢 **Nuevo DNI generado para {modal_interaction.user.mention}**",
-                            embed=embed,
-                            file=archivo_dni
-                        )
-                        await modal_interaction.response.send_message(
-                            f"✅ **¡DNI creado exitosamente!**\nSe ha enviado al canal <#{CANAL_REGISTRO_DNI_ID}>.",
-                            ephemeral=True
-                        )
+                        await canal_dni.send(content=f"📢 **Nuevo DNI generado para {modal_interaction.user.mention}**", embed=embed, file=archivo_dni)
+                        await modal_interaction.response.send_message(f"✅ **¡DNI creado exitosamente!**\nSe ha enviado al canal <#{CANAL_REGISTRO_DNI_ID}>.", ephemeral=True)
                     else:
                         await modal_interaction.response.send_message("❌ No se encontró el canal de registro de DNI.", ephemeral=True)
 
@@ -1246,7 +1142,8 @@ class PanelDNIView(discord.ui.View):
                     await modal_interaction.response.send_message(f"❌ Error al crear el DNI: {e}", ephemeral=True)
 
         await interaction.response.send_modal(DNIModal())
-        # ==================== PANEL DE LICENCIAS ====================
+
+# ==================== PANEL DE LICENCIAS ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1266,36 +1163,11 @@ class PanelLicenciasView(discord.ui.View):
             return
 
         class LicenciaModal(discord.ui.Modal, title="📝 Solicitar Licencia"):
-            nombre = discord.ui.TextInput(
-                label="Nombre",
-                placeholder="Ej: Juan",
-                max_length=50,
-                required=True
-            )
-            apellidos = discord.ui.TextInput(
-                label="Apellidos",
-                placeholder="Ej: Pérez García",
-                max_length=50,
-                required=True
-            )
-            fecha_nacimiento = discord.ui.TextInput(
-                label="📅 Fecha Nacimiento (DD/MM/YYYY)",
-                placeholder="Ej: 15/05/1998 (Edad automática)",
-                max_length=10,
-                required=True
-            )
-            oficio = discord.ui.TextInput(
-                label="Oficio",
-                placeholder="Ej: Conductor",
-                max_length=50,
-                required=True
-            )
-            user_roblox = discord.ui.TextInput(
-                label="Usuario Roblox",
-                placeholder="Ej: Juanito_99",
-                max_length=50,
-                required=True
-            )
+            nombre = discord.ui.TextInput(label="Nombre", placeholder="Ej: Juan", max_length=50, required=True)
+            apellidos = discord.ui.TextInput(label="Apellidos", placeholder="Ej: Pérez García", max_length=50, required=True)
+            fecha_nacimiento = discord.ui.TextInput(label="📅 Fecha Nacimiento (DD/MM/YYYY)", placeholder="Ej: 15/05/1998 (Edad automática)", max_length=10, required=True)
+            oficio = discord.ui.TextInput(label="Oficio", placeholder="Ej: Conductor", max_length=50, required=True)
+            user_roblox = discord.ui.TextInput(label="Usuario Roblox", placeholder="Ej: Juanito_99", max_length=50, required=True)
 
             async def on_submit(self, modal_interaction: discord.Interaction):
                 try:
@@ -1354,30 +1226,15 @@ class PanelLicenciasView(discord.ui.View):
                         await modal_interaction.response.send_message("❌ Error al generar la imagen de la licencia.", ephemeral=True)
                         return
 
-                    embed = discord.Embed(
-                        title="🪪 **LICENCIA GENERADA**",
-                        description=f"{modal_interaction.user.mention}",
-                        color=discord.Color.gold()
-                    )
+                    embed = discord.Embed(title="🪪 **LICENCIA GENERADA**", description=f"{modal_interaction.user.mention}", color=discord.Color.gold())
                     embed.set_image(url="attachment://licencia.png")
-                    embed.add_field(
-                        name="📌 ¿Dónde se envió?",
-                        value=f"Esta licencia se ha enviado al canal <#{CANAL_REGISTRO_LICENCIAS_ID}>",
-                        inline=False
-                    )
+                    embed.add_field(name="📌 ¿Dónde se envió?", value=f"Esta licencia se ha enviado al canal <#{CANAL_REGISTRO_LICENCIAS_ID}>", inline=False)
                     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
 
                     canal_registro = bot.get_channel(CANAL_REGISTRO_LICENCIAS_ID)
                     if canal_registro:
-                        await canal_registro.send(
-                            content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**",
-                            embed=embed,
-                            file=archivo_licencia
-                        )
-                        await modal_interaction.response.send_message(
-                            f"✅ **¡Licencia creada exitosamente!**\nSe ha enviado al canal <#{CANAL_REGISTRO_LICENCIAS_ID}>.",
-                            ephemeral=True
-                        )
+                        await canal_registro.send(content=f"📢 **Nueva licencia generada para {modal_interaction.user.mention}**", embed=embed, file=archivo_licencia)
+                        await modal_interaction.response.send_message(f"✅ **¡Licencia creada exitosamente!**\nSe ha enviado al canal <#{CANAL_REGISTRO_LICENCIAS_ID}>.", ephemeral=True)
                     else:
                         await modal_interaction.response.send_message("❌ No se encontró el canal de registro de licencias.", ephemeral=True)
 
@@ -1393,14 +1250,11 @@ class PanelWSPView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.select(
-        placeholder="🚔 Selecciona una opción",
-        options=[
-            discord.SelectOption(label="🚔 Iniciar Turno", value="iniciar", emoji="🚔"),
-            discord.SelectOption(label="🛑 Finalizar Turno", value="finalizar", emoji="🛑"),
-            discord.SelectOption(label="📋 Turnos Activos", value="activos", emoji="📋"),
-        ]
-    )
+    @discord.ui.select(placeholder="🚔 Selecciona una opción", options=[
+        discord.SelectOption(label="🚔 Iniciar Turno", value="iniciar", emoji="🚔"),
+        discord.SelectOption(label="🛑 Finalizar Turno", value="finalizar", emoji="🛑"),
+        discord.SelectOption(label="📋 Turnos Activos", value="activos", emoji="📋"),
+    ])
     async def wsp_select(self, interaction: discord.Interaction, select: discord.ui.Select):
         opcion = select.values[0]
         
@@ -1423,20 +1277,10 @@ class PanelWSPView(discord.ui.View):
             except:
                 pass
             
-            turnos[user_id] = {
-                "policia_id": user_id,
-                "policia_nombre": str(interaction.user),
-                "inicio": datetime.now(timezone.utc).isoformat(),
-                "activo": True,
-                "tipo": "wsp"
-            }
+            turnos[user_id] = {"policia_id": user_id, "policia_nombre": str(interaction.user), "inicio": datetime.now(timezone.utc).isoformat(), "activo": True, "tipo": "wsp"}
             guardar(TURNOS_FILE, turnos)
             
-            embed = discord.Embed(
-                title="🚔 **TURNO INICIADO**",
-                description=f"{interaction.user.mention} ha comenzado su patrullaje.",
-                color=discord.Color.green()
-            )
+            embed = discord.Embed(title="🚔 **TURNO INICIADO**", description=f"{interaction.user.mention} ha comenzado su patrullaje.", color=discord.Color.green())
             embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
             embed.add_field(name="🕐 **Inicio**", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
             embed.add_field(name="📋 **Estado**", value="🟢 EN SERVICIO", inline=True)
@@ -1474,11 +1318,7 @@ class PanelWSPView(discord.ui.View):
             turnos[user_id]["fin"] = datetime.now(timezone.utc).isoformat()
             guardar(TURNOS_FILE, turnos)
             
-            embed = discord.Embed(
-                title="🚔 **TURNO FINALIZADO**",
-                description=f"{interaction.user.mention} ha terminado su patrullaje.",
-                color=discord.Color.red()
-            )
+            embed = discord.Embed(title="🚔 **TURNO FINALIZADO**", description=f"{interaction.user.mention} ha terminado su patrullaje.", color=discord.Color.red())
             embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
             embed.add_field(name="🕐 **Inicio**", value=inicio.strftime("%H:%M hs"), inline=True)
             embed.add_field(name="🕐 **Fin**", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
@@ -1496,50 +1336,34 @@ class PanelWSPView(discord.ui.View):
             
             turnos = cargar(TURNOS_FILE)
             activos = []
-            
             for user_id, turno in turnos.items():
                 if turno.get("activo", False) and turno.get("tipo") == "wsp":
                     inicio = datetime.fromisoformat(turno["inicio"])
                     duracion = datetime.now(timezone.utc) - inicio
                     horas, resto = divmod(int(duracion.total_seconds()), 3600)
                     minutos = resto // 60
-                    activos.append({
-                        "nombre": turno["policia_nombre"],
-                        "id": user_id,
-                        "horas": horas,
-                        "minutos": minutos
-                    })
+                    activos.append({"nombre": turno["policia_nombre"], "id": user_id, "horas": horas, "minutos": minutos})
             
             if not activos:
                 await interaction.response.send_message("📋 No hay policias en servicio.", ephemeral=True)
                 return
             
-            embed = discord.Embed(
-                title="🚓 **POLICIAS EN SERVICIO**",
-                description=f"Total: {len(activos)} oficiales",
-                color=discord.Color.blue()
-            )
+            embed = discord.Embed(title="🚓 **POLICIAS EN SERVICIO**", description=f"Total: {len(activos)} oficiales", color=discord.Color.blue())
             for policia in activos:
-                embed.add_field(
-                    name=f"👮 {policia['nombre']}",
-                    value=f"🕐 {policia['horas']}h {policia['minutos']}m activo",
-                    inline=False
-                )
+                embed.add_field(name=f"👮 {policia['nombre']}", value=f"🕐 {policia['horas']}h {policia['minutos']}m activo", inline=False)
             embed.set_image(url=URL_IMG_WSP)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            # ==================== PANEL DE EMS ====================
+
+# ==================== PANEL DE EMS ====================
 class PanelEMSView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.select(
-        placeholder="🚑 Selecciona una opción",
-        options=[
-            discord.SelectOption(label="🚨 Iniciar Servicio", value="iniciar", emoji="🚨"),
-            discord.SelectOption(label="🛑 Finalizar Servicio", value="finalizar", emoji="🛑"),
-            discord.SelectOption(label="📋 EMS Activos", value="activos", emoji="📋"),
-        ]
-    )
+    @discord.ui.select(placeholder="🚑 Selecciona una opción", options=[
+        discord.SelectOption(label="🚨 Iniciar Servicio", value="iniciar", emoji="🚨"),
+        discord.SelectOption(label="🛑 Finalizar Servicio", value="finalizar", emoji="🛑"),
+        discord.SelectOption(label="📋 EMS Activos", value="activos", emoji="📋"),
+    ])
     async def ems_select(self, interaction: discord.Interaction, select: discord.ui.Select):
         opcion = select.values[0]
         
@@ -1562,20 +1386,10 @@ class PanelEMSView(discord.ui.View):
             except:
                 pass
             
-            turnos[user_id] = {
-                "usuario_id": user_id,
-                "usuario_nombre": str(interaction.user),
-                "inicio": datetime.now(timezone.utc).isoformat(),
-                "activo": True,
-                "tipo": "ems"
-            }
+            turnos[user_id] = {"usuario_id": user_id, "usuario_nombre": str(interaction.user), "inicio": datetime.now(timezone.utc).isoformat(), "activo": True, "tipo": "ems"}
             guardar(TURNOS_FILE, turnos)
             
-            embed = discord.Embed(
-                title="🚑 **SERVICIO DE EMS INICIADO**",
-                description=f"{interaction.user.mention} ha comenzado su servicio.",
-                color=discord.Color.green()
-            )
+            embed = discord.Embed(title="🚑 **SERVICIO DE EMS INICIADO**", description=f"{interaction.user.mention} ha comenzado su servicio.", color=discord.Color.green())
             embed.add_field(name="🚑 **Servicio**", value="EMS ACTIVO", inline=False)
             embed.add_field(name="👨‍⚕️ **Oficial**", value=interaction.user.mention, inline=False)
             embed.add_field(name="🕐 **Inicio**", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
@@ -1614,11 +1428,7 @@ class PanelEMSView(discord.ui.View):
             turnos[user_id]["fin"] = datetime.now(timezone.utc).isoformat()
             guardar(TURNOS_FILE, turnos)
             
-            embed = discord.Embed(
-                title="🚑 **SERVICIO DE EMS FINALIZADO**",
-                description=f"{interaction.user.mention} ha terminado su servicio.",
-                color=discord.Color.red()
-            )
+            embed = discord.Embed(title="🚑 **SERVICIO DE EMS FINALIZADO**", description=f"{interaction.user.mention} ha terminado su servicio.", color=discord.Color.red())
             embed.add_field(name="🚑 **Servicio**", value="EMS FINALIZADO", inline=False)
             embed.add_field(name="👨‍⚕️ **Oficial**", value=interaction.user.mention, inline=False)
             embed.add_field(name="🕐 **Inicio**", value=inicio.strftime("%H:%M hs"), inline=True)
@@ -1637,50 +1447,34 @@ class PanelEMSView(discord.ui.View):
             
             turnos = cargar(TURNOS_FILE)
             activos = []
-            
             for user_id, turno in turnos.items():
                 if turno.get("activo", False) and turno.get("tipo") == "ems":
                     inicio = datetime.fromisoformat(turno["inicio"])
                     duracion = datetime.now(timezone.utc) - inicio
                     horas, resto = divmod(int(duracion.total_seconds()), 3600)
                     minutos = resto // 60
-                    activos.append({
-                        "nombre": turno["usuario_nombre"],
-                        "id": user_id,
-                        "horas": horas,
-                        "minutos": minutos
-                    })
+                    activos.append({"nombre": turno["usuario_nombre"], "id": user_id, "horas": horas, "minutos": minutos})
             
             if not activos:
                 await interaction.response.send_message("📋 No hay EMS en servicio.", ephemeral=True)
                 return
             
-            embed = discord.Embed(
-                title="🚑 **EMS EN SERVICIO**",
-                description=f"Total: {len(activos)} personal médico",
-                color=discord.Color.green()
-            )
+            embed = discord.Embed(title="🚑 **EMS EN SERVICIO**", description=f"Total: {len(activos)} personal médico", color=discord.Color.green())
             for ems in activos:
-                embed.add_field(
-                    name=f"🚑 {ems['nombre']}",
-                    value=f"🕐 {ems['horas']}h {ems['minutos']}m activo",
-                    inline=False
-                )
+                embed.add_field(name=f"🚑 {ems['nombre']}", value=f"🕐 {ems['horas']}h {ems['minutos']}m activo", inline=False)
             embed.set_image(url=URL_IMG_EMS)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            # ==================== PANEL DE DOT ====================
+
+# ==================== PANEL DE DOT ====================
 class PanelDOTView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.select(
-        placeholder="🚦 Selecciona una opción",
-        options=[
-            discord.SelectOption(label="🚦 Iniciar Servicio", value="iniciar", emoji="🚦"),
-            discord.SelectOption(label="🛑 Finalizar Servicio", value="finalizar", emoji="🛑"),
-            discord.SelectOption(label="📋 DOT Activos", value="activos", emoji="📋"),
-        ]
-    )
+    @discord.ui.select(placeholder="🚦 Selecciona una opción", options=[
+        discord.SelectOption(label="🚦 Iniciar Servicio", value="iniciar", emoji="🚦"),
+        discord.SelectOption(label="🛑 Finalizar Servicio", value="finalizar", emoji="🛑"),
+        discord.SelectOption(label="📋 DOT Activos", value="activos", emoji="📋"),
+    ])
     async def dot_select(self, interaction: discord.Interaction, select: discord.ui.Select):
         opcion = select.values[0]
         
@@ -1703,20 +1497,10 @@ class PanelDOTView(discord.ui.View):
             except:
                 pass
             
-            turnos[user_id] = {
-                "usuario_id": user_id,
-                "usuario_nombre": str(interaction.user),
-                "inicio": datetime.now(timezone.utc).isoformat(),
-                "activo": True,
-                "tipo": "dot"
-            }
+            turnos[user_id] = {"usuario_id": user_id, "usuario_nombre": str(interaction.user), "inicio": datetime.now(timezone.utc).isoformat(), "activo": True, "tipo": "dot"}
             guardar(TURNOS_FILE, turnos)
             
-            embed = discord.Embed(
-                title="🚦 **SERVICIO DE DOT INICIADO**",
-                description=f"{interaction.user.mention} ha comenzado su servicio.",
-                color=discord.Color.green()
-            )
+            embed = discord.Embed(title="🚦 **SERVICIO DE DOT INICIADO**", description=f"{interaction.user.mention} ha comenzado su servicio.", color=discord.Color.green())
             embed.add_field(name="🚦 **Servicio**", value="DOT ACTIVO", inline=False)
             embed.add_field(name="👷 **Oficial**", value=interaction.user.mention, inline=False)
             embed.add_field(name="🕐 **Inicio**", value=datetime.now(timezone.utc).strftime("%H:%M hs"), inline=True)
@@ -1755,11 +1539,7 @@ class PanelDOTView(discord.ui.View):
             turnos[user_id]["fin"] = datetime.now(timezone.utc).isoformat()
             guardar(TURNOS_FILE, turnos)
             
-            embed = discord.Embed(
-                title="🚦 **SERVICIO DE DOT FINALIZADO**",
-                description=f"{interaction.user.mention} ha terminado su servicio.",
-                color=discord.Color.red()
-            )
+            embed = discord.Embed(title="🚦 **SERVICIO DE DOT FINALIZADO**", description=f"{interaction.user.mention} ha terminado su servicio.", color=discord.Color.red())
             embed.add_field(name="🚦 **Servicio**", value="DOT FINALIZADO", inline=False)
             embed.add_field(name="👷 **Oficial**", value=interaction.user.mention, inline=False)
             embed.add_field(name="🕐 **Inicio**", value=inicio.strftime("%H:%M hs"), inline=True)
@@ -1778,35 +1558,21 @@ class PanelDOTView(discord.ui.View):
             
             turnos = cargar(TURNOS_FILE)
             activos = []
-            
             for user_id, turno in turnos.items():
                 if turno.get("activo", False) and turno.get("tipo") == "dot":
                     inicio = datetime.fromisoformat(turno["inicio"])
                     duracion = datetime.now(timezone.utc) - inicio
                     horas, resto = divmod(int(duracion.total_seconds()), 3600)
                     minutos = resto // 60
-                    activos.append({
-                        "nombre": turno["usuario_nombre"],
-                        "id": user_id,
-                        "horas": horas,
-                        "minutos": minutos
-                    })
+                    activos.append({"nombre": turno["usuario_nombre"], "id": user_id, "horas": horas, "minutos": minutos})
             
             if not activos:
                 await interaction.response.send_message("📋 No hay DOT en servicio.", ephemeral=True)
                 return
             
-            embed = discord.Embed(
-                title="🚦 **DOT EN SERVICIO**",
-                description=f"Total: {len(activos)} personal de tránsito",
-                color=discord.Color.green()
-            )
+            embed = discord.Embed(title="🚦 **DOT EN SERVICIO**", description=f"Total: {len(activos)} personal de tránsito", color=discord.Color.green())
             for dot in activos:
-                embed.add_field(
-                    name=f"🚦 {dot['nombre']}",
-                    value=f"🕐 {dot['horas']}h {dot['minutos']}m activo",
-                    inline=False
-                )
+                embed.add_field(name=f"🚦 {dot['nombre']}", value=f"🕐 {dot['horas']}h {dot['minutos']}m activo", inline=False)
             embed.set_image(url=URL_IMG_DOT)
             await interaction.response.send_message(embed=embed, ephemeral=True)
             # ==================== COMANDOS DE PANELES ====================
@@ -1816,24 +1582,19 @@ async def panel_dni(interaction: discord.Interaction):
         await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
         return
     
-    embed = discord.Embed(
-        title="🪪 **PANEL DE DNI**",
-        description=(
-            "Presiona el botón para crear tu **Documento Nacional de Identidad**.\n\n"
-            "📝 **Crear DNI** → Completa el formulario y genera tu DNI.\n\n"
-            "⚠️ **Requisitos:**\n"
-            "• No debes tener un DNI previo.\n"
-            "• Solo puedes tener **UN** DNI por persona.\n\n"
-            "📌 **Importante:**\n"
-            "• Este DNI es **personal e intransferible**.\n"
-            "• La edad se calcula automáticamente.\n\n"
-            "🖼️ **Tu DNI se generará automáticamente** y se enviará al canal de registro."
-        ),
-        color=discord.Color.blue()
-    )
+    embed = discord.Embed(title="🪪 **PANEL DE DNI**", description=(
+        "Presiona el botón para crear tu **Documento Nacional de Identidad**.\n\n"
+        "📝 **Crear DNI** → Completa el formulario y genera tu DNI.\n\n"
+        "⚠️ **Requisitos:**\n"
+        "• No debes tener un DNI previo.\n"
+        "• Solo puedes tener **UN** DNI por persona.\n\n"
+        "📌 **Importante:**\n"
+        "• Este DNI es **personal e intransferible**.\n"
+        "• La edad se calcula automáticamente.\n\n"
+        "🖼️ **Tu DNI se generará automáticamente** y se enviará al canal de registro."
+    ), color=discord.Color.blue())
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
-    view = PanelDNIView()
-    await interaction.response.send_message(embed=embed, view=view)
+    await interaction.response.send_message(embed=embed, view=PanelDNIView())
 
 @bot.tree.command(name="panel_licencias", description="📋 Panel para solicitar licencias - SOLO ADMIN/HOST")
 async def panel_licencias(interaction: discord.Interaction):
@@ -1841,25 +1602,20 @@ async def panel_licencias(interaction: discord.Interaction):
         await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
         return
     
-    embed = discord.Embed(
-        title="📋 **PANEL DE LICENCIAS**",
-        description=(
-            "Presiona el botón para solicitar tu **Licencia de Conducir**.\n\n"
-            "📝 **Crear Licencia** → Completa el formulario y genera tu licencia.\n\n"
-            "⚠️ **Requisitos:**\n"
-            "• Debes tener un DNI creado (usa el panel de DNI).\n"
-            "• Solo puedes tener **UNA** licencia activa por persona.\n\n"
-            "📌 **Importante:**\n"
-            "• Esta licencia es **personal e intransferible**.\n"
-            "• Si pierdes tu licencia, deberás solicitar una nueva.\n"
-            "• La licencia tiene una vigencia de **2 años**.\n\n"
-            "🖼️ **Tu licencia se generará automáticamente** y se enviará al canal de registro."
-        ),
-        color=discord.Color.gold()
-    )
+    embed = discord.Embed(title="📋 **PANEL DE LICENCIAS**", description=(
+        "Presiona el botón para solicitar tu **Licencia de Conducir**.\n\n"
+        "📝 **Crear Licencia** → Completa el formulario y genera tu licencia.\n\n"
+        "⚠️ **Requisitos:**\n"
+        "• Debes tener un DNI creado (usa el panel de DNI).\n"
+        "• Solo puedes tener **UNA** licencia activa por persona.\n\n"
+        "📌 **Importante:**\n"
+        "• Esta licencia es **personal e intransferible**.\n"
+        "• Si pierdes tu licencia, deberás solicitar una nueva.\n"
+        "• La licencia tiene una vigencia de **2 años**.\n\n"
+        "🖼️ **Tu licencia se generará automáticamente** y se enviará al canal de registro."
+    ), color=discord.Color.gold())
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
-    view = PanelLicenciasView()
-    await interaction.response.send_message(embed=embed, view=view)
+    await interaction.response.send_message(embed=embed, view=PanelLicenciasView())
 
 @bot.tree.command(name="panel_wsp", description="📋 Panel para gestionar turnos de policía - SOLO ADMIN/HOST")
 async def panel_wsp(interaction: discord.Interaction):
@@ -1867,23 +1623,18 @@ async def panel_wsp(interaction: discord.Interaction):
         await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
         return
     
-    embed = discord.Embed(
-        title="🚔 **PANEL DE WSP**",
-        description=(
-            "Selecciona una opción del menú para gestionar tu patrullaje.\n\n"
-            "🚔 **Iniciar Turno** → Comienza tu patrullaje.\n"
-            "🛑 **Finalizar Turno** → Termina tu patrullaje.\n"
-            "📋 **Turnos Activos** → Ver policías en servicio.\n\n"
-            "⚠️ **Requisitos:** Debes tener el rol **Wsp│👮** para usar estas opciones.\n"
-            "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
-            f"🔄 **Rol automático:** Al iniciar turno, se te asignará el rol **{ROL_TRABAJANDO_NOMBRE}**."
-        ),
-        color=discord.Color.blue()
-    )
+    embed = discord.Embed(title="🚔 **PANEL DE WSP**", description=(
+        "Selecciona una opción del menú para gestionar tu patrullaje.\n\n"
+        "🚔 **Iniciar Turno** → Comienza tu patrullaje.\n"
+        "🛑 **Finalizar Turno** → Termina tu patrullaje.\n"
+        "📋 **Turnos Activos** → Ver policías en servicio.\n\n"
+        "⚠️ **Requisitos:** Debes tener el rol **Wsp│👮** para usar estas opciones.\n"
+        "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
+        f"🔄 **Rol automático:** Al iniciar turno, se te asignará el rol **{ROL_TRABAJANDO_NOMBRE}**."
+    ), color=discord.Color.blue())
     embed.set_image(url=URL_IMG_WSP)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
-    view = PanelWSPView()
-    await interaction.response.send_message(embed=embed, view=view)
+    await interaction.response.send_message(embed=embed, view=PanelWSPView())
 
 @bot.tree.command(name="panel_ems", description="🚑 Panel para gestionar servicios de EMS - SOLO ADMIN/HOST")
 async def panel_ems(interaction: discord.Interaction):
@@ -1891,23 +1642,18 @@ async def panel_ems(interaction: discord.Interaction):
         await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
         return
     
-    embed = discord.Embed(
-        title="🚑 **PANEL DE EMS**",
-        description=(
-            "Selecciona una opción del menú para gestionar tu servicio de emergencias.\n\n"
-            "🚨 **Iniciar Servicio** → Comienza tu servicio de EMS.\n"
-            "🛑 **Finalizar Servicio** → Termina tu servicio.\n"
-            "📋 **EMS Activos** → Ver personal médico en servicio.\n\n"
-            "⚠️ **Requisitos:** Debes tener el rol **Ems│🚑** para usar estas opciones.\n"
-            "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
-            f"🔄 **Rol automático:** Al iniciar servicio, se te asignará el rol **{ROL_TRABAJANDO_NOMBRE}**."
-        ),
-        color=discord.Color.green()
-    )
+    embed = discord.Embed(title="🚑 **PANEL DE EMS**", description=(
+        "Selecciona una opción del menú para gestionar tu servicio de emergencias.\n\n"
+        "🚨 **Iniciar Servicio** → Comienza tu servicio de EMS.\n"
+        "🛑 **Finalizar Servicio** → Termina tu servicio.\n"
+        "📋 **EMS Activos** → Ver personal médico en servicio.\n\n"
+        "⚠️ **Requisitos:** Debes tener el rol **Ems│🚑** para usar estas opciones.\n"
+        "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
+        f"🔄 **Rol automático:** Al iniciar servicio, se te asignará el rol **{ROL_TRABAJANDO_NOMBRE}**."
+    ), color=discord.Color.green())
     embed.set_image(url=URL_IMG_EMS)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
-    view = PanelEMSView()
-    await interaction.response.send_message(embed=embed, view=view)
+    await interaction.response.send_message(embed=embed, view=PanelEMSView())
 
 @bot.tree.command(name="panel_dot", description="🚦 Panel para gestionar servicios de DOT - SOLO ADMIN/HOST")
 async def panel_dot(interaction: discord.Interaction):
@@ -1915,614 +1661,20 @@ async def panel_dot(interaction: discord.Interaction):
         await interaction.response.send_message("⛔ Solo **Hosts y Admins** pueden usar este comando.", ephemeral=True)
         return
     
-    embed = discord.Embed(
-        title="🚦 **PANEL DE DOT**",
-        description=(
-            "Selecciona una opción del menú para gestionar tu servicio de tránsito.\n\n"
-            "🚦 **Iniciar Servicio** → Comienza tu servicio de DOT.\n"
-            "🛑 **Finalizar Servicio** → Termina tu servicio.\n"
-            "📋 **DOT Activos** → Ver personal de tránsito en servicio.\n\n"
-            "⚠️ **Requisitos:** Debes tener el rol **Dot│🚧** para usar estas opciones.\n"
-            "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
-            f"🔄 **Rol automático:** Al iniciar servicio, se te asignará el rol **{ROL_TRABAJANDO_NOMBRE}**."
-        ),
-        color=discord.Color.orange()
-    )
+    embed = discord.Embed(title="🚦 **PANEL DE DOT**", description=(
+        "Selecciona una opción del menú para gestionar tu servicio de tránsito.\n\n"
+        "🚦 **Iniciar Servicio** → Comienza tu servicio de DOT.\n"
+        "🛑 **Finalizar Servicio** → Termina tu servicio.\n"
+        "📋 **DOT Activos** → Ver personal de tránsito en servicio.\n\n"
+        "⚠️ **Requisitos:** Debes tener el rol **Dot│🚧** para usar estas opciones.\n"
+        "🔒 **Privacidad:** Las respuestas solo las verás tú.\n"
+        f"🔄 **Rol automático:** Al iniciar servicio, se te asignará el rol **{ROL_TRABAJANDO_NOMBRE}**."
+    ), color=discord.Color.orange())
     embed.set_image(url=URL_IMG_DOT)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
-    view = PanelDOTView()
-    await interaction.response.send_message(embed=embed, view=view)
-    # ==================== COMANDOS DE MULTAS ====================
-@bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
-@app_commands.describe(
-    infractor="Usuario infractor",
-    infraccion="Infraccion cometida",
-    precio="Monto de la multa ($)",
-    testigos="Testigos (opcional - menciona)",
-    foto="Foto de evidencia (opcional)"
-)
-async def registrar_multa(
-    interaction: discord.Interaction,
-    infractor: discord.Member,
-    infraccion: str,
-    precio: str,
-    testigos: str = None,
-    foto: discord.Attachment = None
-):
-    if not es_policia(interaction.user):
-        await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
-        return
-    
-    if not precio.isdigit():
-        await interaction.response.send_message("⚠️ Monto: numero", ephemeral=True)
-        return
-    
-    testigos_mentions = []
-    if testigos:
-        mentions = re.findall(r'<@!?(\d+)>', testigos)
-        for user_id in mentions:
-            try:
-                user = await bot.fetch_user(int(user_id))
-                testigos_mentions.append(user.mention)
-            except:
-                pass
-    
-    multas = cargar(MULTAS_FILE)
-    multas.setdefault("historial", []).append({
-        "oficial_id": str(interaction.user.id),
-        "oficial": str(interaction.user),
-        "infractor_id": str(infractor.id),
-        "infractor": str(infractor),
-        "infraccion": infraccion,
-        "precio": int(precio),
-        "pagada": False,
-        "testigos": testigos_mentions,
-        "foto": foto.url if foto else None,
-        "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"),
-    })
-    guardar(MULTAS_FILE, multas)
-    
-    embed = discord.Embed(title="🚨 **MULTA REGISTRADA**", color=discord.Color.red())
-    embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
-    embed.add_field(name="👤 **Infractor**", value=infractor.mention, inline=False)
-    embed.add_field(name="⚖️ **Infracción**", value=infraccion, inline=False)
-    embed.add_field(name="💰 **Monto**", value=f"**${precio}**", inline=True)
-    if testigos_mentions:
-        embed.add_field(name="👀 **Testigos**", value=", ".join(testigos_mentions), inline=False)
-    embed.add_field(name="📌 **Estado**", value="❌ Sin pagar", inline=True)
-    if foto:
-        embed.set_image(url=foto.url)
-    embed.set_footer(text=f"Registrada el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
-    
-    mensaje = f"{infractor.mention} ¡Has recibido una multa!\n📢 Para pagar: Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District 99 Bot {precio}`"
-    if testigos_mentions:
-        mensaje += f"\n👀 **Testigos:** {', '.join(testigos_mentions)}"
-    
-    await interaction.response.send_message(content=mensaje, embed=embed)
-    await enviar_log(f"🚨 **{interaction.user.mention}** multó a **{infractor.mention}** por ${precio}", discord.Color.red())
+    await interaction.response.send_message(embed=embed, view=PanelDOTView())
 
-@bot.tree.command(name="historial_multas", description="📋 Ver historial de multas - SOLO POLICIA")
-@app_commands.describe(usuario="Usuario (opcional)")
-async def historial_multas(interaction: discord.Interaction, usuario: discord.Member = None):
-    if not es_policia(interaction.user):
-        await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
-        return
-    
-    multas = cargar(MULTAS_FILE)
-    historial = multas.get("historial", [])
-    
-    if not historial:
-        await interaction.response.send_message("📋 No hay multas registradas", ephemeral=True)
-        return
-    
-    if usuario:
-        historial = [m for m in historial if m.get('infractor_id') == str(usuario.id)]
-        if not historial:
-            await interaction.response.send_message(f"📋 {usuario.name} no tiene multas", ephemeral=True)
-            return
-        titulo = f"🚨 **MULTAS DE {usuario.name.upper()}**"
-    else:
-        titulo = "🚨 **HISTORIAL DE MULTAS**"
-    
-    embed = discord.Embed(title=titulo, color=discord.Color.red())
-    for i, multa in enumerate(historial[-10:], 1):
-        estado = "✅ Pagada" if multa.get('pagada', False) else "❌ Sin pagar"
-        embed.add_field(
-            name=f"📌 **Multa #{i}**",
-            value=f"👮 **Oficial:** {multa['oficial']}\n⚖️ **Infracción:** {multa['infraccion']}\n💰 **Monto:** ${multa['precio']}\n📌 **Estado:** {estado}\n📅 **Fecha:** {multa['fecha']}",
-            inline=False
-        )
-    embed.set_footer(text="Mostrando últimas 10 multas")
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="mis_multas", description="📋 Ver tu historial de multas")
-async def mis_multas(interaction: discord.Interaction):
-    multas = cargar(MULTAS_FILE)
-    historial = multas.get("historial", [])
-    user_id = str(interaction.user.id)
-    
-    mis_multas = [m for m in historial if m.get('infractor_id') == user_id]
-    if not mis_multas:
-        await interaction.response.send_message("📋 No tienes multas", ephemeral=True)
-        return
-    
-    embed = discord.Embed(title=f"🚨 **TUS MULTAS**", description=f"Total: {len(mis_multas)}", color=discord.Color.orange())
-    total = 0
-    for i, multa in enumerate(mis_multas[-10:], 1):
-        total += multa.get('precio', 0)
-        estado = "✅ Pagada" if multa.get('pagada', False) else "❌ Sin pagar"
-        embed.add_field(
-            name=f"📌 **Multa #{i}**",
-            value=f"👮 **Oficial:** {multa['oficial']}\n⚖️ **Infracción:** {multa['infraccion']}\n💰 **Monto:** ${multa['precio']}\n📌 **Estado:** {estado}",
-            inline=False
-        )
-    embed.add_field(name="💸 **TOTAL ADEUDADO**", value=f"**${total}**", inline=False)
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="confirmar_pago", description="👮 Confirmar pago - SOLO POLICIA")
-@app_commands.describe(usuario="Usuario que pagó", monto="Monto que pagó")
-async def confirmar_pago(interaction: discord.Interaction, usuario: str, monto: int):
-    if not es_policia(interaction.user):
-        await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
-        return
-
-    miembro = None
-    if usuario.startswith('<@') and usuario.endswith('>'):
-        user_id = usuario.replace('<@', '').replace('>', '').replace('!', '')
-        miembro = interaction.guild.get_member(int(user_id))
-    if not miembro:
-        for member in interaction.guild.members:
-            if member.name.lower() == usuario.lower() or member.display_name.lower() == usuario.lower():
-                miembro = member
-                break
-
-    if not miembro:
-        await interaction.response.send_message(f"⚠️ No encontré al usuario `{usuario}`.", ephemeral=True)
-        return
-
-    user_id = str(miembro.id)
-    multas = cargar(MULTAS_FILE)
-    historial = multas.get("historial", [])
-    
-    multa_encontrada = False
-    for i, multa in enumerate(historial):
-        if multa.get('infractor_id') == user_id and not multa.get('pagada', False) and multa.get('precio') == monto:
-            historial[i]['pagada'] = True
-            historial[i]['fecha_pago'] = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
-            multa_encontrada = True
-            break
-
-    if not multa_encontrada:
-        await interaction.response.send_message(f"⚠️ No encontré multa de **${monto}** para {miembro.mention}", ephemeral=True)
-        return
-
-    guardar(MULTAS_FILE, multas)
-    embed = discord.Embed(title="💰 **PAGO CONFIRMADO**", description=f"{miembro.mention} pagó su multa.", color=discord.Color.green())
-    embed.add_field(name="💰 **Monto**", value=f"**${monto}**", inline=True)
-    embed.add_field(name="👮 **Confirmado por**", value=interaction.user.mention, inline=True)
-    await interaction.response.send_message(embed=embed)
-    await enviar_log(f"💰 **{miembro.mention}** pagó multa de ${monto} (Confirmado por {interaction.user.mention})", discord.Color.green())
-    # ==================== COMANDOS DE AUTOS ====================
-@bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehiculo con foto")
-@app_commands.describe(
-    usuario_roblox="Tu usuario de Roblox",
-    placa="Placa del vehiculo",
-    modelo="Modelo/Marca del vehiculo",
-    color="Color del vehiculo",
-    foto="Sube una foto del vehiculo"
-)
-async def registrar_auto(
-    interaction: discord.Interaction,
-    usuario_roblox: str,
-    placa: str,
-    modelo: str,
-    color: str,
-    foto: discord.Attachment
-):
-    if not foto.content_type or not foto.content_type.startswith('image/'):
-        await interaction.response.send_message("⚠️ Debe ser una imagen", ephemeral=True)
-        return
-    
-    autos = cargar(AUTOS_FILE)
-    user_id = str(interaction.user.id)
-    autos.setdefault(user_id, []).append({
-        "usuario_discord": str(interaction.user),
-        "usuario_roblox": usuario_roblox,
-        "placa": placa,
-        "modelo": modelo,
-        "color": color,
-        "foto": foto.url,
-        "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
-        "registrado_por": str(interaction.user)
-    })
-    guardar(AUTOS_FILE, autos)
-    
-    embed = discord.Embed(title="🚗 **VEHÍCULO REGISTRADO**", color=discord.Color.green())
-    embed.add_field(name="👤 **Usuario**", value=interaction.user.mention, inline=False)
-    embed.add_field(name="📋 **Modelo**", value=modelo, inline=True)
-    embed.add_field(name="🎨 **Color**", value=color, inline=True)
-    embed.add_field(name="🅿️ **Placa**", value=placa, inline=True)
-    embed.set_image(url=foto.url)
-    await interaction.response.send_message(embed=embed)
-    await enviar_log(f"🚗 **{interaction.user.mention}** registró un vehículo (Placa: {placa})", discord.Color.green())
-
-@bot.tree.command(name="ver_autos", description="🚗 Ver autos de un usuario")
-@app_commands.describe(usuario="Usuario (opcional)")
-async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = None):
-    objetivo = usuario or interaction.user
-    autos = cargar(AUTOS_FILE)
-    user_autos = autos.get(str(objetivo.id), [])
-    
-    if not user_autos:
-        await interaction.response.send_message(f"❌ {objetivo.name} no tiene autos registrados", ephemeral=True)
-        return
-    
-    embed = discord.Embed(title=f"🚗 **AUTOS DE {objetivo.name.upper()}**", color=discord.Color.blue())
-    for i, auto in enumerate(user_autos, 1):
-        embed.add_field(
-            name=f"🚘 **Auto #{i}**",
-            value=f"👤 **Discord:** {auto['usuario_discord']}\n🎮 **Roblox:** {auto['usuario_roblox']}\n📋 **Modelo:** {auto['modelo']}\n🎨 **Color:** {auto['color']}\n🅿️ **Placa:** {auto['placa']}\n📅 **Registro:** {auto['fecha']}",
-            inline=False
-        )
-        if auto.get('foto'):
-            embed.set_image(url=auto['foto'])
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="eliminar_auto", description="🗑️ Eliminar un auto registrado")
-@app_commands.describe(numero_auto="Número del auto a eliminar (1, 2, 3...)")
-async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
-    autos = cargar(AUTOS_FILE)
-    user_id = str(interaction.user.id)
-    
-    if user_id not in autos or not autos[user_id]:
-        await interaction.response.send_message("❌ No tienes autos registrados", ephemeral=True)
-        return
-    
-    if numero_auto < 1 or numero_auto > len(autos[user_id]):
-        await interaction.response.send_message(f"⚠️ Número inválido. Tienes {len(autos[user_id])} autos.", ephemeral=True)
-        return
-    
-    auto_eliminado = autos[user_id].pop(numero_auto - 1)
-    guardar(AUTOS_FILE, autos)
-    
-    embed = discord.Embed(
-        title="🗑️ **AUTO ELIMINADO**",
-        description=f"{interaction.user.mention} has eliminado tu auto.",
-        color=discord.Color.red()
-    )
-    embed.add_field(name="📋 **Modelo**", value=auto_eliminado.get('modelo', 'Desconocido'), inline=True)
-    embed.add_field(name="🅿️ **Placa**", value=auto_eliminado.get('placa', 'Desconocida'), inline=True)
-    await interaction.response.send_message(embed=embed)
-    await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó un vehículo (Placa: {auto_eliminado.get('placa', 'N/A')})", discord.Color.red())
-    # ==================== COMANDOS DE SESIONES ====================
-@bot.tree.command(name="abrir_sesion", description="🎬 Abrir sesión - SOLO HOSTS")
-@app_commands.describe(
-    ciudad="Elige la ciudad",
-    vias="Número de vías (1 o 2)",
-    velocidad_maxima="Límite de velocidad (mph)",
-    adelantamientos="¿Se permiten adelantamientos?",
-    link="Link del servidor",
-    velocidad_frp="Límite de velocidad para FRP (opcional)"
-)
-@app_commands.choices(
-    ciudad=[
-        app_commands.Choice(name="🌆 Greenville", value="greenville"),
-        app_commands.Choice(name="🌆 Horton", value="horton"),
-        app_commands.Choice(name="🌆 Brookmere", value="brookmere"),
-    ],
-    vias=[
-        app_commands.Choice(name="1 Vía", value="1"),
-        app_commands.Choice(name="2 Vías", value="2"),
-    ],
-    adelantamientos=[
-        app_commands.Choice(name="✅ Sí", value="si"),
-        app_commands.Choice(name="❌ No", value="no"),
-    ]
-)
-async def abrir_sesion(
-    interaction: discord.Interaction,
-    ciudad: app_commands.Choice[str],
-    vias: app_commands.Choice[str],
-    velocidad_maxima: str,
-    adelantamientos: app_commands.Choice[str],
-    link: str,
-    velocidad_frp: str = None
-):
-    if not es_host(interaction.user):
-        await interaction.response.send_message("⛔ Solo **HOSTS** pueden usar este comando.", ephemeral=True)
-        return
-
-    if not velocidad_maxima.isdigit():
-        await interaction.response.send_message("⚠️ La velocidad debe ser un número.", ephemeral=True)
-        return
-
-    if velocidad_frp and not velocidad_frp.isdigit():
-        await interaction.response.send_message("⚠️ La velocidad FRP debe ser un número.", ephemeral=True)
-        return
-
-    velocidad_adelanto = None
-    if adelantamientos.value == "si":
-        class AdelantoModal(discord.ui.Modal, title="🚀 Velocidad de Adelantamiento"):
-            velocidad_adelanto = discord.ui.TextInput(
-                label="Velocidad de Adelantamiento (mph)",
-                placeholder="Ej: 100",
-                required=True,
-                max_length=10
-            )
-
-            async def on_submit(self, modal_interaction: discord.Interaction):
-                if not self.velocidad_adelanto.value.isdigit():
-                    await modal_interaction.response.send_message("⚠️ La velocidad de adelantamiento debe ser un número.", ephemeral=True)
-                    return
-                await enviar_sesion(
-                    modal_interaction,
-                    ciudad=ciudad.value,
-                    vias=vias.value,
-                    velocidad_maxima=velocidad_maxima,
-                    adelantamientos=adelantamientos.value,
-                    link=link,
-                    velocidad_adelanto=self.velocidad_adelanto.value,
-                    velocidad_frp=velocidad_frp
-                )
-
-        await interaction.response.send_modal(AdelantoModal())
-        return
-
-    await enviar_sesion(
-        interaction,
-        ciudad=ciudad.value,
-        vias=vias.value,
-        velocidad_maxima=velocidad_maxima,
-        adelantamientos=adelantamientos.value,
-        link=link,
-        velocidad_adelanto=None,
-        velocidad_frp=velocidad_frp
-    )
-
-async def enviar_sesion(
-    interaction: discord.Interaction,
-    ciudad: str,
-    vias: str,
-    velocidad_maxima: str,
-    adelantamientos: str,
-    link: str,
-    velocidad_adelanto: str = None,
-    velocidad_frp: str = None
-):
-    escenas = cargar(ESCENAS_FILE)
-    channel_id = str(interaction.channel_id)
-    
-    if channel_id in escenas:
-        await interaction.response.send_message("⚠️ Ya hay una sesión abierta en este canal.", ephemeral=True)
-        return
-    
-    escenas[channel_id] = {
-        "ciudad": ciudad,
-        "vias": vias,
-        "velocidad_maxima": velocidad_maxima,
-        "adelantamientos": adelantamientos == "si",
-        "velocidad_adelanto": velocidad_adelanto if velocidad_adelanto else "No aplica",
-        "velocidad_frp": velocidad_frp if velocidad_frp else "No especificada",
-        "link_servidor": link,
-        "host": str(interaction.user),
-        "host_id": str(interaction.user.id),
-        "inicio": datetime.now(timezone.utc).isoformat(),
-    }
-    guardar(ESCENAS_FILE, escenas)
-
-    embed = discord.Embed(title="🏁 **SESIÓN ABIERTA**", description=f"**{NOMBRE_SERVIDOR}**", color=discord.Color.gold())
-    embed.set_image(url=URL_SESION_ABIERTA)
-
-    adelanto_texto = "✅ Permitidos" if adelantamientos == "si" else "❌ No permitidos"
-    
-    detalles = (
-        f"🌆 **Ciudad:** {ciudad.capitalize()}\n"
-        f"🛣️ **Vías:** {vias} vías\n"
-        f"🚗 **Velocidad Máx:** {velocidad_maxima} mph\n"
-        f"🚨 **Vel. FRP:** {velocidad_frp if velocidad_frp else 'No especificada'} mph\n"
-        f"🏁 **Adelantamientos:** {adelanto_texto}\n"
-    )
-    
-    if adelantamientos == "si" and velocidad_adelanto:
-        detalles += f"🚀 **Vel. Adelanto:** {velocidad_adelanto} mph\n"
-    
-    detalles += f"👑 **Host:** {interaction.user.mention}\n🔗 **Link:** [🌐 Haz clic aquí]({link})"
-    
-    embed.add_field(name="📋 **DETALLES**", value=detalles, inline=False)
-    embed.set_footer(text=f"Sesión iniciada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}", icon_url=interaction.user.display_avatar.url)
-
-    canal_sesiones = bot.get_channel(CANAL_SESIONES_ID)
-    if canal_sesiones:
-        await canal_sesiones.send(embed=embed)
-        await interaction.response.send_message("✅ ¡Sesión enviada al canal de sesiones!", ephemeral=True)
-    else:
-        await interaction.response.send_message("❌ No encontré el canal de sesiones.", ephemeral=True)
-
-    await enviar_log(f"🎬 **{interaction.user.mention}** abrió sesión (Ciudad: {ciudad.capitalize()})", discord.Color.gold())
-
-@bot.tree.command(name="cerrar_sesion", description="🔒 Cerrar sesión - SOLO HOSTS")
-async def cerrar_sesion(interaction: discord.Interaction):
-    if not es_host(interaction.user):
-        await interaction.response.send_message("⛔ Solo **HOSTS** pueden usar este comando.", ephemeral=True)
-        return
-
-    escenas = cargar(ESCENAS_FILE)
-    channel_id = str(interaction.channel_id)
-    
-    if channel_id not in escenas:
-        await interaction.response.send_message("❌ No hay una sesión activa en este canal.", ephemeral=True)
-        return
-
-    escena = escenas[channel_id]
-    inicio = datetime.fromisoformat(escena["inicio"])
-    duracion = datetime.now(timezone.utc) - inicio
-    horas, resto = divmod(int(duracion.total_seconds()), 3600)
-    minutos = resto // 60
-
-    del escenas[channel_id]
-    guardar(ESCENAS_FILE, escenas)
-
-    embed = discord.Embed(title="🔒 **SESIÓN CERRADA**", description=f"**¡Buen rol!** 👏\n⏱️ Duración: {horas}h {minutos}m", color=discord.Color.red())
-    embed.set_image(url=URL_SESION_CERRADA_NUEVA)
-    embed.set_footer(text=f"Sesión cerrada por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}", icon_url=interaction.user.display_avatar.url)
-
-    canal_sesiones = bot.get_channel(CANAL_SESIONES_ID)
-    if canal_sesiones:
-        await canal_sesiones.send(embed=embed)
-        await interaction.response.send_message("✅ ¡Sesión cerrada!", ephemeral=True)
-    else:
-        await interaction.response.send_message("❌ No encontré el canal de sesiones.", ephemeral=True)
-
-    await enviar_log(f"🔒 **{interaction.user.mention}** cerró sesión (Duración: {horas}h {minutos}m)", discord.Color.red())
-    # ==================== EVALUAR STAFF ====================
-class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
-    que_hizo = discord.ui.TextInput(label="¿Qué hizo el staff?", placeholder="Ej: Ayudó con el rol...", max_length=200)
-    calificacion = discord.ui.TextInput(label="Calificación (1-10)", placeholder="Ej: 8", max_length=2)
-    amable = discord.ui.TextInput(label="¿Fue amable?", placeholder="Ej: Sí, muy amable", max_length=150)
-    queja = discord.ui.TextInput(label="Sugerencias (opcional)", required=False, max_length=300)
-
-    def __init__(self, staff: discord.Member):
-        super().__init__()
-        self.staff = staff
-
-    async def on_submit(self, interaction: discord.Interaction):
-        try:
-            nota = int(self.calificacion.value.strip())
-            if not 1 <= nota <= 10:
-                raise ValueError
-        except:
-            await interaction.response.send_message("⚠️ Calificación inválida. Usa un número del 1 al 10", ephemeral=True)
-            return
-        
-        evaluaciones = cargar(EVALUACIONES_FILE)
-        clave = str(self.staff.id)
-        
-        evaluaciones.setdefault(clave, []).append({
-            "staff_id": str(self.staff.id),
-            "staff": str(self.staff),
-            "evaluador_id": str(interaction.user.id),
-            "evaluador": str(interaction.user),
-            "que_hizo": self.que_hizo.value,
-            "calificacion": nota,
-            "amable": self.amable.value,
-            "queja": self.queja.value or "Ninguna",
-            "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"),
-        })
-        guardar(EVALUACIONES_FILE, evaluaciones)
-        
-        estrellas = "⭐" * round(nota / 2)
-        
-        embed = discord.Embed(title="📝 **EVALUACIÓN REGISTRADA**", description=f"**Staff evaluado:** {self.staff.mention}", color=discord.Color.purple())
-        embed.add_field(name="⭐ **Calificación**", value=f"{estrellas} ({nota}/10)", inline=False)
-        embed.add_field(name="🤝 **Amabilidad**", value=self.amable.value, inline=False)
-        embed.add_field(name="📌 **Acción**", value=self.que_hizo.value, inline=False)
-        embed.add_field(name="💬 **Sugerencias**", value=self.queja.value or "Ninguna", inline=False)
-        embed.set_footer(text=f"Evaluado por {interaction.user.name}")
-        
-        await interaction.response.send_message(content=f"{self.staff.mention} ¡Has recibido una evaluación! ⭐", embed=embed)
-        await enviar_log(f"⭐ **{interaction.user.mention}** evaluó a **{self.staff.mention}** con nota {nota}/10", discord.Color.purple())
-
-@bot.tree.command(name="evaluar_staff", description="⭐ Evaluar al staff")
-@app_commands.describe(staff="Staff a evaluar")
-async def evaluar_staff(interaction: discord.Interaction, staff: discord.Member):
-    await interaction.response.send_modal(EvalModal(staff))
-
-# ==================== ENVIAR MENSAJE ====================
-@bot.tree.command(name="enviar", description="📢 Enviar un mensaje como el bot - SOLO ADMINS")
-@app_commands.describe(
-    titulo="El título del anuncio (opcional)",
-    mensaje="El mensaje que quieres que el bot envíe",
-    canal="El canal donde quieres enviarlo (opcional - por defecto el canal actual)",
-    imagen_principal="Imagen grande - sube una imagen",
-    imagen_miniatura="Imagen pequeña - sube una imagen",
-    posicion_imagen="¿Dónde quieres la imagen principal?"
-)
-@app_commands.choices(
-    posicion_imagen=[
-        app_commands.Choice(name="📷 Abajo (principal)", value="abajo"),
-        app_commands.Choice(name="📷 Arriba (miniatura)", value="arriba"),
-        app_commands.Choice(name="📷 Ambas (principal + miniatura)", value="ambas"),
-    ]
-)
-async def enviar_mensaje(
-    interaction: discord.Interaction,
-    mensaje: str,
-    titulo: str = None,
-    canal: discord.TextChannel = None,
-    imagen_principal: discord.Attachment = None,
-    imagen_miniatura: discord.Attachment = None,
-    posicion_imagen: app_commands.Choice[str] = None
-):
-    if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("⛔ Solo **Admins** pueden usar este comando.", ephemeral=True)
-        return
-
-    canal_destino = canal if canal else interaction.channel
-
-    embed = discord.Embed(
-        title=titulo if titulo else "📢 ANUNCIO OFICIAL",
-        description=mensaje,
-        color=discord.Color.gold()
-    )
-    embed.set_author(name="DISTRICT 99 - GVRP", icon_url=interaction.guild.icon.url if interaction.guild.icon else None)
-    embed.set_footer(text=f"Enviado por {interaction.user.name} • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}", icon_url=interaction.user.display_avatar.url)
-
-    if posicion_imagen:
-        if posicion_imagen.value == "abajo" and imagen_principal:
-            embed.set_image(url=imagen_principal.url)
-        elif posicion_imagen.value == "arriba" and imagen_principal:
-            embed.set_thumbnail(url=imagen_principal.url)
-        elif posicion_imagen.value == "ambas":
-            if imagen_principal:
-                embed.set_image(url=imagen_principal.url)
-            if imagen_miniatura:
-                embed.set_thumbnail(url=imagen_miniatura.url)
-    else:
-        if imagen_principal:
-            embed.set_image(url=imagen_principal.url)
-
-    try:
-        await canal_destino.send(embed=embed)
-        await interaction.response.send_message(f"✅ **Mensaje enviado a {canal_destino.mention}**", ephemeral=True)
-        await enviar_log(f"📢 **{interaction.user.mention}** envió un anuncio a {canal_destino.mention}", discord.Color.gold())
-    except Exception as e:
-        await interaction.response.send_message(f"❌ Error al enviar el mensaje: {e}", ephemeral=True)
-
-# ==================== STATS ====================
-@bot.tree.command(name="stats", description="📊 Estadísticas del bot - SOLO ADMINS")
-async def stats(interaction: discord.Interaction):
-    if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("⛔ Solo **Admins** pueden usar este comando.", ephemeral=True)
-        return
-    
-    dnis = cargar(DNI_FILE)
-    licencias = cargar(LICENCIAS_FILE)
-    multas = cargar(MULTAS_FILE)
-    autos = cargar(AUTOS_FILE)
-    escenas = cargar(ESCENAS_FILE)
-    evaluaciones = cargar(EVALUACIONES_FILE)
-    
-    historial = multas.get("historial", [])
-    total_multas = len(historial)
-    pagadas = sum(1 for m in historial if m.get('pagada', False))
-    no_pagadas = total_multas - pagadas
-    
-    total_autos = sum(len(v) for v in autos.values())
-    
-    embed = discord.Embed(title="📊 **ESTADÍSTICAS DEL BOT**", description=f"**{NOMBRE_SERVIDOR}**", color=discord.Color.blue())
-    embed.add_field(name="🪪 **DNIs creados**", value=str(len(dnis)), inline=True)
-    embed.add_field(name="🪪 **Licencias activas**", value=str(len(licencias)), inline=True)
-    embed.add_field(name="🚗 **Autos registrados**", value=str(total_autos), inline=True)
-    embed.add_field(name="🚨 **Multas totales**", value=str(total_multas), inline=True)
-    embed.add_field(name="✅ **Multas pagadas**", value=str(pagadas), inline=True)
-    embed.add_field(name="❌ **Multas pendientes**", value=str(no_pagadas), inline=True)
-    embed.add_field(name="🎬 **Escenas abiertas**", value=str(len(escenas)), inline=True)
-    embed.add_field(name="⭐ **Evaluaciones**", value=str(len(evaluaciones)), inline=True)
-    embed.set_footer(text=f"Actualizado: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
-    
-    await interaction.response.send_message(embed=embed)
-    await enviar_log(f"📊 **{interaction.user.mention}** usó /stats", discord.Color.blue())
-    # ==================== EVENTO ON_MESSAGE (DETECTAR !pay) ====================
+# ==================== EVENTO ON_MESSAGE (DETECTAR !pay) ====================
 @bot.event
 async def on_message(message):
     if message.author.id == bot.user.id:
