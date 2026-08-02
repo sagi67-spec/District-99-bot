@@ -1,6 +1,6 @@
 """
 Bot de Discord para servidor de rol (RP) — DISTRICT 99
-CÓDIGO COMPLETO - PARTE 1/15
+CÓDIGO COMPLETO CORREGIDO - LISTO PARA PRODUCCIÓN
 """
 
 import json
@@ -72,7 +72,6 @@ CANAL_LOGS_ID = 1530830726939934933
 CANAL_ANUNCIOS_ID = 1524525824869666856
 CANAL_GENERAL_ID = 1524200579297972336
 CANAL_SESIONES_ID = 1525377180622786701
-
 # ==================== ROLES ====================
 ROL_HOST_NOMBRE = "Host│🎮"
 ROL_POLICIA_NOMBRE = "Wsp│👮"
@@ -140,7 +139,8 @@ async def enviar_log(mensaje, color=discord.Color.blue(), mencionar=None):
         await canal.send(content=content, embed=embed)
     else:
         print(f"❌ No se encontró el canal de logs (ID: {CANAL_LOGS_ID})")
-        # ==================== FUNCIÓN PARA GENERAR DNI ====================
+
+# ==================== FUNCIÓN PARA GENERAR DNI ====================
 async def generar_dni(usuario: discord.Member, datos_dni: dict):
     try:
         W, H = 1200, 750
@@ -316,311 +316,215 @@ class LicenciaRenderer:
         self._cargar_fuentes()
         
     def _cargar_fuentes(self):
-        for nombre, ruta in self.config.FUENTES.items():
-            try:
-                if nombre == 'display':
-                    self.fonts['title'] = ImageFont.truetype(ruta, self.config.FONT_SIZES['title'])
-                    self.fonts['subtitle'] = ImageFont.truetype(ruta, self.config.FONT_SIZES['subtitle'])
-                elif nombre == 'body':
-                    self.fonts['body_value'] = ImageFont.truetype(ruta, self.config.FONT_SIZES['body_value'])
-                    self.fonts['body_label'] = ImageFont.truetype(ruta, self.config.FONT_SIZES['body_label'])
-                elif nombre == 'mono':
-                    self.fonts['mono'] = ImageFont.truetype(ruta, self.config.FONT_SIZES['mrz'])
-                else:
-                    self.fonts[nombre] = ImageFont.truetype(ruta, 16)
-            except Exception as e:
-                print(f"Error cargando fuente {nombre}: {e}")
-                self.fonts = self._fallback_fonts()
-                
-    def _fallback_fonts(self):
-        default = ImageFont.load_default()
-        return {
-            'title': default,
-            'subtitle': default,
-            'body_value': default,
-            'body_label': default,
-            'mono': default,
-        }
-        def generar(self, usuario: discord.Member, datos: dict) -> discord.File:
-    try:
-        img = Image.new('RGB', (self.W, self.H), self.colores['fondo_principal'])
-        draw = ImageDraw.Draw(img)
-        
-        for i in range(self.H):
-            factor = i / self.H
-            r = int(self.colores['fondo_principal'][0] - 15 * factor)
-            g = int(self.colores['fondo_principal'][1] - 12 * factor)
-            b = int(self.colores['fondo_principal'][2] - 10 * factor)
-            draw.line([(0, i), (self.W, i)], fill=(r, g, b))
-        
-        self._dibujar_borde_premium(img, draw)
-        
-        img = self._aplicar_fondo_seguridad(img, draw)
-        draw = ImageDraw.Draw(img)
-        
-        self._dibujar_header(img, draw, datos)
-        self._dibujar_avatar_discord(img, draw, usuario)
-        self._dibujar_avatar_roblox(img, draw, datos)
-        self._dibujar_campos_info(img, draw, datos)
-        self._dibujar_footer(img, draw, datos)
-        self._dibujar_mrz(img, draw, datos)
-        self._dibujar_sellos_seguridad(img, draw, datos)
-        self._dibujar_codigos_verificacion(img, draw, datos)
-        
-        img_bytes = BytesIO()
-        img.save(img_bytes, format='PNG', quality=100, compress_level=0)
-        img_bytes.seek(0)
-        return discord.File(img_bytes, filename="licencia_premium.png")
-        
-    except Exception as e:
-        print(f"❌ Error en generación premium: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
+        try:
+            self.fonts['title'] = ImageFont.truetype(self.config.FUENTES['display'], self.config.FONT_SIZES['title'])
+            self.fonts['subtitle'] = ImageFont.truetype(self.config.FUENTES['display'], self.config.FONT_SIZES['subtitle'])
+            self.fonts['body_value'] = ImageFont.truetype(self.config.FUENTES['body'], self.config.FONT_SIZES['body_value'])
+            self.fonts['body_label'] = ImageFont.truetype(self.config.FUENTES['body'], self.config.FONT_SIZES['body_label'])
+            self.fonts['footer_label'] = ImageFont.truetype(self.config.FUENTES['body'], self.config.FONT_SIZES['footer_label'])
+            self.fonts['footer_value'] = ImageFont.truetype(self.config.FUENTES['body'], self.config.FONT_SIZES['footer_value'])
+            self.fonts['mono'] = ImageFont.truetype(self.config.FUENTES['mono'], self.config.FONT_SIZES['mrz'])
+        except:
+            default = ImageFont.load_default()
+            self.fonts = {
+                'title': default,
+                'subtitle': default,
+                'body_value': default,
+                'body_label': default,
+                'footer_label': default,
+                'footer_value': default,
+                'mono': default,
+            }
 
-def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
-    margen = 25
-    
-    for i in range(12):
-        offset = margen - i
-        draw.rectangle([offset, offset, self.W - offset, self.H - offset],
-                      outline=(0, 0, 0, 30 - i*2), width=1)
-    
-    draw.rectangle([margen, margen, self.W - margen, self.H - margen],
-                  outline=self.colores['dorado_principal'], width=4)
-    
-    draw.rectangle([margen + 10, margen + 10, self.W - margen - 10, self.H - margen - 10],
-                  outline=self.colores['navy_medio'], width=2)
-    
-    draw.rectangle([margen + 16, margen + 16, self.W - margen - 16, self.H - margen - 16],
-                  outline=self.colores['dorado_claro'], width=1)
-    
-    self._dibujar_esquinas_premium(img, draw, margen + 8)
-
-def _dibujar_esquinas_premium(self, img: Image.Image, draw: ImageDraw.Draw, base: int):
-    size = 55
-    grosor = 5
-    
-    esquinas = [
-        (base, base, 1, 1),
-        (self.W - base, base, -1, 1),
-        (base, self.H - base, 1, -1),
-        (self.W - base, self.H - base, -1, -1)
-    ]
-    
-    for cx, cy, dx, dy in esquinas:
-        draw.line([(cx, cy), (cx + size * dx, cy)], fill=self.colores['dorado_principal'], width=grosor)
-        draw.line([(cx, cy), (cx, cy + size * dy)], fill=self.colores['dorado_principal'], width=grosor)
-        
-        offset = 12
-        draw.line([(cx + offset*dx, cy + offset*dy), (cx + (size-15) * dx, cy + offset*dy)],
-                 fill=self.colores['navy_medio'], width=2)
-        draw.line([(cx + offset*dx, cy + offset*dy), (cx + offset*dx, cy + (size-15) * dy)],
-                 fill=self.colores['navy_medio'], width=2)
-        def _aplicar_fondo_seguridad(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
-    img = self._aplicar_guilloche(img, draw)
-    draw = ImageDraw.Draw(img)
-    
-    img = self._aplicar_microtexto(img, draw)
-    draw = ImageDraw.Draw(img)
-    
-    self._dibujar_watermark_99(img, draw)
-    draw = ImageDraw.Draw(img)
-    
-    self._dibujar_hexagonos_seguridad(img, draw)
-    draw = ImageDraw.Draw(img)
-    
-    return img
-
-def _aplicar_guilloche(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
-    centro_x, centro_y = self.W // 2, self.H // 2
-    
-    for radio in range(40, 700, 30):
-        alpha = int(8 * (1 - radio / 700))
-        color = (200 - alpha, 198 - alpha, 190 - alpha)
-        draw.ellipse([centro_x - radio, centro_y - int(radio * 0.7),
-                     centro_x + radio, centro_y + int(radio * 0.7)],
-                    outline=color, width=1)
-    
-    for i in range(-self.H, self.W + self.H, 40):
-        draw.line([(i, 0), (i + self.H, self.H)], fill=(215, 212, 205), width=1)
-        draw.line([(i, 0), (i - self.H, self.H)], fill=(215, 212, 205), width=1)
-        
-    return img
-
-def _aplicar_microtexto(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
-    try:
-        fuente = ImageFont.truetype("fonts/Montserrat-Light.ttf", 6)
-    except:
-        fuente = ImageFont.load_default()
-        
-    texto = "DISTRICT99 GVRP • DOCUMENTO OFICIAL • VALID LICENSE • "
-    texto_repetido = texto * 60
-    
-    draw.text((50, 18), texto_repetido[:500], fill=(200, 198, 190), font=fuente)
-    draw.text((50, self.H - 28), texto_repetido[:500], fill=(200, 198, 190), font=fuente)
-    
-    for i in range(0, self.H - 100, 15):
-        draw.text((12, 50 + i), "D99", fill=(200, 198, 190), font=fuente)
-        draw.text((self.W - 30, 50 + i), "GVRP", fill=(200, 198, 190), font=fuente)
-        
-    return img
-
-def _dibujar_watermark_99(self, img: Image.Image, draw: ImageDraw.Draw):
-    try:
-        fuente = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 180)
-    except:
-        fuente = ImageFont.load_default()
-        
-    draw.text((self.W // 2, self.H // 2 - 20), "99",
-             fill=(215, 212, 205, 40), font=fuente, anchor="mm")
-    
-    try:
-        fuente2 = ImageFont.truetype("fonts/Montserrat-Light.ttf", 40)
-        draw.text((self.W // 2, self.H // 2 + 100), "DISTRICT 99",
-                 fill=(215, 212, 205, 30), font=fuente2, anchor="mm")
-    except:
-        pass
-
-def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
-    size = 18
-    spacing = 35
-    offset_x = 30
-    offset_y = 80
-    
-    for row in range(8):
-        for col in range(22):
-            x = offset_x + col * spacing + (row % 2) * (spacing // 2)
-            y = offset_y + row * spacing
+    def generar(self, usuario: discord.Member, datos: dict) -> discord.File:
+        try:
+            img = Image.new('RGB', (self.W, self.H), self.colores['fondo_principal'])
+            draw = ImageDraw.Draw(img)
             
-            if x > self.W - 50 or y > self.H - 100:
-                continue
-                
-            puntos = []
-            for i in range(6):
-                angulo = i * 60 - 30
-                px = x + size * math.cos(math.radians(angulo))
-                py = y + size * math.sin(math.radians(angulo))
-                puntos.append((px, py))
+            for i in range(self.H):
+                factor = i / self.H
+                r = int(self.colores['fondo_principal'][0] - 15 * factor)
+                g = int(self.colores['fondo_principal'][1] - 12 * factor)
+                b = int(self.colores['fondo_principal'][2] - 10 * factor)
+                draw.line([(0, i), (self.W, i)], fill=(r, g, b))
             
-            if (row + col) % 2 == 0:
-                draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
-                def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+            self._dibujar_borde_premium(img, draw)
+            img = self._aplicar_fondo_seguridad(img, draw)
+            draw = ImageDraw.Draw(img)
+            self._dibujar_header(img, draw, datos)
+            self._dibujar_avatar_discord(img, draw, usuario)
+            self._dibujar_avatar_roblox(img, draw, datos)
+            self._dibujar_campos_info(img, draw, datos)
+            self._dibujar_footer(img, draw, datos)
+            self._dibujar_mrz(img, draw, datos)
+            self._dibujar_sellos_seguridad(img, draw, datos)
+            self._dibujar_codigos_verificacion(img, draw, datos)
+            
+            img_bytes = BytesIO()
+            img.save(img_bytes, format='PNG', quality=100, compress_level=0)
+            img_bytes.seek(0)
+            return discord.File(img_bytes, filename="licencia_premium.png")
+        except Exception as e:
+            print(f"❌ Error en generación premium: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
+    def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
+        margen = 25
+        for i in range(12):
+            offset = margen - i
+            draw.rectangle([offset, offset, self.W - offset, self.H - offset], outline=(0, 0, 0, 30 - i*2), width=1)
+        draw.rectangle([margen, margen, self.W - margen, self.H - margen], outline=self.colores['dorado_principal'], width=4)
+        draw.rectangle([margen + 10, margen + 10, self.W - margen - 10, self.H - margen - 10], outline=self.colores['navy_medio'], width=2)
+        draw.rectangle([margen + 16, margen + 16, self.W - margen - 16, self.H - margen - 16], outline=self.colores['dorado_claro'], width=1)
+        self._dibujar_esquinas_premium(img, draw, margen + 8)
+
+    def _dibujar_esquinas_premium(self, img: Image.Image, draw: ImageDraw.Draw, base: int):
+        size = 55
+        grosor = 5
+        esquinas = [
+            (base, base, 1, 1),
+            (self.W - base, base, -1, 1),
+            (base, self.H - base, 1, -1),
+            (self.W - base, self.H - base, -1, -1)
+        ]
+        for cx, cy, dx, dy in esquinas:
+            draw.line([(cx, cy), (cx + size * dx, cy)], fill=self.colores['dorado_principal'], width=grosor)
+            draw.line([(cx, cy), (cx, cy + size * dy)], fill=self.colores['dorado_principal'], width=grosor)
+            offset = 12
+            draw.line([(cx + offset*dx, cy + offset*dy), (cx + (size-15) * dx, cy + offset*dy)], fill=self.colores['navy_medio'], width=2)
+            draw.line([(cx + offset*dx, cy + offset*dy), (cx + offset*dx, cy + (size-15) * dy)], fill=self.colores['navy_medio'], width=2)
+
+    def _aplicar_fondo_seguridad(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
+        img = self._aplicar_guilloche(img, draw)
+        draw = ImageDraw.Draw(img)
+        img = self._aplicar_microtexto(img, draw)
+        draw = ImageDraw.Draw(img)
+        self._dibujar_watermark_99(img, draw)
+        draw = ImageDraw.Draw(img)
+        self._dibujar_hexagonos_seguridad(img, draw)
+        draw = ImageDraw.Draw(img)
+        return img
+
+    def _aplicar_guilloche(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
+        centro_x, centro_y = self.W // 2, self.H // 2
+        for radio in range(40, 700, 30):
+            alpha = int(8 * (1 - radio / 700))
+            color = (200 - alpha, 198 - alpha, 190 - alpha)
+            draw.ellipse([centro_x - radio, centro_y - int(radio * 0.7), centro_x + radio, centro_y + int(radio * 0.7)], outline=color, width=1)
+        for i in range(-self.H, self.W + self.H, 40):
+            draw.line([(i, 0), (i + self.H, self.H)], fill=(215, 212, 205), width=1)
+            draw.line([(i, 0), (i - self.H, self.H)], fill=(215, 212, 205), width=1)
+        return img
+
+    def _aplicar_microtexto(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
+        try:
+            fuente = ImageFont.truetype("fonts/Montserrat-Light.ttf", 6)
+        except:
+            fuente = ImageFont.load_default()
+        texto = "DISTRICT99 GVRP • DOCUMENTO OFICIAL • VALID LICENSE • "
+        texto_repetido = texto * 60
+        draw.text((50, 18), texto_repetido[:500], fill=(200, 198, 190), font=fuente)
+        draw.text((50, self.H - 28), texto_repetido[:500], fill=(200, 198, 190), font=fuente)
+        for i in range(0, self.H - 100, 15):
+            draw.text((12, 50 + i), "D99", fill=(200, 198, 190), font=fuente)
+            draw.text((self.W - 30, 50 + i), "GVRP", fill=(200, 198, 190), font=fuente)
+        return img
+
+    def _dibujar_watermark_99(self, img: Image.Image, draw: ImageDraw.Draw):
+        try:
+            fuente = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 180)
+        except:
+            fuente = ImageFont.load_default()
+        draw.text((self.W // 2, self.H // 2 - 20), "99", fill=(215, 212, 205, 40), font=fuente, anchor="mm")
+        try:
+            fuente2 = ImageFont.truetype("fonts/Montserrat-Light.ttf", 40)
+            draw.text((self.W // 2, self.H // 2 + 100), "DISTRICT 99", fill=(215, 212, 205, 30), font=fuente2, anchor="mm")
+        except:
+            pass
+
+    def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
+        size = 18
+        spacing = 35
+        offset_x = 30
+        offset_y = 80
+        for row in range(8):
+            for col in range(22):
+                x = offset_x + col * spacing + (row % 2) * (spacing // 2)
+                y = offset_y + row * spacing
+                if x > self.W - 50 or y > self.H - 100:
+                    continue
+                puntos = []
+                for i in range(6):
+                    angulo = i * 60 - 30
+                    px = x + size * math.cos(math.radians(angulo))
+                    py = y + size * math.sin(math.radians(angulo))
+                    puntos.append((px, py))
+                if (row + col) % 2 == 0:
+                    draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
+                    def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     banda_y1 = 45
     banda_y2 = 130
-    draw.rectangle([35, banda_y1, self.W - 35, banda_y2],
-                  fill=self.colores['navy_oscuro'])
-    
-    draw.line([35, banda_y2, self.W - 35, banda_y2],
-             fill=self.colores['dorado_principal'], width=3)
-    draw.line([35, banda_y2 + 4, self.W - 35, banda_y2 + 4],
-             fill=self.colores['dorado_claro'], width=1)
+    draw.rectangle([35, banda_y1, self.W - 35, banda_y2], fill=self.colores['navy_oscuro'])
+    draw.line([35, banda_y2, self.W - 35, banda_y2], fill=self.colores['dorado_principal'], width=3)
+    draw.line([35, banda_y2 + 4, self.W - 35, banda_y2 + 4], fill=self.colores['dorado_claro'], width=1)
     
     escudo_x, escudo_y = 65, 48
     escudo_size = 78
-    
-    draw.ellipse([escudo_x, escudo_y, escudo_x + escudo_size, escudo_y + escudo_size],
-                fill=self.colores['dorado_claro'], outline=self.colores['dorado_oscuro'], width=3)
-    
-    draw.ellipse([escudo_x + 5, escudo_y + 5, escudo_x + escudo_size - 5, escudo_y + escudo_size - 5],
-                outline=self.colores['blanco_puro'], width=1)
-    
-    draw.text((escudo_x + escudo_size // 2, escudo_y + escudo_size // 2 + 2),
-             "99", fill=self.colores['navy_oscuro'],
-             font=self.fonts['title'], anchor="mm")
+    draw.ellipse([escudo_x, escudo_y, escudo_x + escudo_size, escudo_y + escudo_size], fill=self.colores['dorado_claro'], outline=self.colores['dorado_oscuro'], width=3)
+    draw.ellipse([escudo_x + 5, escudo_y + 5, escudo_x + escudo_size - 5, escudo_y + escudo_size - 5], outline=self.colores['blanco_puro'], width=1)
+    draw.text((escudo_x + escudo_size // 2, escudo_y + escudo_size // 2 + 2), "99", fill=self.colores['navy_oscuro'], font=self.fonts['title'], anchor="mm")
     
     titulo_x = escudo_x + escudo_size + 25
     titulo_y = 58
-    
-    draw.text((titulo_x + 2, titulo_y + 2), "LICENCIA DE CONDUCIR",
-             fill=self.colores['dorado_oscuro'],
-             font=self.fonts['title'], anchor="lt")
-    
-    draw.text((titulo_x, titulo_y), "LICENCIA DE CONDUCIR",
-             fill=self.colores['blanco_puro'],
-             font=self.fonts['title'], anchor="lt")
+    draw.text((titulo_x + 2, titulo_y + 2), "LICENCIA DE CONDUCIR", fill=self.colores['dorado_oscuro'], font=self.fonts['title'], anchor="lt")
+    draw.text((titulo_x, titulo_y), "LICENCIA DE CONDUCIR", fill=self.colores['blanco_puro'], font=self.fonts['title'], anchor="lt")
     
     subtitulo_y = titulo_y + 52
-    draw.text((titulo_x, subtitulo_y), "✦ DISTRICT 99 - GVRP ✦",
-             fill=self.colores['dorado_claro'],
-             font=self.fonts['subtitle'], anchor="lt")
+    draw.text((titulo_x, subtitulo_y), "✦ DISTRICT 99 - GVRP ✦", fill=self.colores['dorado_claro'], font=self.fonts['subtitle'], anchor="lt")
     
     licencia_id = datos.get('licencia_id', 'LIC-0000')
     num_x = self.W - 120
     num_y = 52
-    
-    draw.rectangle([num_x - 140, num_y - 8, num_x + 140, num_y + 62],
-                  fill=self.colores['dorado_claro'],
-                  outline=self.colores['dorado_oscuro'], width=2)
-    
+    draw.rectangle([num_x - 140, num_y - 8, num_x + 140, num_y + 62], fill=self.colores['dorado_claro'], outline=self.colores['dorado_oscuro'], width=2)
     for i in range(0, 280, 4):
-        draw.line([num_x - 140 + i, num_y - 8, num_x - 140 + i, num_y + 62],
-                 fill=(230, 220, 200, 30), width=1)
-    
-    draw.text((num_x, num_y + 10), f"#{licencia_id}",
-             fill=self.colores['navy_oscuro'],
-             font=self.fonts['body_value'], anchor="mt")
-    
-    draw.text((num_x, num_y + 42), "VALID",
-             fill=self.colores['dorado_oscuro'],
-             font=self.fonts['body_label'], anchor="mt")
-    def _dibujar_avatar_discord(self, img: Image.Image, draw: ImageDraw.Draw, usuario: discord.Member):
+        draw.line([num_x - 140 + i, num_y - 8, num_x - 140 + i, num_y + 62], fill=(230, 220, 200, 30), width=1)
+    draw.text((num_x, num_y + 10), f"#{licencia_id}", fill=self.colores['navy_oscuro'], font=self.fonts['body_value'], anchor="mt")
+    draw.text((num_x, num_y + 42), "VALID", fill=self.colores['dorado_oscuro'], font=self.fonts['body_label'], anchor="mt")
+
+def _dibujar_avatar_discord(self, img: Image.Image, draw: ImageDraw.Draw, usuario: discord.Member):
     avatar_size = 175
     avatar_x = 65
     avatar_y = 175
-    
     for i in range(8):
         shadow_offset = 8 - i
-        draw.rectangle([avatar_x - shadow_offset, avatar_y - shadow_offset,
-                      avatar_x + avatar_size + shadow_offset,
-                      avatar_y + avatar_size + shadow_offset],
-                      outline=(0, 0, 0, 20 - i*2), width=2)
-    
+        draw.rectangle([avatar_x - shadow_offset, avatar_y - shadow_offset, avatar_x + avatar_size + shadow_offset, avatar_y + avatar_size + shadow_offset], outline=(0, 0, 0, 20 - i*2), width=2)
     try:
         avatar_response = requests.get(usuario.display_avatar.url, timeout=5)
         avatar_img = Image.open(BytesIO(avatar_response.content)).convert("RGBA")
         avatar_img = avatar_img.resize((avatar_size, avatar_size))
-        
         mask = Image.new('L', (avatar_size, avatar_size), 0)
         mask_draw = ImageDraw.Draw(mask)
         mask_draw.rounded_rectangle((0, 0, avatar_size, avatar_size), radius=20, fill=255)
-        
         avatar_recortado = Image.new('RGBA', (avatar_size, avatar_size))
         avatar_recortado.paste(avatar_img, (0, 0), mask)
-        
         marco_outer = Image.new('RGBA', (avatar_size + 12, avatar_size + 12))
         marco_draw = ImageDraw.Draw(marco_outer)
-        marco_draw.rounded_rectangle((0, 0, avatar_size + 12, avatar_size + 12),
-                                    radius=22, fill=None,
-                                    outline=self.colores['dorado_principal'], width=4)
-        
-        marco_draw.rounded_rectangle((4, 4, avatar_size + 8, avatar_size + 8),
-                                    radius=20, fill=None,
-                                    outline=self.colores['navy_medio'], width=2)
-        
+        marco_draw.rounded_rectangle((0, 0, avatar_size + 12, avatar_size + 12), radius=22, fill=None, outline=self.colores['dorado_principal'], width=4)
+        marco_draw.rounded_rectangle((4, 4, avatar_size + 8, avatar_size + 8), radius=20, fill=None, outline=self.colores['navy_medio'], width=2)
         img.paste(marco_outer, (avatar_x - 6, avatar_y - 6), marco_outer)
         img.paste(avatar_recortado, (avatar_x, avatar_y), avatar_recortado)
-        
     except:
-        draw.rounded_rectangle([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size],
-                              radius=20, fill=(200, 200, 200),
-                              outline=self.colores['dorado_principal'], width=3)
-    
+        draw.rounded_rectangle([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size], radius=20, fill=(200, 200, 200), outline=self.colores['dorado_principal'], width=3)
     label_y = avatar_y + avatar_size + 15
-    draw.text((avatar_x + avatar_size // 2, label_y), "DISCORD",
-             fill=self.colores['texto_secundario'],
-             font=self.fonts['body_label'], anchor="mt")
-    
-    draw.text((avatar_x + avatar_size // 2, label_y + 20),
-             f"@{usuario.name}",
-             fill=self.colores['texto_principal'],
-             font=self.fonts['body_value'], anchor="mt")
+    draw.text((avatar_x + avatar_size // 2, label_y), "DISCORD", fill=self.colores['texto_secundario'], font=self.fonts['body_label'], anchor="mt")
+    draw.text((avatar_x + avatar_size // 2, label_y + 20), f"@{usuario.name}", fill=self.colores['texto_principal'], font=self.fonts['body_value'], anchor="mt")
 
 def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     avatar_size = 85
     avatar_x = 200
     avatar_y = 325
-    
     try:
         user_roblox = datos.get('user_roblox', '')
         if user_roblox:
@@ -633,50 +537,31 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
                 foto_url = thumb_data['data'][0]['imageUrl']
                 foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content))
                 foto_img = foto_img.resize((avatar_size, avatar_size))
-                
                 mask = Image.new('L', (avatar_size, avatar_size), 0)
                 mask_draw = ImageDraw.Draw(mask)
                 mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
-                
                 avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
                 avatar_circular.paste(foto_img, (0, 0), mask)
-                
                 fondo_circ = Image.new('RGBA', (avatar_size + 20, avatar_size + 20))
                 fondo_draw = ImageDraw.Draw(fondo_circ)
-                fondo_draw.ellipse((0, 0, avatar_size + 20, avatar_size + 20),
-                                  fill=(248, 246, 242),
-                                  outline=self.colores['dorado_principal'], width=3)
-                fondo_draw.ellipse((5, 5, avatar_size + 15, avatar_size + 15),
-                                  fill=None,
-                                  outline=self.colores['navy_medio'], width=1)
-                
+                fondo_draw.ellipse((0, 0, avatar_size + 20, avatar_size + 20), fill=(248, 246, 242), outline=self.colores['dorado_principal'], width=3)
+                fondo_draw.ellipse((5, 5, avatar_size + 15, avatar_size + 15), fill=None, outline=self.colores['navy_medio'], width=1)
                 img.paste(fondo_circ, (avatar_x - 10, avatar_y - 10), fondo_circ)
                 img.paste(avatar_circular, (avatar_x, avatar_y), avatar_circular)
-                
     except:
-        draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size],
-                    outline=self.colores['dorado_principal'], width=3)
-    
+        draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size], outline=self.colores['dorado_principal'], width=3)
     label_y = avatar_y + avatar_size + 12
-    draw.text((avatar_x + avatar_size // 2, label_y), "ROBLOX",
-             fill=self.colores['texto_secundario'],
-             font=self.fonts['body_label'], anchor="mt")
-    def _dibujar_campos_info(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    draw.text((avatar_x + avatar_size // 2, label_y), "ROBLOX", fill=self.colores['texto_secundario'], font=self.fonts['body_label'], anchor="mt")
+
+def _dibujar_campos_info(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     tabla_x1 = 310
     tabla_y1 = 170
     tabla_x2 = self.W - 50
     tabla_y2 = 510
-    
-    draw.rectangle([tabla_x1 + 3, tabla_y1 + 3, tabla_x2 + 3, tabla_y2 + 3],
-                  fill=(0, 0, 0, 15))
-    
-    draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2],
-                  fill=(255, 255, 255, 80))
-    
-    draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2],
-                  outline=self.colores['dorado_principal'], width=2)
-    draw.rectangle([tabla_x1 + 6, tabla_y1 + 6, tabla_x2 - 6, tabla_y2 - 6],
-                  outline=self.colores['navy_medio'], width=1)
+    draw.rectangle([tabla_x1 + 3, tabla_y1 + 3, tabla_x2 + 3, tabla_y2 + 3], fill=(0, 0, 0, 15))
+    draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2], fill=(255, 255, 255, 80))
+    draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2], outline=self.colores['dorado_principal'], width=2)
+    draw.rectangle([tabla_x1 + 6, tabla_y1 + 6, tabla_x2 - 6, tabla_y2 - 6], outline=self.colores['navy_medio'], width=1)
     
     col1_x = tabla_x1 + 30
     col2_x = tabla_x1 + (tabla_x2 - tabla_x1) // 2 + 20
@@ -699,188 +584,94 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
     
     for i, (label, value) in enumerate(col1_campos):
         y = y_start + i * row_height
-        
         if i > 0:
-            draw.line([col1_x, y - 8, col1_x + 280, y - 8],
-                     fill=(220, 218, 210), width=1)
-        
-        draw.text((col1_x, y), label,
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'])
-        
-        draw.text((col1_x, y + 20), value,
-                 fill=self.colores['texto_principal'],
-                 font=self.fonts['body_value'])
+            draw.line([col1_x, y - 8, col1_x + 280, y - 8], fill=(220, 218, 210), width=1)
+        draw.text((col1_x, y), label, fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
+        draw.text((col1_x, y + 20), value, fill=self.colores['texto_principal'], font=self.fonts['body_value'])
     
     for i, (label, value) in enumerate(col2_campos):
         y = y_start + i * row_height
-        
         if i > 0:
-            draw.line([col2_x, y - 8, col2_x + 280, y - 8],
-                     fill=(220, 218, 210), width=1)
+            draw.line([col2_x, y - 8, col2_x + 280, y - 8], fill=(220, 218, 210), width=1)
+        draw.text((col2_x, y), label, fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
+        draw.text((col2_x, y + 20), value, fill=self.colores['texto_principal'], font=self.fonts['body_value'])
+            def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+        footer_y1 = self.H - 140
+        footer_y2 = self.H - 30
+        draw.rectangle([35, footer_y1, self.W - 35, footer_y2], fill=self.colores['navy_oscuro'])
+        draw.line([35, footer_y1, self.W - 35, footer_y1], fill=self.colores['dorado_principal'], width=3)
+        draw.line([35, footer_y1 + 4, self.W - 35, footer_y1 + 4], fill=self.colores['dorado_claro'], width=1)
         
-        draw.text((col2_x, y), label,
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'])
+        fecha_x = 65
+        fecha_y = footer_y1 + 20
+        draw.text((fecha_x, fecha_y), "EXPEDICIÓN", fill=self.colores['dorado_claro'], font=self.fonts['footer_label'])
+        draw.text((fecha_x, fecha_y + 22), datos.get('fecha_expedicion', ''), fill=self.colores['blanco_puro'], font=self.fonts['footer_value'])
         
-        draw.text((col2_x, y + 20), value,
-                 fill=self.colores['texto_principal'],
-                 font=self.fonts['body_value'])
+        fecha_x2 = fecha_x + 230
+        draw.text((fecha_x2, fecha_y), "EXPIRACIÓN", fill=self.colores['dorado_claro'], font=self.fonts['footer_label'])
+        draw.text((fecha_x2, fecha_y + 22), datos.get('fecha_expiracion', ''), fill=self.colores['blanco_puro'], font=self.fonts['footer_value'])
+        
+        estado_x = self.W - 320
+        estado_y = footer_y1 + 12
+        draw.rounded_rectangle([estado_x, estado_y, self.W - 55, estado_y + 70], radius=12, fill=(20, 60, 35), outline=self.colores['verde_brillante'], width=3)
+        draw.ellipse([estado_x + 18, estado_y + 23, estado_x + 40, estado_y + 45], fill=self.colores['verde_brillante'])
+        draw.text((estado_x + 52, estado_y + 20), "ESTADO:", fill=self.colores['dorado_claro'], font=self.fonts['footer_label'])
+        draw.text((estado_x + 52, estado_y + 40), "ACTIVA", fill=self.colores['verde_brillante'], font=self.fonts['body_value'])
+        
+        sello_x = self.W - 170
+        sello_y = footer_y1 + 20
+        draw.ellipse([sello_x, sello_y, sello_x + 55, sello_y + 55], outline=self.colores['dorado_principal'], width=3, fill=self.colores['navy_oscuro'])
+        draw.ellipse([sello_x + 5, sello_y + 5, sello_x + 50, sello_y + 50], outline=self.colores['dorado_claro'], width=1)
+        draw.text((sello_x + 28, sello_y + 28), "✓", fill=self.colores['dorado_principal'], font=self.fonts['title'], anchor="mm")
+        draw.text((sello_x + 28, sello_y + 48), "VALID", fill=self.colores['dorado_claro'], font=self.fonts['body_label'], anchor="mm")
+        draw.text((self.W // 2, footer_y2 - 5), "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY", fill=self.colores['dorado_claro'], font=self.fonts['body_label'], anchor="mm")
 
-def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    footer_y1 = self.H - 140
-    footer_y2 = self.H - 30
-    
-    draw.rectangle([35, footer_y1, self.W - 35, footer_y2],
-                  fill=self.colores['navy_oscuro'])
-    
-    draw.line([35, footer_y1, self.W - 35, footer_y1],
-             fill=self.colores['dorado_principal'], width=3)
-    draw.line([35, footer_y1 + 4, self.W - 35, footer_y1 + 4],
-             fill=self.colores['dorado_claro'], width=1)
-    
-    fecha_x = 65
-    fecha_y = footer_y1 + 20
-    
-    draw.text((fecha_x, fecha_y), "EXPEDICIÓN",
-             fill=self.colores['dorado_claro'],
-             font=self.fonts['footer_label'])
-    draw.text((fecha_x, fecha_y + 22),
-             datos.get('fecha_expedicion', ''),
-             fill=self.colores['blanco_puro'],
-             font=self.fonts['footer_value'])
-    
-    fecha_x2 = fecha_x + 230
-    draw.text((fecha_x2, fecha_y), "EXPIRACIÓN",
-             fill=self.colores['dorado_claro'],
-             font=self.fonts['footer_label'])
-    draw.text((fecha_x2, fecha_y + 22),
-             datos.get('fecha_expiracion', ''),
-             fill=self.colores['blanco_puro'],
-             font=self.fonts['footer_value'])
-    
-    estado_x = self.W - 320
-    estado_y = footer_y1 + 12
-    
-    draw.rounded_rectangle([estado_x, estado_y, self.W - 55, estado_y + 70],
-                          radius=12, fill=(20, 60, 35),
-                          outline=self.colores['verde_brillante'], width=3)
-    
-    draw.ellipse([estado_x + 18, estado_y + 23, estado_x + 40, estado_y + 45],
-                fill=self.colores['verde_brillante'])
-    
-    draw.text((estado_x + 52, estado_y + 20), "ESTADO:",
-             fill=self.colores['dorado_claro'],
-             font=self.fonts['footer_label'])
-    draw.text((estado_x + 52, estado_y + 40), "ACTIVA",
-             fill=self.colores['verde_brillante'],
-             font=self.fonts['body_value'])
-    
-    sello_x = self.W - 170
-    sello_y = footer_y1 + 20
-    
-    draw.ellipse([sello_x, sello_y, sello_x + 55, sello_y + 55],
-                outline=self.colores['dorado_principal'], width=3,
-                fill=self.colores['navy_oscuro'])
-    
-    draw.ellipse([sello_x + 5, sello_y + 5, sello_x + 50, sello_y + 50],
-                outline=self.colores['dorado_claro'], width=1)
-    
-    draw.text((sello_x + 28, sello_y + 28), "✓",
-             fill=self.colores['dorado_principal'],
-             font=self.fonts['title'], anchor="mm")
-    
-    draw.text((sello_x + 28, sello_y + 48), "VALID",
-             fill=self.colores['dorado_claro'],
-             font=self.fonts['body_label'], anchor="mm")
-    
-    draw.text((self.W // 2, footer_y2 - 5),
-             "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY",
-             fill=self.colores['dorado_claro'],
-             font=self.fonts['body_label'], anchor="mm")
-        def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
         mrz_y = self.H - 25
         mrz_x = 50
-        
-        draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10],
-                      fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
-        
+        draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10], fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
         nombre = datos.get('nombre', '').upper()[:20].ljust(20)
         apellido = datos.get('apellidos', '').upper()[:20].ljust(20)
         dni = datos.get('dni', '').zfill(8)
         licencia = datos.get('licencia_id', 'LIC-0000')
-        
         mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia}<<<D99<<<<<<<"
         mrz_texto = mrz_texto[:44].ljust(44)
-        
-        draw.text((mrz_x, mrz_y), mrz_texto,
-                 fill=self.colores['texto_principal'],
-                 font=self.fonts['mono'], anchor="mm")
+        draw.text((mrz_x, mrz_y), mrz_texto, fill=self.colores['texto_principal'], font=self.fonts['mono'], anchor="mm")
 
     def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
         sello_x = self.W - 200
         sello_y = 350
-        
-        draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90],
-                    outline=self.colores['azul_seguridad'], width=2,
-                    fill=(240, 248, 255, 80))
-        
-        draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82],
-                    outline=self.colores['azul_seguridad'], width=1)
-        
-        draw.text((sello_x + 45, sello_y + 35), "D99",
-                 fill=self.colores['azul_seguridad'],
-                 font=self.fonts['body_value'], anchor="mm")
-        draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT",
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'], anchor="mm")
+        draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90], outline=self.colores['azul_seguridad'], width=2, fill=(240, 248, 255, 80))
+        draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82], outline=self.colores['azul_seguridad'], width=1)
+        draw.text((sello_x + 45, sello_y + 35), "D99", fill=self.colores['azul_seguridad'], font=self.fonts['body_value'], anchor="mm")
+        draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT", fill=self.colores['texto_terciario'], font=self.fonts['body_label'], anchor="mm")
         
         firma_x = 65
         firma_y = self.H - 180
-        
-        draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO",
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'])
-        
+        draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO", fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
         firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
-        draw.text((firma_x, firma_y + 20), f"__________________ {firma}",
-                 fill=self.colores['texto_principal'],
-                 font=self.fonts['body_value'])
+        draw.text((firma_x, firma_y + 20), f"__________________ {firma}", fill=self.colores['texto_principal'], font=self.fonts['body_value'])
 
     def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
         bar_x = 65
         bar_y = self.H - 105
         bar_width = 250
         bar_height = 35
-        
-        draw.rectangle([bar_x, bar_y, bar_x + bar_width, bar_y + bar_height],
-                      fill=(255, 255, 255), outline=(200, 200, 200), width=1)
-        
+        draw.rectangle([bar_x, bar_y, bar_x + bar_width, bar_y + bar_height], fill=(255, 255, 255), outline=(200, 200, 200), width=1)
         for i in range(0, bar_width, 3):
             height_var = random.randint(20, bar_height)
-            draw.rectangle([bar_x + i, bar_y + (bar_height - height_var),
-                           bar_x + i + 1, bar_y + bar_height],
-                          fill=(0, 0, 0))
-        
+            draw.rectangle([bar_x + i, bar_y + (bar_height - height_var), bar_x + i + 1, bar_y + bar_height], fill=(0, 0, 0))
         numero = datos.get('dni', '00000000') + datos.get('licencia_id', 'LIC-0000')[-4:]
-        draw.text((bar_x + bar_width // 2, bar_y + bar_height + 5),
-                 numero,
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'], anchor="mt")
+        draw.text((bar_x + bar_width // 2, bar_y + bar_height + 5), numero, fill=self.colores['texto_terciario'], font=self.fonts['body_label'], anchor="mt")
         
         qr_x = self.W - 160
         qr_y = self.H - 155
         qr_size = 40
-        
-        draw.rectangle([qr_x, qr_y, qr_x + qr_size, qr_y + qr_size],
-                      fill=(255, 255, 255), outline=(200, 200, 200), width=1)
-        
+        draw.rectangle([qr_x, qr_y, qr_x + qr_size, qr_y + qr_size], fill=(255, 255, 255), outline=(200, 200, 200), width=1)
         for i in range(0, qr_size, 6):
             for j in range(0, qr_size, 6):
                 if (i + j) % 7 == 0 or (i * j) % 11 == 0:
-                    draw.rectangle([qr_x + i, qr_y + j, qr_x + i + 4, qr_y + j + 4],
-                                  fill=(0, 0, 0))
-        
+                    draw.rectangle([qr_x + i, qr_y + j, qr_x + i + 4, qr_y + j + 4], fill=(0, 0, 0))
         for cx, cy in [(qr_x + 3, qr_y + 3), (qr_x + qr_size - 10, qr_y + 3), (qr_x + 3, qr_y + qr_size - 10)]:
             draw.rectangle([cx, cy, cx + 7, cy + 7], fill=(0, 0, 0))
 
@@ -888,7 +679,7 @@ def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     renderer = LicenciaRenderer()
     return renderer.generar(usuario, datos_licencia)
-# ==================== BOT ====================
+    # ==================== BOT ====================
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
@@ -1062,7 +853,8 @@ async def sync(interaction: discord.Interaction):
         await interaction.response.send_message("✅ **Comandos sincronizados correctamente.**", ephemeral=True)
     except Exception as e:
         await interaction.response.send_message(f"❌ Error al sincronizar: {e}", ephemeral=True)
-        # ==================== PANEL DE DNI ====================
+
+# ==================== PANEL DE DNI ====================
 class PanelDNIView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1143,8 +935,7 @@ class PanelDNIView(discord.ui.View):
                     await modal_interaction.response.send_message(f"❌ Error al crear el DNI: {e}", ephemeral=True)
 
         await interaction.response.send_modal(DNIModal())
-
-# ==================== PANEL DE LICENCIAS ====================
+        # ==================== PANEL DE LICENCIAS ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1465,8 +1256,7 @@ class PanelEMSView(discord.ui.View):
                 embed.add_field(name=f"🚑 {ems['nombre']}", value=f"🕐 {ems['horas']}h {ems['minutos']}m activo", inline=False)
             embed.set_image(url=URL_IMG_EMS)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-
-# ==================== PANEL DE DOT ====================
+            # ==================== PANEL DE DOT ====================
 class PanelDOTView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1674,6 +1464,7 @@ async def panel_dot(interaction: discord.Interaction):
     embed.set_image(url=URL_IMG_DOT)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     await interaction.response.send_message(embed=embed, view=PanelDOTView())
+
 # ==================== MULTAS ====================
 @bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
 @app_commands.describe(infractor="Usuario", infraccion="Infraccion", precio="Monto", testigos="Testigos (opcional)", foto="Foto (opcional)")
@@ -1769,8 +1560,7 @@ async def confirmar_pago(interaction: discord.Interaction, usuario: str, monto: 
             await enviar_log(f"💰 {miembro.mention} pagó ${monto} (Confirmado por {interaction.user.mention})", discord.Color.green())
             return
     await interaction.response.send_message(f"⚠️ No encontré multa de ${monto} para {miembro.mention}", ephemeral=True)
-
-# ==================== AUTOS ====================
+    # ==================== AUTOS ====================
 @bot.tree.command(name="registrar_auto", description="🚗 Registrar auto con foto")
 @app_commands.describe(usuario_roblox="Usuario Roblox", placa="Placa", modelo="Modelo", color="Color", foto="Foto")
 async def registrar_auto(interaction: discord.Interaction, usuario_roblox: str, placa: str, modelo: str, color: str, foto: discord.Attachment):
@@ -1818,6 +1608,7 @@ async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
     embed.add_field(name="🅿️ Placa", value=eliminado.get('placa', 'Desconocida'))
     await interaction.response.send_message(embed=embed)
     await enviar_log(f"🗑️ {interaction.user.mention} eliminó {eliminado.get('placa', 'N/A')}", discord.Color.red())
+
 # ==================== SESIONES ====================
 @bot.tree.command(name="abrir_sesion", description="🎬 Abrir sesión - SOLO HOSTS")
 @app_commands.choices(ciudad=[app_commands.Choice(name="🌆 Greenville", value="greenville"), app_commands.Choice(name="🌆 Horton", value="horton"), app_commands.Choice(name="🌆 Brookmere", value="brookmere")], vias=[app_commands.Choice(name="1 Vía", value="1"), app_commands.Choice(name="2 Vías", value="2")], adelantamientos=[app_commands.Choice(name="✅ Sí", value="si"), app_commands.Choice(name="❌ No", value="no")])
