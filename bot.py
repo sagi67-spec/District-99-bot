@@ -327,12 +327,8 @@ class LicenciaRenderer:
         except:
             default = ImageFont.load_default()
             self.fonts = {
-                'title': default,
-                'subtitle': default,
-                'body_value': default,
-                'body_label': default,
-                'footer_label': default,
-                'footer_value': default,
+                'title': default, 'subtitle': default, 'body_value': default,
+                'body_label': default, 'footer_label': default, 'footer_value': default,
                 'mono': default,
             }
 
@@ -340,14 +336,12 @@ class LicenciaRenderer:
         try:
             img = Image.new('RGB', (self.W, self.H), self.colores['fondo_principal'])
             draw = ImageDraw.Draw(img)
-            
             for i in range(self.H):
                 factor = i / self.H
                 r = int(self.colores['fondo_principal'][0] - 15 * factor)
                 g = int(self.colores['fondo_principal'][1] - 12 * factor)
                 b = int(self.colores['fondo_principal'][2] - 10 * factor)
                 draw.line([(0, i), (self.W, i)], fill=(r, g, b))
-            
             self._dibujar_borde_premium(img, draw)
             img = self._aplicar_fondo_seguridad(img, draw)
             draw = ImageDraw.Draw(img)
@@ -359,7 +353,6 @@ class LicenciaRenderer:
             self._dibujar_mrz(img, draw, datos)
             self._dibujar_sellos_seguridad(img, draw, datos)
             self._dibujar_codigos_verificacion(img, draw, datos)
-            
             img_bytes = BytesIO()
             img.save(img_bytes, format='PNG', quality=100, compress_level=0)
             img_bytes.seek(0)
@@ -370,7 +363,7 @@ class LicenciaRenderer:
             traceback.print_exc()
             return None
 
-    def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
+    def _dibujar_borde_premium(self, img, draw):
         margen = 25
         for i in range(12):
             offset = margen - i
@@ -380,15 +373,10 @@ class LicenciaRenderer:
         draw.rectangle([margen + 16, margen + 16, self.W - margen - 16, self.H - margen - 16], outline=self.colores['dorado_claro'], width=1)
         self._dibujar_esquinas_premium(img, draw, margen + 8)
 
-    def _dibujar_esquinas_premium(self, img: Image.Image, draw: ImageDraw.Draw, base: int):
+    def _dibujar_esquinas_premium(self, img, draw, base):
         size = 55
         grosor = 5
-        esquinas = [
-            (base, base, 1, 1),
-            (self.W - base, base, -1, 1),
-            (base, self.H - base, 1, -1),
-            (self.W - base, self.H - base, -1, -1)
-        ]
+        esquinas = [(base, base, 1, 1), (self.W - base, base, -1, 1), (base, self.H - base, 1, -1), (self.W - base, self.H - base, -1, -1)]
         for cx, cy, dx, dy in esquinas:
             draw.line([(cx, cy), (cx + size * dx, cy)], fill=self.colores['dorado_principal'], width=grosor)
             draw.line([(cx, cy), (cx, cy + size * dy)], fill=self.colores['dorado_principal'], width=grosor)
@@ -396,7 +384,7 @@ class LicenciaRenderer:
             draw.line([(cx + offset*dx, cy + offset*dy), (cx + (size-15) * dx, cy + offset*dy)], fill=self.colores['navy_medio'], width=2)
             draw.line([(cx + offset*dx, cy + offset*dy), (cx + offset*dx, cy + (size-15) * dy)], fill=self.colores['navy_medio'], width=2)
 
-    def _aplicar_fondo_seguridad(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
+    def _aplicar_fondo_seguridad(self, img, draw):
         img = self._aplicar_guilloche(img, draw)
         draw = ImageDraw.Draw(img)
         img = self._aplicar_microtexto(img, draw)
@@ -407,7 +395,7 @@ class LicenciaRenderer:
         draw = ImageDraw.Draw(img)
         return img
 
-    def _aplicar_guilloche(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
+    def _aplicar_guilloche(self, img, draw):
         centro_x, centro_y = self.W // 2, self.H // 2
         for radio in range(40, 700, 30):
             alpha = int(8 * (1 - radio / 700))
@@ -418,7 +406,7 @@ class LicenciaRenderer:
             draw.line([(i, 0), (i - self.H, self.H)], fill=(215, 212, 205), width=1)
         return img
 
-    def _aplicar_microtexto(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.Image:
+    def _aplicar_microtexto(self, img, draw):
         try:
             fuente = ImageFont.truetype("fonts/Montserrat-Light.ttf", 6)
         except:
@@ -432,7 +420,7 @@ class LicenciaRenderer:
             draw.text((self.W - 30, 50 + i), "GVRP", fill=(200, 198, 190), font=fuente)
         return img
 
-    def _dibujar_watermark_99(self, img: Image.Image, draw: ImageDraw.Draw):
+    def _dibujar_watermark_99(self, img, draw):
         try:
             fuente = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 180)
         except:
@@ -444,178 +432,164 @@ class LicenciaRenderer:
         except:
             pass
 
-def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
-    size = 18
-    spacing = 35
-    offset_x = 30
-    offset_y = 80
-    for row in range(8):
-        for col in range(22):
-            x = offset_x + col * spacing + (row % 2) * (spacing // 2)
-            y = offset_y + row * spacing
-            if x > self.W - 50 or y > self.H - 100:
-                continue
-            puntos = []
-            for i in range(6):
-                angulo = i * 60 - 30
-                px = x + size * math.cos(math.radians(angulo))
-                py = y + size * math.sin(math.radians(angulo))
-                puntos.append((px, py))
-            if (row + col) % 2 == 0:
-                draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
+    def _dibujar_hexagonos_seguridad(self, img, draw):
+        size = 18
+        spacing = 35
+        offset_x = 30
+        offset_y = 80
+        for row in range(8):
+            for col in range(22):
+                x = offset_x + col * spacing + (row % 2) * (spacing // 2)
+                y = offset_y + row * spacing
+                if x > self.W - 50 or y > self.H - 100:
+                    continue
+                puntos = []
+                for i in range(6):
+                    angulo = i * 60 - 30
+                    px = x + size * math.cos(math.radians(angulo))
+                    py = y + size * math.sin(math.radians(angulo))
+                    puntos.append((px, py))
+                if (row + col) % 2 == 0:
+                    draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
 
-def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    banda_y1 = 45
-    banda_y2 = 130
-    draw.rectangle([35, banda_y1, self.W - 35, banda_y2], fill=self.colores['navy_oscuro'])
-    draw.line([35, banda_y2, self.W - 35, banda_y2], fill=self.colores['dorado_principal'], width=3)
-    draw.line([35, banda_y2 + 4, self.W - 35, banda_y2 + 4], fill=self.colores['dorado_claro'], width=1)
-    escudo_x, escudo_y = 65, 48
-    escudo_size = 78
-    draw.ellipse([escudo_x, escudo_y, escudo_x + escudo_size, escudo_y + escudo_size], fill=self.colores['dorado_claro'], outline=self.colores['dorado_oscuro'], width=3)
-    draw.ellipse([escudo_x + 5, escudo_y + 5, escudo_x + escudo_size - 5, escudo_y + escudo_size - 5], outline=self.colores['blanco_puro'], width=1)
-    draw.text((escudo_x + escudo_size // 2, escudo_y + escudo_size // 2 + 2), "99", fill=self.colores['navy_oscuro'], font=self.fonts['title'], anchor="mm")
-    titulo_x = escudo_x + escudo_size + 25
-    titulo_y = 58
-    draw.text((titulo_x + 2, titulo_y + 2), "LICENCIA DE CONDUCIR", fill=self.colores['dorado_oscuro'], font=self.fonts['title'], anchor="lt")
-    draw.text((titulo_x, titulo_y), "LICENCIA DE CONDUCIR", fill=self.colores['blanco_puro'], font=self.fonts['title'], anchor="lt")
-    subtitulo_y = titulo_y + 52
-    draw.text((titulo_x, subtitulo_y), "✦ DISTRICT 99 - GVRP ✦", fill=self.colores['dorado_claro'], font=self.fonts['subtitle'], anchor="lt")
-    licencia_id = datos.get('licencia_id', 'LIC-0000')
-    num_x = self.W - 120
-    num_y = 52
-    draw.rectangle([num_x - 140, num_y - 8, num_x + 140, num_y + 62], fill=self.colores['dorado_claro'], outline=self.colores['dorado_oscuro'], width=2)
-    for i in range(0, 280, 4):
-        draw.line([num_x - 140 + i, num_y - 8, num_x - 140 + i, num_y + 62], fill=(230, 220, 200, 30), width=1)
-    draw.text((num_x, num_y + 10), f"#{licencia_id}", fill=self.colores['navy_oscuro'], font=self.fonts['body_value'], anchor="mt")
-    draw.text((num_x, num_y + 42), "VALID", fill=self.colores['dorado_oscuro'], font=self.fonts['body_label'], anchor="mt")
+    def _dibujar_header(self, img, draw, datos):
+        banda_y1 = 45
+        banda_y2 = 130
+        draw.rectangle([35, banda_y1, self.W - 35, banda_y2], fill=self.colores['navy_oscuro'])
+        draw.line([35, banda_y2, self.W - 35, banda_y2], fill=self.colores['dorado_principal'], width=3)
+        draw.line([35, banda_y2 + 4, self.W - 35, banda_y2 + 4], fill=self.colores['dorado_claro'], width=1)
+        escudo_x, escudo_y = 65, 48
+        escudo_size = 78
+        draw.ellipse([escudo_x, escudo_y, escudo_x + escudo_size, escudo_y + escudo_size], fill=self.colores['dorado_claro'], outline=self.colores['dorado_oscuro'], width=3)
+        draw.ellipse([escudo_x + 5, escudo_y + 5, escudo_x + escudo_size - 5, escudo_y + escudo_size - 5], outline=self.colores['blanco_puro'], width=1)
+        draw.text((escudo_x + escudo_size // 2, escudo_y + escudo_size // 2 + 2), "99", fill=self.colores['navy_oscuro'], font=self.fonts['title'], anchor="mm")
+        titulo_x = escudo_x + escudo_size + 25
+        titulo_y = 58
+        draw.text((titulo_x + 2, titulo_y + 2), "LICENCIA DE CONDUCIR", fill=self.colores['dorado_oscuro'], font=self.fonts['title'], anchor="lt")
+        draw.text((titulo_x, titulo_y), "LICENCIA DE CONDUCIR", fill=self.colores['blanco_puro'], font=self.fonts['title'], anchor="lt")
+        subtitulo_y = titulo_y + 52
+        draw.text((titulo_x, subtitulo_y), "✦ DISTRICT 99 - GVRP ✦", fill=self.colores['dorado_claro'], font=self.fonts['subtitle'], anchor="lt")
+        licencia_id = datos.get('licencia_id', 'LIC-0000')
+        num_x = self.W - 120
+        num_y = 52
+        draw.rectangle([num_x - 140, num_y - 8, num_x + 140, num_y + 62], fill=self.colores['dorado_claro'], outline=self.colores['dorado_oscuro'], width=2)
+        for i in range(0, 280, 4):
+            draw.line([num_x - 140 + i, num_y - 8, num_x - 140 + i, num_y + 62], fill=(230, 220, 200, 30), width=1)
+        draw.text((num_x, num_y + 10), f"#{licencia_id}", fill=self.colores['navy_oscuro'], font=self.fonts['body_value'], anchor="mt")
+        draw.text((num_x, num_y + 42), "VALID", fill=self.colores['dorado_oscuro'], font=self.fonts['body_label'], anchor="mt")
 
-def _dibujar_avatar_discord(self, img: Image.Image, draw: ImageDraw.Draw, usuario: discord.Member):
-    avatar_size = 175
-    avatar_x = 65
-    avatar_y = 175
-    for i in range(8):
-        shadow_offset = 8 - i
-        draw.rectangle([avatar_x - shadow_offset, avatar_y - shadow_offset, avatar_x + avatar_size + shadow_offset, avatar_y + avatar_size + shadow_offset], outline=(0, 0, 0, 20 - i*2), width=2)
-    try:
-        avatar_response = requests.get(usuario.display_avatar.url, timeout=5)
-        avatar_img = Image.open(BytesIO(avatar_response.content)).convert("RGBA")
-        avatar_img = avatar_img.resize((avatar_size, avatar_size))
-        mask = Image.new('L', (avatar_size, avatar_size), 0)
-        mask_draw = ImageDraw.Draw(mask)
-        mask_draw.rounded_rectangle((0, 0, avatar_size, avatar_size), radius=20, fill=255)
-        avatar_recortado = Image.new('RGBA', (avatar_size, avatar_size))
-        avatar_recortado.paste(avatar_img, (0, 0), mask)
-        marco_outer = Image.new('RGBA', (avatar_size + 12, avatar_size + 12))
-        marco_draw = ImageDraw.Draw(marco_outer)
-        marco_draw.rounded_rectangle((0, 0, avatar_size + 12, avatar_size + 12), radius=22, fill=None, outline=self.colores['dorado_principal'], width=4)
-        marco_draw.rounded_rectangle((4, 4, avatar_size + 8, avatar_size + 8), radius=20, fill=None, outline=self.colores['navy_medio'], width=2)
-        img.paste(marco_outer, (avatar_x - 6, avatar_y - 6), marco_outer)
-        img.paste(avatar_recortado, (avatar_x, avatar_y), avatar_recortado)
-    except:
-        draw.rounded_rectangle([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size], radius=20, fill=(200, 200, 200), outline=self.colores['dorado_principal'], width=3)
-    label_y = avatar_y + avatar_size + 15
-    draw.text((avatar_x + avatar_size // 2, label_y), "DISCORD", fill=self.colores['texto_secundario'], font=self.fonts['body_label'], anchor="mt")
-    draw.text((avatar_x + avatar_size // 2, label_y + 20), f"@{usuario.name}", fill=self.colores['texto_principal'], font=self.fonts['body_value'], anchor="mt")
+    def _dibujar_avatar_discord(self, img, draw, usuario):
+        avatar_size = 175
+        avatar_x = 65
+        avatar_y = 175
+        for i in range(8):
+            shadow_offset = 8 - i
+            draw.rectangle([avatar_x - shadow_offset, avatar_y - shadow_offset, avatar_x + avatar_size + shadow_offset, avatar_y + avatar_size + shadow_offset], outline=(0, 0, 0, 20 - i*2), width=2)
+        try:
+            avatar_response = requests.get(usuario.display_avatar.url, timeout=5)
+            avatar_img = Image.open(BytesIO(avatar_response.content)).convert("RGBA").resize((avatar_size, avatar_size))
+            mask = Image.new('L', (avatar_size, avatar_size), 0)
+            ImageDraw.Draw(mask).rounded_rectangle((0, 0, avatar_size, avatar_size), radius=20, fill=255)
+            avatar_recortado = Image.new('RGBA', (avatar_size, avatar_size))
+            avatar_recortado.paste(avatar_img, (0, 0), mask)
+            marco_outer = Image.new('RGBA', (avatar_size + 12, avatar_size + 12))
+            marco_draw = ImageDraw.Draw(marco_outer)
+            marco_draw.rounded_rectangle((0, 0, avatar_size + 12, avatar_size + 12), radius=22, fill=None, outline=self.colores['dorado_principal'], width=4)
+            marco_draw.rounded_rectangle((4, 4, avatar_size + 8, avatar_size + 8), radius=20, fill=None, outline=self.colores['navy_medio'], width=2)
+            img.paste(marco_outer, (avatar_x - 6, avatar_y - 6), marco_outer)
+            img.paste(avatar_recortado, (avatar_x, avatar_y), avatar_recortado)
+        except:
+            draw.rounded_rectangle([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size], radius=20, fill=(200, 200, 200), outline=self.colores['dorado_principal'], width=3)
+        label_y = avatar_y + avatar_size + 15
+        draw.text((avatar_x + avatar_size // 2, label_y), "DISCORD", fill=self.colores['texto_secundario'], font=self.fonts['body_label'], anchor="mt")
+        draw.text((avatar_x + avatar_size // 2, label_y + 20), f"@{usuario.name}", fill=self.colores['texto_principal'], font=self.fonts['body_value'], anchor="mt")
 
-def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    avatar_size = 85
-    avatar_x = 200
-    avatar_y = 325
-    try:
-        user_roblox = datos.get('user_roblox', '')
-        if user_roblox:
-            search_url = f"https://users.roblox.com/v1/users/search?keyword={user_roblox}"
-            search_data = requests.get(search_url, timeout=5).json()
-            if search_data.get('data'):
-                rid = search_data['data'][0]['id']
-                thumb_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={rid}&size=420x420&format=Png"
-                thumb_data = requests.get(thumb_url, timeout=5).json()
-                foto_url = thumb_data['data'][0]['imageUrl']
-                foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content))
-                foto_img = foto_img.resize((avatar_size, avatar_size))
-                mask = Image.new('L', (avatar_size, avatar_size), 0)
-                mask_draw = ImageDraw.Draw(mask)
-                mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
-                avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
-                avatar_circular.paste(foto_img, (0, 0), mask)
-                fondo_circ = Image.new('RGBA', (avatar_size + 20, avatar_size + 20))
-                fondo_draw = ImageDraw.Draw(fondo_circ)
-                fondo_draw.ellipse((0, 0, avatar_size + 20, avatar_size + 20), fill=(248, 246, 242), outline=self.colores['dorado_principal'], width=3)
-                fondo_draw.ellipse((5, 5, avatar_size + 15, avatar_size + 15), fill=None, outline=self.colores['navy_medio'], width=1)
-                img.paste(fondo_circ, (avatar_x - 10, avatar_y - 10), fondo_circ)
-                img.paste(avatar_circular, (avatar_x, avatar_y), avatar_circular)
-    except:
-        draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size], outline=self.colores['dorado_principal'], width=3)
-    label_y = avatar_y + avatar_size + 12
-    draw.text((avatar_x + avatar_size // 2, label_y), "ROBLOX", fill=self.colores['texto_secundario'], font=self.fonts['body_label'], anchor="mt")
+    def _dibujar_avatar_roblox(self, img, draw, datos):
+        avatar_size = 85
+        avatar_x = 200
+        avatar_y = 325
+        try:
+            user_roblox = datos.get('user_roblox', '')
+            if user_roblox:
+                search_url = f"https://users.roblox.com/v1/users/search?keyword={user_roblox}"
+                search_data = requests.get(search_url, timeout=5).json()
+                if search_data.get('data'):
+                    rid = search_data['data'][0]['id']
+                    thumb_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={rid}&size=420x420&format=Png"
+                    thumb_data = requests.get(thumb_url, timeout=5).json()
+                    foto_url = thumb_data['data'][0]['imageUrl']
+                    foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content)).resize((avatar_size, avatar_size))
+                    mask = Image.new('L', (avatar_size, avatar_size), 0)
+                    ImageDraw.Draw(mask).ellipse((0, 0, avatar_size, avatar_size), fill=255)
+                    avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
+                    avatar_circular.paste(foto_img, (0, 0), mask)
+                    fondo_circ = Image.new('RGBA', (avatar_size + 20, avatar_size + 20))
+                    fondo_draw = ImageDraw.Draw(fondo_circ)
+                    fondo_draw.ellipse((0, 0, avatar_size + 20, avatar_size + 20), fill=(248, 246, 242), outline=self.colores['dorado_principal'], width=3)
+                    fondo_draw.ellipse((5, 5, avatar_size + 15, avatar_size + 15), fill=None, outline=self.colores['navy_medio'], width=1)
+                    img.paste(fondo_circ, (avatar_x - 10, avatar_y - 10), fondo_circ)
+                    img.paste(avatar_circular, (avatar_x, avatar_y), avatar_circular)
+        except:
+            draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size], outline=self.colores['dorado_principal'], width=3)
+        label_y = avatar_y + avatar_size + 12
+        draw.text((avatar_x + avatar_size // 2, label_y), "ROBLOX", fill=self.colores['texto_secundario'], font=self.fonts['body_label'], anchor="mt")
+            def _dibujar_campos_info(self, img, draw, datos):
+        tabla_x1 = 310
+        tabla_y1 = 170
+        tabla_x2 = self.W - 50
+        tabla_y2 = 510
+        draw.rectangle([tabla_x1 + 3, tabla_y1 + 3, tabla_x2 + 3, tabla_y2 + 3], fill=(0, 0, 0, 15))
+        draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2], fill=(255, 255, 255, 80))
+        draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2], outline=self.colores['dorado_principal'], width=2)
+        draw.rectangle([tabla_x1 + 6, tabla_y1 + 6, tabla_x2 - 6, tabla_y2 - 6], outline=self.colores['navy_medio'], width=1)
+        col1_x = tabla_x1 + 30
+        col2_x = tabla_x1 + (tabla_x2 - tabla_x1) // 2 + 20
+        y_start = tabla_y1 + 25
+        row_height = 60
+        campos = [
+            ("NOMBRE COMPLETO", f"{datos.get('nombre', '')} {datos.get('apellidos', '')}".upper()),
+            ("FECHA NACIMIENTO", datos.get('fecha_nacimiento', '')),
+            ("EDAD", f"{datos.get('edad', '')} AÑOS"),
+            ("OFICIO", datos.get('oficio', '')),
+            ("DNI", datos.get('dni', '')),
+            ("LICENCIA", datos.get('licencia_id', '')),
+            ("FECHA EXP.", datos.get('fecha_expedicion', '')),
+            ("FECHA EXPIR.", datos.get('fecha_expiracion', '')),
+        ]
+        col1_campos = campos[:4]
+        col2_campos = campos[4:]
+        for i, (label, value) in enumerate(col1_campos):
+            y = y_start + i * row_height
+            if i > 0:
+                draw.line([col1_x, y - 8, col1_x + 280, y - 8], fill=(220, 218, 210), width=1)
+            draw.text((col1_x, y), label, fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
+            draw.text((col1_x, y + 20), value, fill=self.colores['texto_principal'], font=self.fonts['body_value'])
+        for i, (label, value) in enumerate(col2_campos):
+            y = y_start + i * row_height
+            if i > 0:
+                draw.line([col2_x, y - 8, col2_x + 280, y - 8], fill=(220, 218, 210), width=1)
+            draw.text((col2_x, y), label, fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
+            draw.text((col2_x, y + 20), value, fill=self.colores['texto_principal'], font=self.fonts['body_value'])
 
-def _dibujar_campos_info(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    tabla_x1 = 310
-    tabla_y1 = 170
-    tabla_x2 = self.W - 50
-    tabla_y2 = 510
-    draw.rectangle([tabla_x1 + 3, tabla_y1 + 3, tabla_x2 + 3, tabla_y2 + 3], fill=(0, 0, 0, 15))
-    draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2], fill=(255, 255, 255, 80))
-    draw.rectangle([tabla_x1, tabla_y1, tabla_x2, tabla_y2], outline=self.colores['dorado_principal'], width=2)
-    draw.rectangle([tabla_x1 + 6, tabla_y1 + 6, tabla_x2 - 6, tabla_y2 - 6], outline=self.colores['navy_medio'], width=1)
-    
-    col1_x = tabla_x1 + 30
-    col2_x = tabla_x1 + (tabla_x2 - tabla_x1) // 2 + 20
-    y_start = tabla_y1 + 25
-    row_height = 60
-    
-    campos = [
-        ("NOMBRE COMPLETO", f"{datos.get('nombre', '')} {datos.get('apellidos', '')}".upper()),
-        ("FECHA NACIMIENTO", datos.get('fecha_nacimiento', '')),
-        ("EDAD", f"{datos.get('edad', '')} AÑOS"),
-        ("OFICIO", datos.get('oficio', '')),
-        ("DNI", datos.get('dni', '')),
-        ("LICENCIA", datos.get('licencia_id', '')),
-        ("FECHA EXP.", datos.get('fecha_expedicion', '')),
-        ("FECHA EXPIR.", datos.get('fecha_expiracion', '')),
-    ]
-    
-    col1_campos = campos[:4]
-    col2_campos = campos[4:]
-    
-    for i, (label, value) in enumerate(col1_campos):
-        y = y_start + i * row_height
-        if i > 0:
-            draw.line([col1_x, y - 8, col1_x + 280, y - 8], fill=(220, 218, 210), width=1)
-        draw.text((col1_x, y), label, fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
-        draw.text((col1_x, y + 20), value, fill=self.colores['texto_principal'], font=self.fonts['body_value'])
-    
-    for i, (label, value) in enumerate(col2_campos):
-        y = y_start + i * row_height
-        if i > 0:
-            draw.line([col2_x, y - 8, col2_x + 280, y - 8], fill=(220, 218, 210), width=1)
-        draw.text((col2_x, y), label, fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
-        draw.text((col2_x, y + 20), value, fill=self.colores['texto_principal'], font=self.fonts['body_value'])
-        
-def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    def _dibujar_footer(self, img, draw, datos):
         footer_y1 = self.H - 140
         footer_y2 = self.H - 30
         draw.rectangle([35, footer_y1, self.W - 35, footer_y2], fill=self.colores['navy_oscuro'])
         draw.line([35, footer_y1, self.W - 35, footer_y1], fill=self.colores['dorado_principal'], width=3)
         draw.line([35, footer_y1 + 4, self.W - 35, footer_y1 + 4], fill=self.colores['dorado_claro'], width=1)
-        
         fecha_x = 65
         fecha_y = footer_y1 + 20
         draw.text((fecha_x, fecha_y), "EXPEDICIÓN", fill=self.colores['dorado_claro'], font=self.fonts['footer_label'])
         draw.text((fecha_x, fecha_y + 22), datos.get('fecha_expedicion', ''), fill=self.colores['blanco_puro'], font=self.fonts['footer_value'])
-        
         fecha_x2 = fecha_x + 230
         draw.text((fecha_x2, fecha_y), "EXPIRACIÓN", fill=self.colores['dorado_claro'], font=self.fonts['footer_label'])
         draw.text((fecha_x2, fecha_y + 22), datos.get('fecha_expiracion', ''), fill=self.colores['blanco_puro'], font=self.fonts['footer_value'])
-        
         estado_x = self.W - 320
         estado_y = footer_y1 + 12
         draw.rounded_rectangle([estado_x, estado_y, self.W - 55, estado_y + 70], radius=12, fill=(20, 60, 35), outline=self.colores['verde_brillante'], width=3)
         draw.ellipse([estado_x + 18, estado_y + 23, estado_x + 40, estado_y + 45], fill=self.colores['verde_brillante'])
         draw.text((estado_x + 52, estado_y + 20), "ESTADO:", fill=self.colores['dorado_claro'], font=self.fonts['footer_label'])
         draw.text((estado_x + 52, estado_y + 40), "ACTIVA", fill=self.colores['verde_brillante'], font=self.fonts['body_value'])
-        
         sello_x = self.W - 170
         sello_y = footer_y1 + 20
         draw.ellipse([sello_x, sello_y, sello_x + 55, sello_y + 55], outline=self.colores['dorado_principal'], width=3, fill=self.colores['navy_oscuro'])
@@ -624,7 +598,7 @@ def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
         draw.text((sello_x + 28, sello_y + 48), "VALID", fill=self.colores['dorado_claro'], font=self.fonts['body_label'], anchor="mm")
         draw.text((self.W // 2, footer_y2 - 5), "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY", fill=self.colores['dorado_claro'], font=self.fonts['body_label'], anchor="mm")
 
-    def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    def _dibujar_mrz(self, img, draw, datos):
         mrz_y = self.H - 25
         mrz_x = 50
         draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10], fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
@@ -636,21 +610,20 @@ def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
         mrz_texto = mrz_texto[:44].ljust(44)
         draw.text((mrz_x, mrz_y), mrz_texto, fill=self.colores['texto_principal'], font=self.fonts['mono'], anchor="mm")
 
-    def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    def _dibujar_sellos_seguridad(self, img, draw, datos):
         sello_x = self.W - 200
         sello_y = 350
         draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90], outline=self.colores['azul_seguridad'], width=2, fill=(240, 248, 255, 80))
         draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82], outline=self.colores['azul_seguridad'], width=1)
         draw.text((sello_x + 45, sello_y + 35), "D99", fill=self.colores['azul_seguridad'], font=self.fonts['body_value'], anchor="mm")
         draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT", fill=self.colores['texto_terciario'], font=self.fonts['body_label'], anchor="mm")
-        
         firma_x = 65
         firma_y = self.H - 180
         draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO", fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
         firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
         draw.text((firma_x, firma_y + 20), f"__________________ {firma}", fill=self.colores['texto_principal'], font=self.fonts['body_value'])
 
-    def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    def _dibujar_codigos_verificacion(self, img, draw, datos):
         bar_x = 65
         bar_y = self.H - 105
         bar_width = 250
@@ -661,7 +634,6 @@ def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
             draw.rectangle([bar_x + i, bar_y + (bar_height - height_var), bar_x + i + 1, bar_y + bar_height], fill=(0, 0, 0))
         numero = datos.get('dni', '00000000') + datos.get('licencia_id', 'LIC-0000')[-4:]
         draw.text((bar_x + bar_width // 2, bar_y + bar_height + 5), numero, fill=self.colores['texto_terciario'], font=self.fonts['body_label'], anchor="mt")
-        
         qr_x = self.W - 160
         qr_y = self.H - 155
         qr_size = 40
