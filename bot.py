@@ -444,47 +444,43 @@ class LicenciaRenderer:
         except:
             pass
 
-    def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
-        size = 18
-        spacing = 35
-        offset_x = 30
-        offset_y = 80
-        for row in range(8):
-            for col in range(22):
-                x = offset_x + col * spacing + (row % 2) * (spacing // 2)
-                y = offset_y + row * spacing
-                if x > self.W - 50 or y > self.H - 100:
-                    continue
-                puntos = []
-                for i in range(6):
-                    angulo = i * 60 - 30
-                    px = x + size * math.cos(math.radians(angulo))
-                    py = y + size * math.sin(math.radians(angulo))
-                    puntos.append((px, py))
-                if (row + col) % 2 == 0:
-                    draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
-                    
-    def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
+    size = 18
+    spacing = 35
+    offset_x = 30
+    offset_y = 80
+    for row in range(8):
+        for col in range(22):
+            x = offset_x + col * spacing + (row % 2) * (spacing // 2)
+            y = offset_y + row * spacing
+            if x > self.W - 50 or y > self.H - 100:
+                continue
+            puntos = []
+            for i in range(6):
+                angulo = i * 60 - 30
+                px = x + size * math.cos(math.radians(angulo))
+                py = y + size * math.sin(math.radians(angulo))
+                puntos.append((px, py))
+            if (row + col) % 2 == 0:
+                draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
+
+def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     banda_y1 = 45
     banda_y2 = 130
     draw.rectangle([35, banda_y1, self.W - 35, banda_y2], fill=self.colores['navy_oscuro'])
     draw.line([35, banda_y2, self.W - 35, banda_y2], fill=self.colores['dorado_principal'], width=3)
     draw.line([35, banda_y2 + 4, self.W - 35, banda_y2 + 4], fill=self.colores['dorado_claro'], width=1)
-    
     escudo_x, escudo_y = 65, 48
     escudo_size = 78
     draw.ellipse([escudo_x, escudo_y, escudo_x + escudo_size, escudo_y + escudo_size], fill=self.colores['dorado_claro'], outline=self.colores['dorado_oscuro'], width=3)
     draw.ellipse([escudo_x + 5, escudo_y + 5, escudo_x + escudo_size - 5, escudo_y + escudo_size - 5], outline=self.colores['blanco_puro'], width=1)
     draw.text((escudo_x + escudo_size // 2, escudo_y + escudo_size // 2 + 2), "99", fill=self.colores['navy_oscuro'], font=self.fonts['title'], anchor="mm")
-    
     titulo_x = escudo_x + escudo_size + 25
     titulo_y = 58
     draw.text((titulo_x + 2, titulo_y + 2), "LICENCIA DE CONDUCIR", fill=self.colores['dorado_oscuro'], font=self.fonts['title'], anchor="lt")
     draw.text((titulo_x, titulo_y), "LICENCIA DE CONDUCIR", fill=self.colores['blanco_puro'], font=self.fonts['title'], anchor="lt")
-    
     subtitulo_y = titulo_y + 52
     draw.text((titulo_x, subtitulo_y), "✦ DISTRICT 99 - GVRP ✦", fill=self.colores['dorado_claro'], font=self.fonts['subtitle'], anchor="lt")
-    
     licencia_id = datos.get('licencia_id', 'LIC-0000')
     num_x = self.W - 120
     num_y = 52
