@@ -304,9 +304,7 @@ class LicenciaConfig:
         'mrz': 20,
         'watermark': 200,
     }
-
-
-class LicenciaRenderer:
+    class LicenciaRenderer:
     def __init__(self):
         self.config = LicenciaConfig()
         self.colores = self.config.COLORES
@@ -340,44 +338,44 @@ class LicenciaRenderer:
             'body_label': default,
             'mono': default,
         }
-        def generar(self, usuario: discord.Member, datos: dict) -> discord.File:
-            try:
-        img = Image.new('RGB', (self.W, self.H), self.colores['fondo_principal'])
-        draw = ImageDraw.Draw(img)
-        
-        for i in range(self.H):
-            factor = i / self.H
-            r = int(self.colores['fondo_principal'][0] - 15 * factor)
-            g = int(self.colores['fondo_principal'][1] - 12 * factor)
-            b = int(self.colores['fondo_principal'][2] - 10 * factor)
-            draw.line([(0, i), (self.W, i)], fill=(r, g, b))
-        
-        self._dibujar_borde_premium(img, draw)
-        
-        img = self._aplicar_fondo_seguridad(img, draw)
-        draw = ImageDraw.Draw(img)
-        
-        self._dibujar_header(img, draw, datos)
-        self._dibujar_avatar_discord(img, draw, usuario)
-        self._dibujar_avatar_roblox(img, draw, datos)
-        self._dibujar_campos_info(img, draw, datos)
-        self._dibujar_footer(img, draw, datos)
-        self._dibujar_mrz(img, draw, datos)
-        self._dibujar_sellos_seguridad(img, draw, datos)
-        self._dibujar_codigos_verificacion(img, draw, datos)
-        
-        img_bytes = BytesIO()
-        img.save(img_bytes, format='PNG', quality=100, compress_level=0)
-        img_bytes.seek(0)
-        return discord.File(img_bytes, filename="licencia_premium.png")
-        
-    except Exception as e:
-        print(f"❌ Error en generación premium: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
 
-def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
+    def generar(self, usuario: discord.Member, datos: dict) -> discord.File:
+        try:
+            img = Image.new('RGB', (self.W, self.H), self.colores['fondo_principal'])
+            draw = ImageDraw.Draw(img)
+            
+            for i in range(self.H):
+                factor = i / self.H
+                r = int(self.colores['fondo_principal'][0] - 15 * factor)
+                g = int(self.colores['fondo_principal'][1] - 12 * factor)
+                b = int(self.colores['fondo_principal'][2] - 10 * factor)
+                draw.line([(0, i), (self.W, i)], fill=(r, g, b))
+            
+            self._dibujar_borde_premium(img, draw)
+            
+            img = self._aplicar_fondo_seguridad(img, draw)
+            draw = ImageDraw.Draw(img)
+            
+            self._dibujar_header(img, draw, datos)
+            self._dibujar_avatar_discord(img, draw, usuario)
+            self._dibujar_avatar_roblox(img, draw, datos)
+            self._dibujar_campos_info(img, draw, datos)
+            self._dibujar_footer(img, draw, datos)
+            self._dibujar_mrz(img, draw, datos)
+            self._dibujar_sellos_seguridad(img, draw, datos)
+            self._dibujar_codigos_verificacion(img, draw, datos)
+            
+            img_bytes = BytesIO()
+            img.save(img_bytes, format='PNG', quality=100, compress_level=0)
+            img_bytes.seek(0)
+            return discord.File(img_bytes, filename="licencia_premium.png")
+            
+        except Exception as e:
+            print(f"❌ Error en generación premium: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+            def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
     margen = 25
     
     for i in range(12):
@@ -504,7 +502,8 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
             
             if (row + col) % 2 == 0:
                 draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
-                def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+
+def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     banda_y1 = 45
     banda_y2 = 130
     draw.rectangle([35, banda_y1, self.W - 35, banda_y2],
@@ -660,7 +659,8 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
     draw.text((avatar_x + avatar_size // 2, label_y), "ROBLOX",
              fill=self.colores['texto_secundario'],
              font=self.fonts['body_label'], anchor="mt")
-    def _dibujar_campos_info(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+
+def _dibujar_campos_info(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     tabla_x1 = 310
     tabla_y1 = 170
     tabla_x2 = self.W - 50
@@ -725,7 +725,8 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
         draw.text((col2_x, y + 20), value,
                  fill=self.colores['texto_principal'],
                  font=self.fonts['body_value'])
-        def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+
+def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     footer_y1 = self.H - 140
     footer_y2 = self.H - 30
     
@@ -796,93 +797,93 @@ def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: 
              "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY",
              fill=self.colores['dorado_claro'],
              font=self.fonts['body_label'], anchor="mm")
-        def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-        mrz_y = self.H - 25
-        mrz_x = 50
-        
-        draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10],
-                      fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
-        
-        nombre = datos.get('nombre', '').upper()[:20].ljust(20)
-        apellido = datos.get('apellidos', '').upper()[:20].ljust(20)
-        dni = datos.get('dni', '').zfill(8)
-        licencia = datos.get('licencia_id', 'LIC-0000')
-        
-        mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia}<<<D99<<<<<<<"
-        mrz_texto = mrz_texto[:44].ljust(44)
-        
-        draw.text((mrz_x, mrz_y), mrz_texto,
-                 fill=self.colores['texto_principal'],
-                 font=self.fonts['mono'], anchor="mm")
 
-    def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-        sello_x = self.W - 200
-        sello_y = 350
-        
-        draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90],
-                    outline=self.colores['azul_seguridad'], width=2,
-                    fill=(240, 248, 255, 80))
-        
-        draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82],
-                    outline=self.colores['azul_seguridad'], width=1)
-        
-        draw.text((sello_x + 45, sello_y + 35), "D99",
-                 fill=self.colores['azul_seguridad'],
-                 font=self.fonts['body_value'], anchor="mm")
-        draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT",
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'], anchor="mm")
-        
-        firma_x = 65
-        firma_y = self.H - 180
-        
-        draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO",
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'])
-        
-        firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
-        draw.text((firma_x, firma_y + 20), f"__________________ {firma}",
-                 fill=self.colores['texto_principal'],
-                 font=self.fonts['body_value'])
+def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    mrz_y = self.H - 25
+    mrz_x = 50
+    
+    draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10],
+                  fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
+    
+    nombre = datos.get('nombre', '').upper()[:20].ljust(20)
+    apellido = datos.get('apellidos', '').upper()[:20].ljust(20)
+    dni = datos.get('dni', '').zfill(8)
+    licencia = datos.get('licencia_id', 'LIC-0000')
+    
+    mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia}<<<D99<<<<<<<"
+    mrz_texto = mrz_texto[:44].ljust(44)
+    
+    draw.text((mrz_x, mrz_y), mrz_texto,
+             fill=self.colores['texto_principal'],
+             font=self.fonts['mono'], anchor="mm")
 
-    def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-        bar_x = 65
-        bar_y = self.H - 105
-        bar_width = 250
-        bar_height = 35
-        
-        draw.rectangle([bar_x, bar_y, bar_x + bar_width, bar_y + bar_height],
-                      fill=(255, 255, 255), outline=(200, 200, 200), width=1)
-        
-        for i in range(0, bar_width, 3):
-            height_var = random.randint(20, bar_height)
-            draw.rectangle([bar_x + i, bar_y + (bar_height - height_var),
-                           bar_x + i + 1, bar_y + bar_height],
-                          fill=(0, 0, 0))
-        
-        numero = datos.get('dni', '00000000') + datos.get('licencia_id', 'LIC-0000')[-4:]
-        draw.text((bar_x + bar_width // 2, bar_y + bar_height + 5),
-                 numero,
-                 fill=self.colores['texto_terciario'],
-                 font=self.fonts['body_label'], anchor="mt")
-        
-        qr_x = self.W - 160
-        qr_y = self.H - 155
-        qr_size = 40
-        
-        draw.rectangle([qr_x, qr_y, qr_x + qr_size, qr_y + qr_size],
-                      fill=(255, 255, 255), outline=(200, 200, 200), width=1)
-        
-        for i in range(0, qr_size, 6):
-            for j in range(0, qr_size, 6):
-                if (i + j) % 7 == 0 or (i * j) % 11 == 0:
-                    draw.rectangle([qr_x + i, qr_y + j, qr_x + i + 4, qr_y + j + 4],
-                                  fill=(0, 0, 0))
-        
-        for cx, cy in [(qr_x + 3, qr_y + 3), (qr_x + qr_size - 10, qr_y + 3), (qr_x + 3, qr_y + qr_size - 10)]:
-            draw.rectangle([cx, cy, cx + 7, cy + 7], fill=(0, 0, 0))
+def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    sello_x = self.W - 200
+    sello_y = 350
+    
+    draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90],
+                outline=self.colores['azul_seguridad'], width=2,
+                fill=(240, 248, 255, 80))
+    
+    draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82],
+                outline=self.colores['azul_seguridad'], width=1)
+    
+    draw.text((sello_x + 45, sello_y + 35), "D99",
+             fill=self.colores['azul_seguridad'],
+             font=self.fonts['body_value'], anchor="mm")
+    draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT",
+             fill=self.colores['texto_terciario'],
+             font=self.fonts['body_label'], anchor="mm")
+    
+    firma_x = 65
+    firma_y = self.H - 180
+    
+    draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO",
+             fill=self.colores['texto_terciario'],
+             font=self.fonts['body_label'])
+    
+    firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
+    draw.text((firma_x, firma_y + 20), f"__________________ {firma}",
+             fill=self.colores['texto_principal'],
+             font=self.fonts['body_value'])
 
-
+def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    bar_x = 65
+    bar_y = self.H - 105
+    bar_width = 250
+    bar_height = 35
+    
+    draw.rectangle([bar_x, bar_y, bar_x + bar_width, bar_y + bar_height],
+                  fill=(255, 255, 255), outline=(200, 200, 200), width=1)
+    
+    for i in range(0, bar_width, 3):
+        height_var = random.randint(20, bar_height)
+        draw.rectangle([bar_x + i, bar_y + (bar_height - height_var),
+                       bar_x + i + 1, bar_y + bar_height],
+                      fill=(0, 0, 0))
+    
+    numero = datos.get('dni', '00000000') + datos.get('licencia_id', 'LIC-0000')[-4:]
+    draw.text((bar_x + bar_width // 2, bar_y + bar_height + 5),
+             numero,
+             fill=self.colores['texto_terciario'],
+             font=self.fonts['body_label'], anchor="mt")
+    
+    qr_x = self.W - 160
+    qr_y = self.H - 155
+    qr_size = 40
+    
+    draw.rectangle([qr_x, qr_y, qr_x + qr_size, qr_y + qr_size],
+                  fill=(255, 255, 255), outline=(200, 200, 200), width=1)
+    
+    for i in range(0, qr_size, 6):
+        for j in range(0, qr_size, 6):
+            if (i + j) % 7 == 0 or (i * j) % 11 == 0:
+                draw.rectangle([qr_x + i, qr_y + j, qr_x + i + 4, qr_y + j + 4],
+                              fill=(0, 0, 0))
+    
+    for cx, cy in [(qr_x + 3, qr_y + 3), (qr_x + qr_size - 10, qr_y + 3), (qr_x + 3, qr_y + qr_size - 10)]:
+        draw.rectangle([cx, cy, cx + 7, cy + 7], fill=(0, 0, 0))
+        # ==================== FUNCIÓN PARA GENERAR LICENCIA ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     renderer = LicenciaRenderer()
     return renderer.generar(usuario, datos_licencia)
