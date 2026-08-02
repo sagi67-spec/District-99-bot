@@ -1,6 +1,6 @@
 """
 Bot de Discord para servidor de rol (RP) — DISTRICT 99
-CÓDIGO COMPLETO - PARTE 1/22
+CÓDIGO COMPLETO - PARTE 1/20
 """
 
 import json
@@ -147,14 +147,12 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
         img = Image.new('RGB', (W, H), color=(15, 15, 18))
         draw = ImageDraw.Draw(img)
 
-        # ========== COLORES ==========
         BLANCO = (255, 255, 255)
         GRIS = (150, 155, 165)
         GRIS_LABEL = (140, 145, 155)
         VERDE = (60, 210, 130)
         LINEA = (48, 48, 55)
 
-        # ========== FONDO DEGRADADO ==========
         radio_card = 30
         draw.rounded_rectangle([0, 0, W, H], radius=radio_card, fill=(20, 20, 24))
         overlay = Image.new('L', (W, H), 0)
@@ -170,7 +168,6 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
         img = Image.composite(img, fondo_negro, mask_final)
         draw = ImageDraw.Draw(img)
 
-        # ========== FUENTES ==========
         try:
             font_title = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 34)
             font_sub = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 20)
@@ -182,15 +179,12 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
         except:
             font_title = font_sub = font_num = font_label = font_value = font_status = font_footer = ImageFont.load_default()
 
-        # ========== TÍTULO ==========
         draw.text((W // 2, 45), "DOCUMENTO NACIONAL DE IDENTIDAD", fill=BLANCO, font=font_title, anchor="mt")
         draw.text((W // 2, 90), "DISTRICT 99 - GVRP", fill=GRIS, font=font_sub, anchor="mt")
 
-        # ========== Nº DNI ==========
         numero_dni = datos_dni.get('numero_dni', '00000000')
         draw.text((W - 60, 55), f"DNI #{numero_dni}", fill=BLANCO, font=font_num, anchor="rt")
 
-        # ========== AVATAR ==========
         avatar_size = 320
         avatar_x = 60
         avatar_y = (H - 120 - avatar_size) // 2 + 20
@@ -207,7 +201,6 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
             pass
         draw.ellipse([avatar_x - 3, avatar_y - 3, avatar_x + avatar_size + 3, avatar_y + avatar_size + 3], outline=(70, 70, 78), width=3)
 
-        # ========== TARJETA DE DATOS ==========
         card_x1 = avatar_x + avatar_size + 50
         card_y1 = 150
         card_x2 = W - 60
@@ -245,7 +238,6 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
         draw.text((col1_x, y), "EXPEDICIÓN", fill=GRIS_LABEL, font=font_label)
         draw.text((col1_x, y + 24), datos_dni.get('fecha_expedicion', ''), fill=BLANCO, font=font_value)
 
-        # ========== BARRA DE ESTADO ==========
         barra_y1 = H - 115
         barra_y2 = H - 40
         draw.rounded_rectangle([40, barra_y1, W - 40, barra_y2], radius=14, fill=(24, 24, 28))
@@ -254,7 +246,6 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
         draw.ellipse([cx_dot - 14, cy_dot - 14, cx_dot + 14, cy_dot + 14], fill=VERDE)
         draw.text((cx_dot + 30, cy_dot), "VÁLIDO", fill=VERDE, font=font_status, anchor="lm")
 
-        # ========== PIE ==========
         draw.text((W // 2, H - 28), "DISTRICT 99 - GVRP © 2026", fill=GRIS, font=font_footer, anchor="mm")
 
         img_bytes = BytesIO()
@@ -313,6 +304,8 @@ class LicenciaConfig:
         'mrz': 20,
         'watermark': 200,
     }
+
+
 class LicenciaRenderer:
     def __init__(self):
         self.config = LicenciaConfig()
@@ -348,7 +341,7 @@ class LicenciaRenderer:
             'mono': default,
         }
         def generar(self, usuario: discord.Member, datos: dict) -> discord.File:
-        try:
+    try:
         img = Image.new('RGB', (self.W, self.H), self.colores['fondo_principal'])
         draw = ImageDraw.Draw(img)
         
@@ -383,7 +376,8 @@ class LicenciaRenderer:
         import traceback
         traceback.print_exc()
         return None
-        def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
+
+def _dibujar_borde_premium(self, img: Image.Image, draw: ImageDraw.Draw):
     margen = 25
     
     for i in range(12):
@@ -470,7 +464,8 @@ def _aplicar_microtexto(self, img: Image.Image, draw: ImageDraw.Draw) -> Image.I
         draw.text((self.W - 30, 50 + i), "GVRP", fill=(200, 198, 190), font=fuente)
         
     return img
-    def _dibujar_watermark_99(self, img: Image.Image, draw: ImageDraw.Draw):
+
+def _dibujar_watermark_99(self, img: Image.Image, draw: ImageDraw.Draw):
     try:
         fuente = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 180)
     except:
@@ -548,26 +543,27 @@ def _dibujar_hexagonos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw):
     draw.text((titulo_x, subtitulo_y), "✦ DISTRICT 99 - GVRP ✦",
              fill=self.colores['dorado_claro'],
              font=self.fonts['subtitle'], anchor="lt")
+    
     licencia_id = datos.get('licencia_id', 'LIC-0000')
-num_x = self.W - 120
-num_y = 52
-
-draw.rectangle([num_x - 140, num_y - 8, num_x + 140, num_y + 62],
-              fill=self.colores['dorado_claro'],
-              outline=self.colores['dorado_oscuro'], width=2)
-
-for i in range(0, 280, 4):
-    draw.line([num_x - 140 + i, num_y - 8, num_x - 140 + i, num_y + 62],
-             fill=(230, 220, 200, 30), width=1)
-
-draw.text((num_x, num_y + 10), f"#{licencia_id}",
-         fill=self.colores['navy_oscuro'],
-         font=self.fonts['body_value'], anchor="mt")
-
-draw.text((num_x, num_y + 42), "VALID",
-         fill=self.colores['dorado_oscuro'],
-         font=self.fonts['body_label'], anchor="mt")
-def _dibujar_avatar_discord(self, img: Image.Image, draw: ImageDraw.Draw, usuario: discord.Member):
+    num_x = self.W - 120
+    num_y = 52
+    
+    draw.rectangle([num_x - 140, num_y - 8, num_x + 140, num_y + 62],
+                  fill=self.colores['dorado_claro'],
+                  outline=self.colores['dorado_oscuro'], width=2)
+    
+    for i in range(0, 280, 4):
+        draw.line([num_x - 140 + i, num_y - 8, num_x - 140 + i, num_y + 62],
+                 fill=(230, 220, 200, 30), width=1)
+    
+    draw.text((num_x, num_y + 10), f"#{licencia_id}",
+             fill=self.colores['navy_oscuro'],
+             font=self.fonts['body_value'], anchor="mt")
+    
+    draw.text((num_x, num_y + 42), "VALID",
+             fill=self.colores['dorado_oscuro'],
+             font=self.fonts['body_label'], anchor="mt")
+    def _dibujar_avatar_discord(self, img: Image.Image, draw: ImageDraw.Draw, usuario: discord.Member):
     avatar_size = 175
     avatar_x = 65
     avatar_y = 175
@@ -618,7 +614,8 @@ def _dibujar_avatar_discord(self, img: Image.Image, draw: ImageDraw.Draw, usuari
              f"@{usuario.name}",
              fill=self.colores['texto_principal'],
              font=self.fonts['body_value'], anchor="mt")
-    def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+
+def _dibujar_avatar_roblox(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     avatar_size = 85
     avatar_x = 200
     avatar_y = 325
@@ -759,94 +756,96 @@ def _dibujar_avatar_discord(self, img: Image.Image, draw: ImageDraw.Draw, usuari
              datos.get('fecha_expiracion', ''),
              fill=self.colores['blanco_puro'],
              font=self.fonts['footer_value'])
+    
     estado_x = self.W - 320
-estado_y = footer_y1 + 12
-
-draw.rounded_rectangle([estado_x, estado_y, self.W - 55, estado_y + 70],
-                      radius=12, fill=(20, 60, 35),
-                      outline=self.colores['verde_brillante'], width=3)
-
-draw.ellipse([estado_x + 18, estado_y + 23, estado_x + 40, estado_y + 45],
-            fill=self.colores['verde_brillante'])
-
-draw.text((estado_x + 52, estado_y + 20), "ESTADO:",
-         fill=self.colores['dorado_claro'],
-         font=self.fonts['footer_label'])
-draw.text((estado_x + 52, estado_y + 40), "ACTIVA",
-         fill=self.colores['verde_brillante'],
-         font=self.fonts['body_value'])
-
-sello_x = self.W - 170
-sello_y = footer_y1 + 20
-
-draw.ellipse([sello_x, sello_y, sello_x + 55, sello_y + 55],
-            outline=self.colores['dorado_principal'], width=3,
-            fill=self.colores['navy_oscuro'])
-
-draw.ellipse([sello_x + 5, sello_y + 5, sello_x + 50, sello_y + 50],
-            outline=self.colores['dorado_claro'], width=1)
-
-draw.text((sello_x + 28, sello_y + 28), "✓",
-         fill=self.colores['dorado_principal'],
-         font=self.fonts['title'], anchor="mm")
-
-draw.text((sello_x + 28, sello_y + 48), "VALID",
-         fill=self.colores['dorado_claro'],
-         font=self.fonts['body_label'], anchor="mm")
-
-draw.text((self.W // 2, footer_y2 - 5),
-         "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY",
-         fill=self.colores['dorado_claro'],
-         font=self.fonts['body_label'], anchor="mm")
-def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    mrz_y = self.H - 25
-    mrz_x = 50
+    estado_y = footer_y1 + 12
     
-    draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10],
-                  fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
+    draw.rounded_rectangle([estado_x, estado_y, self.W - 55, estado_y + 70],
+                          radius=12, fill=(20, 60, 35),
+                          outline=self.colores['verde_brillante'], width=3)
     
-    nombre = datos.get('nombre', '').upper()[:20].ljust(20)
-    apellido = datos.get('apellidos', '').upper()[:20].ljust(20)
-    dni = datos.get('dni', '').zfill(8)
-    licencia = datos.get('licencia_id', 'LIC-0000')
+    draw.ellipse([estado_x + 18, estado_y + 23, estado_x + 40, estado_y + 45],
+                fill=self.colores['verde_brillante'])
     
-    mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia}<<<D99<<<<<<<"
-    mrz_texto = mrz_texto[:44].ljust(44)
+    draw.text((estado_x + 52, estado_y + 20), "ESTADO:",
+             fill=self.colores['dorado_claro'],
+             font=self.fonts['footer_label'])
+    draw.text((estado_x + 52, estado_y + 40), "ACTIVA",
+             fill=self.colores['verde_brillante'],
+             font=self.fonts['body_value'])
     
-    draw.text((mrz_x, mrz_y), mrz_texto,
-             fill=self.colores['texto_principal'],
-             font=self.fonts['mono'], anchor="mm")
-
-def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
-    sello_x = self.W - 200
-    sello_y = 350
+    sello_x = self.W - 170
+    sello_y = footer_y1 + 20
     
-    draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90],
-                outline=self.colores['azul_seguridad'], width=2,
-                fill=(240, 248, 255, 80))
+    draw.ellipse([sello_x, sello_y, sello_x + 55, sello_y + 55],
+                outline=self.colores['dorado_principal'], width=3,
+                fill=self.colores['navy_oscuro'])
     
-    draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82],
-                outline=self.colores['azul_seguridad'], width=1)
+    draw.ellipse([sello_x + 5, sello_y + 5, sello_x + 50, sello_y + 50],
+                outline=self.colores['dorado_claro'], width=1)
     
-    draw.text((sello_x + 45, sello_y + 35), "D99",
-             fill=self.colores['azul_seguridad'],
-             font=self.fonts['body_value'], anchor="mm")
-    draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT",
-             fill=self.colores['texto_terciario'],
+    draw.text((sello_x + 28, sello_y + 28), "✓",
+             fill=self.colores['dorado_principal'],
+             font=self.fonts['title'], anchor="mm")
+    
+    draw.text((sello_x + 28, sello_y + 48), "VALID",
+             fill=self.colores['dorado_claro'],
              font=self.fonts['body_label'], anchor="mm")
     
-    firma_x = 65
-    firma_y = self.H - 180
-    
-    draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO",
-             fill=self.colores['texto_terciario'],
-             font=self.fonts['body_label'])
-    
-    firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
-    draw.text((firma_x, firma_y + 20), f"__________________ {firma}",
-             fill=self.colores['texto_principal'],
-             font=self.fonts['body_value'])
-        def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+    draw.text((self.W // 2, footer_y2 - 5),
+             "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY",
+             fill=self.colores['dorado_claro'],
+             font=self.fonts['body_label'], anchor="mm")
+        def _dibujar_mrz(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+        mrz_y = self.H - 25
+        mrz_x = 50
+        
+        draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10],
+                      fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
+        
+        nombre = datos.get('nombre', '').upper()[:20].ljust(20)
+        apellido = datos.get('apellidos', '').upper()[:20].ljust(20)
+        dni = datos.get('dni', '').zfill(8)
+        licencia = datos.get('licencia_id', 'LIC-0000')
+        
+        mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia}<<<D99<<<<<<<"
+        mrz_texto = mrz_texto[:44].ljust(44)
+        
+        draw.text((mrz_x, mrz_y), mrz_texto,
+                 fill=self.colores['texto_principal'],
+                 font=self.fonts['mono'], anchor="mm")
+
+    def _dibujar_sellos_seguridad(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+        sello_x = self.W - 200
+        sello_y = 350
+        
+        draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90],
+                    outline=self.colores['azul_seguridad'], width=2,
+                    fill=(240, 248, 255, 80))
+        
+        draw.ellipse([sello_x + 8, sello_y + 8, sello_x + 82, sello_y + 82],
+                    outline=self.colores['azul_seguridad'], width=1)
+        
+        draw.text((sello_x + 45, sello_y + 35), "D99",
+                 fill=self.colores['azul_seguridad'],
+                 font=self.fonts['body_value'], anchor="mm")
+        draw.text((sello_x + 45, sello_y + 60), "DEPARTMENT",
+                 fill=self.colores['texto_terciario'],
+                 font=self.fonts['body_label'], anchor="mm")
+        
+        firma_x = 65
+        firma_y = self.H - 180
+        
+        draw.text((firma_x, firma_y), "FIRMA DEL CIUDADANO",
+                 fill=self.colores['texto_terciario'],
+                 font=self.fonts['body_label'])
+        
+        firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
+        draw.text((firma_x, firma_y + 20), f"__________________ {firma}",
+                 fill=self.colores['texto_principal'],
+                 font=self.fonts['body_value'])
+
+    def _dibujar_codigos_verificacion(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
         bar_x = 65
         bar_y = self.H - 105
         bar_width = 250
@@ -1142,8 +1141,7 @@ class PanelDNIView(discord.ui.View):
                     await modal_interaction.response.send_message(f"❌ Error al crear el DNI: {e}", ephemeral=True)
 
         await interaction.response.send_modal(DNIModal())
-
-# ==================== PANEL DE LICENCIAS ====================
+        # ==================== PANEL DE LICENCIAS ====================
 class PanelLicenciasView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1353,8 +1351,7 @@ class PanelWSPView(discord.ui.View):
                 embed.add_field(name=f"👮 {policia['nombre']}", value=f"🕐 {policia['horas']}h {policia['minutos']}m activo", inline=False)
             embed.set_image(url=URL_IMG_WSP)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-
-# ==================== PANEL DE EMS ====================
+            # ==================== PANEL DE EMS ====================
 class PanelEMSView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1464,8 +1461,7 @@ class PanelEMSView(discord.ui.View):
                 embed.add_field(name=f"🚑 {ems['nombre']}", value=f"🕐 {ems['horas']}h {ems['minutos']}m activo", inline=False)
             embed.set_image(url=URL_IMG_EMS)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-
-# ==================== PANEL DE DOT ====================
+            # ==================== PANEL DE DOT ====================
 class PanelDOTView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1673,78 +1669,266 @@ async def panel_dot(interaction: discord.Interaction):
     embed.set_image(url=URL_IMG_DOT)
     embed.set_footer(text="DISTRICT 99 - GVRP © 2026")
     await interaction.response.send_message(embed=embed, view=PanelDOTView())
+# ==================== COMANDOS DE MULTAS ====================
+@bot.tree.command(name="registrar_multa", description="🚨 Registrar multa - SOLO POLICIA")
+@app_commands.describe(
+    infractor="Usuario infractor",
+    infraccion="Infraccion cometida",
+    precio="Monto de la multa ($)",
+    testigos="Testigos (opcional - menciona)",
+    foto="Foto de evidencia (opcional)"
+)
+async def registrar_multa(
+    interaction: discord.Interaction,
+    infractor: discord.Member,
+    infraccion: str,
+    precio: str,
+    testigos: str = None,
+    foto: discord.Attachment = None
+):
+    if not es_policia(interaction.user):
+        await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
+        return
+    
+    if not precio.isdigit():
+        await interaction.response.send_message("⚠️ Monto: numero", ephemeral=True)
+        return
+    
+    testigos_mentions = []
+    if testigos:
+        mentions = re.findall(r'<@!?(\d+)>', testigos)
+        for user_id in mentions:
+            try:
+                user = await bot.fetch_user(int(user_id))
+                testigos_mentions.append(user.mention)
+            except:
+                pass
+    
+    multas = cargar(MULTAS_FILE)
+    multas.setdefault("historial", []).append({
+        "oficial_id": str(interaction.user.id),
+        "oficial": str(interaction.user),
+        "infractor_id": str(infractor.id),
+        "infractor": str(infractor),
+        "infraccion": infraccion,
+        "precio": int(precio),
+        "pagada": False,
+        "testigos": testigos_mentions,
+        "foto": foto.url if foto else None,
+        "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"),
+    })
+    guardar(MULTAS_FILE, multas)
+    
+    embed = discord.Embed(title="🚨 **MULTA REGISTRADA**", color=discord.Color.red())
+    embed.add_field(name="👮 **Oficial**", value=interaction.user.mention, inline=False)
+    embed.add_field(name="👤 **Infractor**", value=infractor.mention, inline=False)
+    embed.add_field(name="⚖️ **Infracción**", value=infraccion, inline=False)
+    embed.add_field(name="💰 **Monto**", value=f"**${precio}**", inline=True)
+    if testigos_mentions:
+        embed.add_field(name="👀 **Testigos**", value=", ".join(testigos_mentions), inline=False)
+    embed.add_field(name="📌 **Estado**", value="❌ Sin pagar", inline=True)
+    if foto:
+        embed.set_image(url=foto.url)
+    embed.set_footer(text=f"Registrada el {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
+    
+    mensaje = f"{infractor.mention} ¡Has recibido una multa!\n📢 Para pagar: Ve a <#{CANAL_PAGOS_ID}> y escribe `!pay District 99 Bot {precio}`"
+    if testigos_mentions:
+        mensaje += f"\n👀 **Testigos:** {', '.join(testigos_mentions)}"
+    
+    await interaction.response.send_message(content=mensaje, embed=embed)
+    await enviar_log(f"🚨 **{interaction.user.mention}** multó a **{infractor.mention}** por ${precio}", discord.Color.red())
 
-# ==================== EVENTO ON_MESSAGE (DETECTAR !pay) ====================
-@bot.event
-async def on_message(message):
-    if message.author.id == bot.user.id:
+@bot.tree.command(name="historial_multas", description="📋 Ver historial de multas - SOLO POLICIA")
+@app_commands.describe(usuario="Usuario (opcional)")
+async def historial_multas(interaction: discord.Interaction, usuario: discord.Member = None):
+    if not es_policia(interaction.user):
+        await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
         return
     
-    if message.channel.id != CANAL_PAGOS_ID:
-        await bot.process_commands(message)
+    multas = cargar(MULTAS_FILE)
+    historial = multas.get("historial", [])
+    
+    if not historial:
+        await interaction.response.send_message("📋 No hay multas registradas", ephemeral=True)
         return
     
-    if message.content.lower().startswith("!pay"):
-        partes = message.content.split()
-        if len(partes) >= 2:
-            monto = None
-            for parte in partes:
-                if parte.isdigit():
-                    monto = int(parte)
-                    break
-            
-            if monto is None:
-                await bot.process_commands(message)
-                return
-            
-            user_id = str(message.author.id)
-            user_mention = message.author.mention
-            user_name = message.author.name
-            
-            multas = cargar(MULTAS_FILE)
-            historial = multas.get("historial", [])
-            
-            tiene_pendientes = False
-            oficial_id = None
-            infraccion = None
-            
-            for multa in historial:
-                if multa.get('infractor_id') == user_id and not multa.get('pagada', False):
-                    tiene_pendientes = True
-                    if multa.get('precio') == monto:
-                        oficial_id = multa.get('oficial_id')
-                        infraccion = multa.get('infraccion')
-                    break
-            
-            if not tiene_pendientes:
-                await message.channel.send(f"{user_mention} ✅ No tienes multas pendientes. ¡Estás al día!")
-                await bot.process_commands(message)
-                return
-            
-            if not oficial_id:
-                for multa in historial:
-                    if multa.get('infractor_id') == user_id and not multa.get('pagada', False) and multa.get('precio') == monto:
-                        oficial_id = multa.get('oficial_id')
-                        infraccion = multa.get('infraccion')
-                        break
-            
-            await message.channel.send(f"{user_mention} ✅ He detectado tu pago de **${monto}**.\n⏳ Espera a que un oficial verifique y confirme el pago.")
-            
-            if oficial_id:
-                await message.channel.send(f"👮 <@{oficial_id}> El ciudadano {user_mention} dice que pagó su multa de **${monto}**.\n📌 **Infracción:** {infraccion}\n✅ Verifica en UnbelievaBoat y usa `/confirmar_pago {user_name} {monto}`")
-            else:
-                await message.channel.send(f"📢 **ATENCIÓN POLICÍAS:** {user_mention} dice que pagó **${monto}**.\nVerifiquen en UnbelievaBoat y usen `/confirmar_pago {user_name} {monto}`")
-            
-            await bot.process_commands(message)
+    if usuario:
+        historial = [m for m in historial if m.get('infractor_id') == str(usuario.id)]
+        if not historial:
+            await interaction.response.send_message(f"📋 {usuario.name} no tiene multas", ephemeral=True)
             return
+        titulo = f"🚨 **MULTAS DE {usuario.name.upper()}**"
+    else:
+        titulo = "🚨 **HISTORIAL DE MULTAS**"
     
-    await bot.process_commands(message)
+    embed = discord.Embed(title=titulo, color=discord.Color.red())
+    for i, multa in enumerate(historial[-10:], 1):
+        estado = "✅ Pagada" if multa.get('pagada', False) else "❌ Sin pagar"
+        embed.add_field(
+            name=f"📌 **Multa #{i}**",
+            value=f"👮 **Oficial:** {multa['oficial']}\n⚖️ **Infracción:** {multa['infraccion']}\n💰 **Monto:** ${multa['precio']}\n📌 **Estado:** {estado}\n📅 **Fecha:** {multa['fecha']}",
+            inline=False
+        )
+    embed.set_footer(text="Mostrando últimas 10 multas")
+    await interaction.response.send_message(embed=embed)
 
-# ==================== INICIAR BOT ====================
-print("🚀 Intentando conectar a Discord...")
-try:
-    bot.run(TOKEN)
-except Exception as e:
-    print(f"❌ ERROR FATAL: {e}")
-    import traceback
-    traceback.print_exc()
+@bot.tree.command(name="mis_multas", description="📋 Ver tu historial de multas")
+async def mis_multas(interaction: discord.Interaction):
+    multas = cargar(MULTAS_FILE)
+    historial = multas.get("historial", [])
+    user_id = str(interaction.user.id)
+    
+    mis_multas = [m for m in historial if m.get('infractor_id') == user_id]
+    if not mis_multas:
+        await interaction.response.send_message("📋 No tienes multas", ephemeral=True)
+        return
+    
+    embed = discord.Embed(title=f"🚨 **TUS MULTAS**", description=f"Total: {len(mis_multas)}", color=discord.Color.orange())
+    total = 0
+    for i, multa in enumerate(mis_multas[-10:], 1):
+        total += multa.get('precio', 0)
+        estado = "✅ Pagada" if multa.get('pagada', False) else "❌ Sin pagar"
+        embed.add_field(
+            name=f"📌 **Multa #{i}**",
+            value=f"👮 **Oficial:** {multa['oficial']}\n⚖️ **Infracción:** {multa['infraccion']}\n💰 **Monto:** ${multa['precio']}\n📌 **Estado:** {estado}",
+            inline=False
+        )
+    embed.add_field(name="💸 **TOTAL ADEUDADO**", value=f"**${total}**", inline=False)
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="confirmar_pago", description="👮 Confirmar pago - SOLO POLICIA")
+@app_commands.describe(usuario="Usuario que pagó", monto="Monto que pagó")
+async def confirmar_pago(interaction: discord.Interaction, usuario: str, monto: int):
+    if not es_policia(interaction.user):
+        await interaction.response.send_message("⛔ Solo POLICIA pueden usar este comando", ephemeral=True)
+        return
+
+    miembro = None
+    if usuario.startswith('<@') and usuario.endswith('>'):
+        user_id = usuario.replace('<@', '').replace('>', '').replace('!', '')
+        miembro = interaction.guild.get_member(int(user_id))
+    if not miembro:
+        for member in interaction.guild.members:
+            if member.name.lower() == usuario.lower() or member.display_name.lower() == usuario.lower():
+                miembro = member
+                break
+
+    if not miembro:
+        await interaction.response.send_message(f"⚠️ No encontré al usuario `{usuario}`.", ephemeral=True)
+        return
+
+    user_id = str(miembro.id)
+    multas = cargar(MULTAS_FILE)
+    historial = multas.get("historial", [])
+    
+    multa_encontrada = False
+    for i, multa in enumerate(historial):
+        if multa.get('infractor_id') == user_id and not multa.get('pagada', False) and multa.get('precio') == monto:
+            historial[i]['pagada'] = True
+            historial[i]['fecha_pago'] = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
+            multa_encontrada = True
+            break
+
+    if not multa_encontrada:
+        await interaction.response.send_message(f"⚠️ No encontré multa de **${monto}** para {miembro.mention}", ephemeral=True)
+        return
+
+    guardar(MULTAS_FILE, multas)
+    embed = discord.Embed(title="💰 **PAGO CONFIRMADO**", description=f"{miembro.mention} pagó su multa.", color=discord.Color.green())
+    embed.add_field(name="💰 **Monto**", value=f"**${monto}**", inline=True)
+    embed.add_field(name="👮 **Confirmado por**", value=interaction.user.mention, inline=True)
+    await interaction.response.send_message(embed=embed)
+    await enviar_log(f"💰 **{miembro.mention}** pagó multa de ${monto} (Confirmado por {interaction.user.mention})", discord.Color.green())
+
+# ==================== COMANDOS DE AUTOS ====================
+@bot.tree.command(name="registrar_auto", description="🚗 Registrar tu vehiculo con foto")
+@app_commands.describe(
+    usuario_roblox="Tu usuario de Roblox",
+    placa="Placa del vehiculo",
+    modelo="Modelo/Marca del vehiculo",
+    color="Color del vehiculo",
+    foto="Sube una foto del vehiculo"
+)
+async def registrar_auto(
+    interaction: discord.Interaction,
+    usuario_roblox: str,
+    placa: str,
+    modelo: str,
+    color: str,
+    foto: discord.Attachment
+):
+    if not foto.content_type or not foto.content_type.startswith('image/'):
+        await interaction.response.send_message("⚠️ Debe ser una imagen", ephemeral=True)
+        return
+    
+    autos = cargar(AUTOS_FILE)
+    user_id = str(interaction.user.id)
+    autos.setdefault(user_id, []).append({
+        "usuario_discord": str(interaction.user),
+        "usuario_roblox": usuario_roblox,
+        "placa": placa,
+        "modelo": modelo,
+        "color": color,
+        "foto": foto.url,
+        "fecha": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
+        "registrado_por": str(interaction.user)
+    })
+    guardar(AUTOS_FILE, autos)
+    
+    embed = discord.Embed(title="🚗 **VEHÍCULO REGISTRADO**", color=discord.Color.green())
+    embed.add_field(name="👤 **Usuario**", value=interaction.user.mention, inline=False)
+    embed.add_field(name="📋 **Modelo**", value=modelo, inline=True)
+    embed.add_field(name="🎨 **Color**", value=color, inline=True)
+    embed.add_field(name="🅿️ **Placa**", value=placa, inline=True)
+    embed.set_image(url=foto.url)
+    await interaction.response.send_message(embed=embed)
+    await enviar_log(f"🚗 **{interaction.user.mention}** registró un vehículo (Placa: {placa})", discord.Color.green())
+
+@bot.tree.command(name="ver_autos", description="🚗 Ver autos de un usuario")
+@app_commands.describe(usuario="Usuario (opcional)")
+async def ver_autos(interaction: discord.Interaction, usuario: discord.Member = None):
+    objetivo = usuario or interaction.user
+    autos = cargar(AUTOS_FILE)
+    user_autos = autos.get(str(objetivo.id), [])
+    
+    if not user_autos:
+        await interaction.response.send_message(f"❌ {objetivo.name} no tiene autos registrados", ephemeral=True)
+        return
+    
+    embed = discord.Embed(title=f"🚗 **AUTOS DE {objetivo.name.upper()}**", color=discord.Color.blue())
+    for i, auto in enumerate(user_autos, 1):
+        embed.add_field(
+            name=f"🚘 **Auto #{i}**",
+            value=f"👤 **Discord:** {auto['usuario_discord']}\n🎮 **Roblox:** {auto['usuario_roblox']}\n📋 **Modelo:** {auto['modelo']}\n🎨 **Color:** {auto['color']}\n🅿️ **Placa:** {auto['placa']}\n📅 **Registro:** {auto['fecha']}",
+            inline=False
+        )
+        if auto.get('foto'):
+            embed.set_image(url=auto['foto'])
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="eliminar_auto", description="🗑️ Eliminar un auto registrado")
+@app_commands.describe(numero_auto="Número del auto a eliminar (1, 2, 3...)")
+async def eliminar_auto(interaction: discord.Interaction, numero_auto: int):
+    autos = cargar(AUTOS_FILE)
+    user_id = str(interaction.user.id)
+    
+    if user_id not in autos or not autos[user_id]:
+        await interaction.response.send_message("❌ No tienes autos registrados", ephemeral=True)
+        return
+    
+    if numero_auto < 1 or numero_auto > len(autos[user_id]):
+        await interaction.response.send_message(f"⚠️ Número inválido. Tienes {len(autos[user_id])} autos.", ephemeral=True)
+        return
+    
+    auto_eliminado = autos[user_id].pop(numero_auto - 1)
+    guardar(AUTOS_FILE, autos)
+    
+    embed = discord.Embed(
+        title="🗑️ **AUTO ELIMINADO**",
+        description=f"{interaction.user.mention} has eliminado tu auto.",
+        color=discord.Color.red()
+    )
+    embed.add_field(name="📋 **Modelo**", value=auto_eliminado.get('modelo', 'Desconocido'), inline=True)
+    embed.add_field(name="🅿️ **Placa**", value=auto_eliminado.get('placa', 'Desconocida'), inline=True)
+    await interaction.response.send_message(embed=embed)
+    await enviar_log(f"🗑️ **{interaction.user.mention}** eliminó un vehículo (Placa: {auto_eliminado.get('placa', 'N/A')})", discord.Color.red())
