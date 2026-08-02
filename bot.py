@@ -315,7 +315,7 @@ class LicenciaRenderer:
         self.fonts = {}
         self._cargar_fuentes()
         
-   def _cargar_fuentes(self):
+    def _cargar_fuentes(self):
         try:
             self.fonts['title'] = ImageFont.truetype(self.config.FUENTES['display'], self.config.FONT_SIZES['title'])
             self.fonts['subtitle'] = ImageFont.truetype(self.config.FUENTES['display'], self.config.FONT_SIZES['subtitle'])
