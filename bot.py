@@ -363,7 +363,7 @@ class LicenciaRenderer:
             traceback.print_exc()
             return None
 
-def _dibujar_borde_premium(self, img, draw):
+    def _dibujar_borde_premium(self, img, draw):
         margen = 25
         for i in range(12):
             offset = margen - i
@@ -373,7 +373,7 @@ def _dibujar_borde_premium(self, img, draw):
         draw.rectangle([margen + 16, margen + 16, self.W - margen - 16, self.H - margen - 16], outline=self.colores['dorado_claro'], width=1)
         self._dibujar_esquinas_premium(img, draw, margen + 8)
 
-def _dibujar_esquinas_premium(self, img, draw, base):
+    def _dibujar_esquinas_premium(self, img, draw, base):
         size = 55
         grosor = 5
         esquinas = [(base, base, 1, 1), (self.W - base, base, -1, 1), (base, self.H - base, 1, -1), (self.W - base, self.H - base, -1, -1)]
@@ -384,7 +384,7 @@ def _dibujar_esquinas_premium(self, img, draw, base):
             draw.line([(cx + offset*dx, cy + offset*dy), (cx + (size-15) * dx, cy + offset*dy)], fill=self.colores['navy_medio'], width=2)
             draw.line([(cx + offset*dx, cy + offset*dy), (cx + offset*dx, cy + (size-15) * dy)], fill=self.colores['navy_medio'], width=2)
 
-def _aplicar_fondo_seguridad(self, img, draw):
+    def _aplicar_fondo_seguridad(self, img, draw):
         img = self._aplicar_guilloche(img, draw)
         draw = ImageDraw.Draw(img)
         img = self._aplicar_microtexto(img, draw)
@@ -395,7 +395,7 @@ def _aplicar_fondo_seguridad(self, img, draw):
         draw = ImageDraw.Draw(img)
         return img
 
-def _aplicar_guilloche(self, img, draw):
+    def _aplicar_guilloche(self, img, draw):
         centro_x, centro_y = self.W // 2, self.H // 2
         for radio in range(40, 700, 30):
             alpha = int(8 * (1 - radio / 700))
@@ -406,7 +406,7 @@ def _aplicar_guilloche(self, img, draw):
             draw.line([(i, 0), (i - self.H, self.H)], fill=(215, 212, 205), width=1)
         return img
 
-def _aplicar_microtexto(self, img, draw):
+    def _aplicar_microtexto(self, img, draw):
         try:
             fuente = ImageFont.truetype("fonts/Montserrat-Light.ttf", 6)
         except:
@@ -420,7 +420,7 @@ def _aplicar_microtexto(self, img, draw):
             draw.text((self.W - 30, 50 + i), "GVRP", fill=(200, 198, 190), font=fuente)
         return img
 
-def _dibujar_watermark_99(self, img, draw):
+    def _dibujar_watermark_99(self, img, draw):
         try:
             fuente = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 180)
         except:
@@ -432,7 +432,7 @@ def _dibujar_watermark_99(self, img, draw):
         except:
             pass
 
-def _dibujar_hexagonos_seguridad(self, img, draw):
+    def _dibujar_hexagonos_seguridad(self, img, draw):
         size = 18
         spacing = 35
         offset_x = 30
@@ -452,7 +452,7 @@ def _dibujar_hexagonos_seguridad(self, img, draw):
                 if (row + col) % 2 == 0:
                     draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
 
-def _dibujar_header(self, img, draw, datos):
+    def _dibujar_header(self, img, draw, datos):
         banda_y1 = 45
         banda_y2 = 130
         draw.rectangle([35, banda_y1, self.W - 35, banda_y2], fill=self.colores['navy_oscuro'])
@@ -478,7 +478,7 @@ def _dibujar_header(self, img, draw, datos):
         draw.text((num_x, num_y + 10), f"#{licencia_id}", fill=self.colores['navy_oscuro'], font=self.fonts['body_value'], anchor="mt")
         draw.text((num_x, num_y + 42), "VALID", fill=self.colores['dorado_oscuro'], font=self.fonts['body_label'], anchor="mt")
 
-def _dibujar_avatar_discord(self, img, draw, usuario):
+    def _dibujar_avatar_discord(self, img, draw, usuario):
         avatar_size = 175
         avatar_x = 65
         avatar_y = 175
@@ -504,7 +504,7 @@ def _dibujar_avatar_discord(self, img, draw, usuario):
         draw.text((avatar_x + avatar_size // 2, label_y), "DISCORD", fill=self.colores['texto_secundario'], font=self.fonts['body_label'], anchor="mt")
         draw.text((avatar_x + avatar_size // 2, label_y + 20), f"@{usuario.name}", fill=self.colores['texto_principal'], font=self.fonts['body_value'], anchor="mt")
 
-def _dibujar_avatar_roblox(self, img, draw, datos):
+    def _dibujar_avatar_roblox(self, img, draw, datos):
         avatar_size = 85
         avatar_x = 200
         avatar_y = 325
@@ -533,7 +533,7 @@ def _dibujar_avatar_roblox(self, img, draw, datos):
             draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size], outline=self.colores['dorado_principal'], width=3)
         label_y = avatar_y + avatar_size + 12
         draw.text((avatar_x + avatar_size // 2, label_y), "ROBLOX", fill=self.colores['texto_secundario'], font=self.fonts['body_label'], anchor="mt")
-def _dibujar_campos_info(self, img, draw, datos):
+    def _dibujar_campos_info(self, img, draw, datos):
         tabla_x1 = 310
         tabla_y1 = 170
         tabla_x2 = self.W - 50
@@ -571,7 +571,7 @@ def _dibujar_campos_info(self, img, draw, datos):
             draw.text((col2_x, y), label, fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
             draw.text((col2_x, y + 20), value, fill=self.colores['texto_principal'], font=self.fonts['body_value'])
 
-def _dibujar_footer(self, img, draw, datos):
+    def _dibujar_footer(self, img, draw, datos):
         footer_y1 = self.H - 140
         footer_y2 = self.H - 30
         draw.rectangle([35, footer_y1, self.W - 35, footer_y2], fill=self.colores['navy_oscuro'])
@@ -598,7 +598,7 @@ def _dibujar_footer(self, img, draw, datos):
         draw.text((sello_x + 28, sello_y + 48), "VALID", fill=self.colores['dorado_claro'], font=self.fonts['body_label'], anchor="mm")
         draw.text((self.W // 2, footer_y2 - 5), "DISTRICT 99 - GVRP  •  DOCUMENTO OFICIAL DE ROLEPLAY", fill=self.colores['dorado_claro'], font=self.fonts['body_label'], anchor="mm")
 
-def _dibujar_mrz(self, img, draw, datos):
+    def _dibujar_mrz(self, img, draw, datos):
         mrz_y = self.H - 25
         mrz_x = 50
         draw.rectangle([mrz_x - 10, mrz_y - 8, self.W - mrz_x + 10, mrz_y + 10], fill=(245, 243, 238), outline=self.colores['texto_terciario'], width=1)
@@ -610,7 +610,7 @@ def _dibujar_mrz(self, img, draw, datos):
         mrz_texto = mrz_texto[:44].ljust(44)
         draw.text((mrz_x, mrz_y), mrz_texto, fill=self.colores['texto_principal'], font=self.fonts['mono'], anchor="mm")
 
-def _dibujar_sellos_seguridad(self, img, draw, datos):
+    def _dibujar_sellos_seguridad(self, img, draw, datos):
         sello_x = self.W - 200
         sello_y = 350
         draw.ellipse([sello_x, sello_y, sello_x + 90, sello_y + 90], outline=self.colores['azul_seguridad'], width=2, fill=(240, 248, 255, 80))
@@ -623,7 +623,7 @@ def _dibujar_sellos_seguridad(self, img, draw, datos):
         firma = datos.get('nombre', '')[:1] + datos.get('apellidos', '')[:1] + " - " + datos.get('dni', '')[-4:]
         draw.text((firma_x, firma_y + 20), f"__________________ {firma}", fill=self.colores['texto_principal'], font=self.fonts['body_value'])
 
-def _dibujar_codigos_verificacion(self, img, draw, datos):
+    def _dibujar_codigos_verificacion(self, img, draw, datos):
         bar_x = 65
         bar_y = self.H - 105
         bar_width = 250
