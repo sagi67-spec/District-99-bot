@@ -463,7 +463,8 @@ class LicenciaRenderer:
                     puntos.append((px, py))
                 if (row + col) % 2 == 0:
                     draw.polygon(puntos, outline=(210, 208, 200, 40), width=1)
-                    def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+                    
+    def _dibujar_header(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
     banda_y1 = 45
     banda_y2 = 130
     draw.rectangle([35, banda_y1, self.W - 35, banda_y2], fill=self.colores['navy_oscuro'])
