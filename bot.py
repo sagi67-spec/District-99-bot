@@ -332,7 +332,7 @@ class LicenciaRenderer:
                 'mono': default,
             }
 
-     def generar(self, usuario: discord.Member, datos: dict) -> discord.File:
+    def generar(self, usuario: discord.Member, datos: dict) -> discord.File:
         try:
             img = Image.new('RGB', (self.W, self.H), self.colores['fondo_principal'])
             draw = ImageDraw.Draw(img)
