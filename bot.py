@@ -592,7 +592,8 @@ def _dibujar_campos_info(self, img: Image.Image, draw: ImageDraw.Draw, datos: di
             draw.line([col2_x, y - 8, col2_x + 280, y - 8], fill=(220, 218, 210), width=1)
         draw.text((col2_x, y), label, fill=self.colores['texto_terciario'], font=self.fonts['body_label'])
         draw.text((col2_x, y + 20), value, fill=self.colores['texto_principal'], font=self.fonts['body_value'])
-            def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
+        
+def _dibujar_footer(self, img: Image.Image, draw: ImageDraw.Draw, datos: dict):
         footer_y1 = self.H - 140
         footer_y2 = self.H - 30
         draw.rectangle([35, footer_y1, self.W - 35, footer_y2], fill=self.colores['navy_oscuro'])
