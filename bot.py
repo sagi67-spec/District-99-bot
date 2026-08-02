@@ -328,7 +328,8 @@ class LicenciaRenderer:
                     self.fonts['mono'] = ImageFont.truetype(ruta, self.config.FONT_SIZES['mrz'])
                 else:
                     self.fonts[nombre] = ImageFont.truetype(ruta, 16)
-            except:
+            except Exception as e:
+                print(f"Error cargando fuente {nombre}: {e}")
                 self.fonts = self._fallback_fonts()
                 
     def _fallback_fonts(self):
