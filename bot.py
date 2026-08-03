@@ -318,10 +318,25 @@ class LicenciaConfig:
         'mrz': 20,
         'watermark': 200,
             }
-    # ==================== FUNCIÓN PARA GENERAR LICENCIA PREMIUM ====================
+    # ==================== FUNCIÓN PARA GENERAR LICENCIA PREMIUM ===================
+def _estrella(draw, cx, cy, r_ext, color, r_int=None):
+    """Dibuja una pequeña estrella de 5 puntas (acento decorativo dorado)."""
+    if r_int is None:
+        r_int = r_ext * 0.42
+    puntos = []
+    for i in range(10):
+        ang = math.radians(-90 + i * 36)
+        radio = r_ext if i % 2 == 0 else r_int
+        puntos.append((cx + radio * math.cos(ang), cy + radio * math.sin(ang)))
+    draw.polygon(puntos, fill=color)
+
+
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
         W, H = 1100, 750
+        RADIO = 34          # radio de las esquinas redondeadas de la tarjeta
+        MARGEN = 46          # espacio extra alrededor para la sombra flotante
+
         img = Image.new('RGB', (W, H), color=(245, 245, 250))
         draw = ImageDraw.Draw(img)
 
@@ -330,7 +345,8 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         GRIS = (100, 105, 115)
         GRIS_CLARO = (210, 215, 225)
         BLANCO = (255, 255, 255)
-        DORADO = (200, 165, 90)
+        DORADO = (196, 155, 60)
+        DORADO_CLARO = (222, 190, 120)
         AZUL = (20, 60, 140)
         AZUL_OSCURO = (12, 35, 85)
         VERDE = (0, 180, 80)
@@ -339,7 +355,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         try:
             font_title = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 46)
             font_sub = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 24)
-            font_label = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 20)
+            font_label = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 20)
             font_value = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 28)
             font_small = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 16)
             font_micro = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 7)
@@ -358,7 +374,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             b = int(250 - 10 * factor)
             draw.line([(0, i), (W, i)], fill=(r, g, b))
 
-        # ========== CAPA GUILLOCHÉ (líneas curvas tipo billete) ==========
+        # ========== CAPA GUILLOCHÉ ==========
         guilloche = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         gdraw = ImageDraw.Draw(guilloche)
         gcx, gcy = W * 0.5, H * 0.55
@@ -368,10 +384,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                           outline=(*AZUL, alpha), width=1)
         img = Image.alpha_composite(img.convert('RGBA'), guilloche).convert('RGB')
 
-        # ========== MARCA DE AGUA "99" REPETIDA POR TODO EL FONDO ==========
-        # En vez de un solo "99" grande escondido en una esquina, se genera un
-        # patrón tipo "tile" en diagonal que cubre TODA la licencia, como en
-        # los billetes/documentos oficiales reales.
+        # ========== MARCA DE AGUA "99" REPETIDA ==========
         tile_w, tile_h = 220, 140
         tile = Image.new('RGBA', (tile_w, tile_h), (0, 0, 0, 0))
         tdraw = ImageDraw.Draw(tile)
@@ -391,7 +404,6 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                 x += paso_x
             y += paso_y
             fila += 1
-
         img = Image.alpha_composite(img.convert('RGBA'), marca_layer).convert('RGB')
         draw = ImageDraw.Draw(img)
 
@@ -401,9 +413,6 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.text((45, H - 18), micro_txt, fill=GRIS_CLARO, font=font_micro)
 
         # ========== FRANJA HOLOGRÁFICA IZQUIERDA ==========
-        # Se dibuja ANTES que la banda superior, pero ahora la banda ya no
-        # invade su columna (ver banda_x0 más abajo), así que se ve completa
-        # de arriba a abajo en vez de quedar tapada por el azul.
         strip_x = 32
         strip_w = 26
         strip_h = H - 64
@@ -421,15 +430,13 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         img.paste(holo, (strip_x, 32))
         draw = ImageDraw.Draw(img)
 
-        # ========== BORDE ==========
-        draw.rectangle([12, 12, W - 12, H - 12], outline=AZUL, width=6)
-        draw.rectangle([20, 20, W - 20, H - 20], outline=DORADO, width=3)
-        draw.rectangle([26, 26, W - 26, H - 26], outline=GRIS_CLARO, width=1)
+        # ========== BORDE (ahora con esquinas redondeadas, a juego con la tarjeta) ==========
+        draw.rounded_rectangle([12, 12, W - 12, H - 12], radius=RADIO - 6, outline=AZUL, width=6)
+        draw.rounded_rectangle([20, 20, W - 20, H - 20], radius=RADIO - 12, outline=DORADO, width=3)
+        draw.rounded_rectangle([26, 26, W - 26, H - 26], radius=RADIO - 16, outline=GRIS_CLARO, width=1)
 
         # ========== BANDA SUPERIOR ==========
-        # Ahora arranca DESPUÉS de la franja holográfica (strip_x + strip_w)
-        # para no taparla, en vez de arrancar en x=30 y pisarla.
-        banda_x0 = strip_x + strip_w + 8   # 66
+        banda_x0 = strip_x + strip_w + 8
         banda_x1 = W - 30
         banda_w = banda_x1 - banda_x0
         banda = Image.new('RGB', (banda_w, 90))
@@ -446,18 +453,16 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.line([banda_x0, 124, W - 30, 124], fill=DORADO, width=1)
 
         # ========== TÍTULO ==========
-        titulo = "L I C E N C I A   D E   C O N D U C I R"
         centro_banda = (banda_x0 + banda_x1) // 2
-        draw.text((centro_banda, 45), titulo, fill=BLANCO, font=font_sub, anchor="mt")
-        draw.text((centro_banda, 45), "LICENCIA DE CONDUCIR", fill=BLANCO, font=font_title, anchor="mt")
-        draw.text((centro_banda, 88), "DISTRICT 99 - GVRP", fill=(220, 225, 240), font=font_sub, anchor="mt")
+        draw.text((centro_banda, 40), "LICENCIA DE CONDUCIR", fill=BLANCO, font=font_title, anchor="mt")
+        draw.text((centro_banda, 90), "DISTRICT 99 - GVRP", fill=DORADO_CLARO, font=font_sub, anchor="mt")
 
         # ========== NÚMERO ==========
         licencia_id = datos_licencia.get('licencia_id', 'LIC-0000')
         draw.text((W - 50, 42), f"#{licencia_id}", fill=DORADO, font=font_lic, anchor="rt")
         draw.text((W - 50, 76), "VALID", fill=(220, 225, 240), font=font_small, anchor="rt")
 
-        # ========== ESCUDO (movido un poco a la derecha para no pisar la franja) ==========
+        # ========== ESCUDO ==========
         escudo_x, escudo_y = banda_x0 + 8, 38
         escudo_size = 75
 
@@ -544,13 +549,13 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                   fill=GRIS_CLARO, width=2)
 
         # ========== TABLA DE DATOS ==========
-        # row_height se amplió de 56 a 74 y la línea "firma" se separó del
-        # valor (antes quedaba pegada/encima del texto y parecía tachado).
+        # Labels ahora en DORADO (como pediste) y cada línea termina con un
+        # pequeño diamante dorado, estilo "Alto Las Condes".
         y_start = avatar_y + avatar_size + 108
         row_height = 74
         col1_x = 80
         col2_x = W // 2 + 60
-        col_ancho_linea = 320
+        col_ancho_linea = 300
 
         campos = [
             ("FECHA NACIMIENTO", datos_licencia.get('fecha_nacimiento', '')),
@@ -568,16 +573,18 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         for fila_i, (label, value) in enumerate(filas_col1):
             x = col1_x
             y = y_start + fila_i * row_height
-            draw.text((x, y), label, fill=GRIS, font=font_label)
+            draw.text((x, y), label, fill=DORADO, font=font_label)
             draw.text((x, y + 26), value, fill=NEGRO, font=font_value)
             draw.line([x, y + 60, x + col_ancho_linea, y + 60], fill=GRIS_CLARO, width=1)
+            _estrella(draw, x + col_ancho_linea + 14, y + 60, 8, DORADO)
 
         for fila_i, (label, value) in enumerate(filas_col2):
             x = col2_x
             y = y_start + fila_i * row_height
-            draw.text((x, y), label, fill=GRIS, font=font_label)
+            draw.text((x, y), label, fill=DORADO, font=font_label)
             draw.text((x, y + 26), value, fill=NEGRO, font=font_value)
             draw.line([x, y + 60, x + col_ancho_linea, y + 60], fill=GRIS_CLARO, width=1)
+            _estrella(draw, x + col_ancho_linea + 14, y + 60, 8, DORADO)
 
         # ========== ESTADO ==========
         estado_y = H - 85
@@ -591,10 +598,41 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.text((W // 2, H - 18), "DISTRICT 99 - GVRP © 2026",
                   fill=GRIS, font=font_small, anchor="mm")
 
+        img = img.convert('RGB')
+
+        # ========== TARJETA FLOTANTE: esquinas redondeadas + sombra ==========
+        # 1) Recortamos la tarjeta con esquinas redondeadas (máscara).
+        mascara = Image.new('L', (W, H), 0)
+        mdraw = ImageDraw.Draw(mascara)
+        mdraw.rounded_rectangle([0, 0, W - 1, H - 1], radius=RADIO, fill=255)
+
+        tarjeta_rgba = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        tarjeta_rgba.paste(img, (0, 0), mascara)
+
+        # 2) Creamos el lienzo final más grande (transparente) para que se
+        #    vea "flotando" sobre el fondo oscuro de Discord.
+        final_w, final_h = W + MARGEN * 2, H + MARGEN * 2
+        final_img = Image.new('RGBA', (final_w, final_h), (0, 0, 0, 0))
+
+        # 3) Sombra: la misma máscara redondeada, en negro, desenfocada y
+        #    desplazada un poco hacia abajo.
+        sombra = Image.new('RGBA', (final_w, final_h), (0, 0, 0, 0))
+        sombra_forma = Image.new('L', (final_w, final_h), 0)
+        sdraw2 = ImageDraw.Draw(sombra_forma)
+        sdraw2.rounded_rectangle(
+            [MARGEN - 4, MARGEN + 10, MARGEN + W + 4, MARGEN + H + 18],
+            radius=RADIO, fill=200
+        )
+        sombra_forma = sombra_forma.filter(ImageFilter.GaussianBlur(18))
+        sombra.putalpha(sombra_forma)
+        final_img = Image.alpha_composite(final_img, sombra)
+
+        # 4) Pegamos la tarjeta encima de la sombra.
+        final_img.alpha_composite(tarjeta_rgba, (MARGEN, MARGEN))
+
         # ========== GUARDAR ==========
         img_bytes = BytesIO()
-        img = img.convert('RGB')
-        img.save(img_bytes, format='PNG', quality=98)
+        final_img.save(img_bytes, format='PNG')
         img_bytes.seek(0)
         return discord.File(img_bytes, filename="licencia.png")
 
