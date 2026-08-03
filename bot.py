@@ -331,23 +331,27 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         GRIS_CLARO = (210, 215, 225)
         BLANCO = (255, 255, 255)
         DORADO = (200, 165, 90)
+        DORADO_SUAVE = (200, 165, 90)
         AZUL = (20, 60, 140)
+        AZUL_OSCURO = (12, 35, 85)
         VERDE = (0, 180, 80)
 
-        # ========== FUENTES (USANDO LAS QUE YA TIENES) ==========
+        # ========== FUENTES ==========
         try:
-            font_title = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 48)
+            font_title = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 46)
             font_sub = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 24)
             font_label = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 20)
             font_value = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 30)
             font_small = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 16)
+            font_micro = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 7)
             font_estado = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 34)
             font_lic = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 26)
+            font_watermark = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 240)
         except Exception as e:
             print(f"⚠️ Error cargando fuentes: {e}")
-            font_title = font_sub = font_label = font_value = font_small = font_estado = font_lic = ImageFont.load_default()
+            font_title = font_sub = font_label = font_value = font_small = font_micro = font_estado = font_lic = font_watermark = ImageFont.load_default()
 
-        # ========== FONDO ==========
+        # ========== FONDO DEGRADADO BASE ==========
         for i in range(H):
             factor = i / H
             r = int(245 - 15 * factor)
@@ -355,39 +359,110 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             b = int(250 - 10 * factor)
             draw.line([(0, i), (W, i)], fill=(r, g, b))
 
+        # ========== CAPA GUILLOCHÉ (líneas curvas tipo billete) ==========
+        guilloche = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        gdraw = ImageDraw.Draw(guilloche)
+        gcx, gcy = W * 0.5, H * 0.55
+        for radio in range(30, 650, 11):
+            alpha = max(4, int(12 - radio / 60))
+            gdraw.ellipse([gcx - radio, gcy - radio * 0.65, gcx + radio, gcy + radio * 0.65],
+                          outline=(*AZUL, alpha), width=1)
+        img_rgba = img.convert('RGBA')
+        img = Image.alpha_composite(img_rgba, guilloche).convert('RGB')
+        draw = ImageDraw.Draw(img)
+
+        # ========== WATERMARK GRANDE "99" SUTIL ==========
+        wm = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        wdraw = ImageDraw.Draw(wm)
+        wdraw.text((W * 0.72, H * 0.48), "99", fill=(*AZUL, 12), font=font_watermark, anchor="mm")
+        img = Image.alpha_composite(img.convert('RGBA'), wm).convert('RGB')
+        draw = ImageDraw.Draw(img)
+
+        # ========== MICROTEXTO EN BORDES ==========
+        micro_txt = ("DISTRICT99 GVRP • DOCUMENTO OFICIAL • NO VÁLIDO SIN SELLO • " * 20)[:420]
+        draw.text((45, 16), micro_txt, fill=GRIS_CLARO, font=font_micro)
+        draw.text((45, H - 18), micro_txt, fill=GRIS_CLARO, font=font_micro)
+
+        # ========== FRANJA HOLOGRÁFICA IZQUIERDA ==========
+        strip_w = 26
+        strip_h = H - 64
+        holo = Image.new('RGB', (strip_w, strip_h))
+        hpx = holo.load()
+        for y in range(strip_h):
+            for x in range(strip_w):
+                wave1 = math.sin((y * 0.05) + (x * 0.15)) * 0.5 + 0.5
+                wave2 = math.sin((y * 0.032) - (x * 0.09) + 2) * 0.5 + 0.5
+                hue = wave1 * 0.6 + wave2 * 0.4
+                r = int(210 + 40 * math.sin(hue * 6.28))
+                g = int(210 + 40 * math.sin(hue * 6.28 + 2.1))
+                b = int(220 + 32 * math.sin(hue * 6.28 + 4.2))
+                hpx[x, y] = (max(170, min(255, r)), max(170, min(255, g)), max(180, min(255, b)))
+        img.paste(holo, (32, 32))
+        draw = ImageDraw.Draw(img)
+
         # ========== BORDE ==========
         draw.rectangle([12, 12, W - 12, H - 12], outline=AZUL, width=6)
         draw.rectangle([20, 20, W - 20, H - 20], outline=DORADO, width=3)
         draw.rectangle([26, 26, W - 26, H - 26], outline=GRIS_CLARO, width=1)
 
-        # ========== BANDA SUPERIOR ==========
-        draw.rectangle([30, 30, W - 30, 120], fill=AZUL)
+        # ========== BANDA SUPERIOR (con leve degradado) ==========
+        banda = Image.new('RGB', (W - 60, 90))
+        bdraw = ImageDraw.Draw(banda)
+        for i in range(90):
+            t = i / 90
+            r = int(AZUL_OSCURO[0] + (AZUL[0] - AZUL_OSCURO[0]) * t)
+            g = int(AZUL_OSCURO[1] + (AZUL[1] - AZUL_OSCURO[1]) * t)
+            b = int(AZUL_OSCURO[2] + (AZUL[2] - AZUL_OSCURO[2]) * t)
+            bdraw.line([(0, i), (W - 60, i)], fill=(r, g, b))
+        img.paste(banda, (30, 30))
+        draw = ImageDraw.Draw(img)
         draw.line([30, 120, W - 30, 120], fill=DORADO, width=4)
+        draw.line([30, 124, W - 30, 124], fill=(DORADO[0], DORADO[1], DORADO[2]), width=1)
 
-        # ========== TÍTULO ==========
+        # ========== TÍTULO CON ESPACIADO (efecto gubernamental) ==========
+        titulo = "L I C E N C I A   D E   C O N D U C I R"
+        draw.text((W // 2, 45), titulo, fill=BLANCO, font=font_sub, anchor="mt")
         draw.text((W // 2, 45), "LICENCIA DE CONDUCIR", fill=BLANCO, font=font_title, anchor="mt")
-        draw.text((W // 2, 85), "DISTRICT 99 - GVRP", fill=(255, 255, 255, 200), font=font_sub, anchor="mt")
+        draw.text((W // 2, 88), "DISTRICT 99 - GVRP", fill=(220, 225, 240), font=font_sub, anchor="mt")
 
         # ========== NÚMERO ==========
         licencia_id = datos_licencia.get('licencia_id', 'LIC-0000')
         draw.text((W - 50, 42), f"#{licencia_id}", fill=DORADO, font=font_lic, anchor="rt")
-        draw.text((W - 50, 76), "VALID", fill=(255, 255, 255, 180), font=font_small, anchor="rt")
+        draw.text((W - 50, 76), "VALID", fill=(220, 225, 240), font=font_small, anchor="rt")
 
-        # ========== ESCUDO ==========
+        # ========== ESCUDO MEJORADO (multi-anillo) ==========
         escudo_x, escudo_y = 50, 38
         escudo_size = 75
 
-        draw.ellipse([escudo_x + 3, escudo_y + 3, escudo_x + escudo_size + 3, escudo_y + escudo_size + 3],
-                    fill=(0, 0, 0, 20))
+        draw.ellipse([escudo_x + 3, escudo_y + 3, escudo_x + escudo_size + 3, escudo_y + escudo_size + 3], fill=(0, 0, 0, 20))
+        # anillo exterior metálico
+        for i in range(4):
+            t = i / 4
+            col = tuple(int(AZUL_OSCURO[c] + (DORADO[c] - AZUL_OSCURO[c]) * t) for c in range(3))
+            draw.ellipse([escudo_x - i, escudo_y - i, escudo_x + escudo_size + i, escudo_y + escudo_size + i], outline=col, width=2)
+        draw.ellipse([escudo_x, escudo_y, escudo_x + escudo_size, escudo_y + escudo_size], fill=DORADO, outline=BLANCO, width=3)
+        draw.ellipse([escudo_x + 6, escudo_y + 6, escudo_x + escudo_size - 6, escudo_y + escudo_size - 6], outline=BLANCO, width=1)
+        # rayos tipo laurel
+        ecx, ecy = escudo_x + escudo_size // 2, escudo_y + escudo_size // 2
+        for a in range(0, 360, 20):
+            rad = math.radians(a)
+            x1 = ecx + (escudo_size // 2 - 4) * math.cos(rad)
+            y1 = ecy + (escudo_size // 2 - 4) * math.sin(rad)
+            x2 = ecx + (escudo_size // 2 - 10) * math.cos(rad)
+            y2 = ecy + (escudo_size // 2 - 10) * math.sin(rad)
+            draw.line([(x1, y1), (x2, y2)], fill=AZUL_OSCURO, width=1)
+        draw.text((ecx, ecy + 1), "D99", fill=AZUL_OSCURO, font=font_title, anchor="mm")
 
-        draw.ellipse([escudo_x, escudo_y, escudo_x + escudo_size, escudo_y + escudo_size],
-                    fill=DORADO, outline=(255, 255, 255, 180), width=3)
-
-        draw.ellipse([escudo_x + 6, escudo_y + 6, escudo_x + escudo_size - 6, escudo_y + escudo_size - 6],
-                    outline=BLANCO, width=1)
-
-        draw.text((escudo_x + escudo_size // 2, escudo_y + escudo_size // 2 + 2),
-                 "D99", fill=AZUL, font=font_title, anchor="mm")
+        # ========== SELLO INSTITUCIONAL (esquina inferior izquierda, semi-transparente) ==========
+        sello_layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        sdraw = ImageDraw.Draw(sello_layer)
+        sel_cx, sel_cy, sel_r = 90, H - 100, 42
+        sdraw.ellipse([sel_cx - sel_r, sel_cy - sel_r, sel_cx + sel_r, sel_cy + sel_r], outline=(*AZUL, 90), width=2)
+        sdraw.ellipse([sel_cx - sel_r + 6, sel_cy - sel_r + 6, sel_cx + sel_r - 6, sel_cy + sel_r - 6], outline=(*AZUL, 70), width=1)
+        sdraw.text((sel_cx, sel_cy - 4), "D99", fill=(*AZUL, 110), font=font_small, anchor="mm")
+        sdraw.text((sel_cx, sel_cy + 14), "OFICIAL", fill=(*AZUL, 90), font=font_micro, anchor="mm")
+        img = Image.alpha_composite(img.convert('RGBA'), sello_layer).convert('RGB')
+        draw = ImageDraw.Draw(img)
 
         # ========== LÍNEA ==========
         draw.line([40, 140, W - 40, 140], fill=GRIS_CLARO, width=2)
@@ -397,8 +472,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         avatar_x = (W - avatar_size) // 2
         avatar_y = 170
 
-        draw.ellipse([avatar_x + 5, avatar_y + 5, avatar_x + avatar_size + 5, avatar_y + avatar_size + 5],
-                    fill=(0, 0, 0, 20))
+        draw.ellipse([avatar_x + 5, avatar_y + 5, avatar_x + avatar_size + 5, avatar_y + avatar_size + 5], fill=(0, 0, 0, 20))
 
         try:
             user_roblox = datos_licencia.get('user_roblox', '')
@@ -421,6 +495,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                     avatar_circular.paste(foto_img, (0, 0), mask)
 
                     img.paste(avatar_circular, (avatar_x, avatar_y), avatar_circular)
+                    draw = ImageDraw.Draw(img)
                     draw.ellipse([avatar_x - 5, avatar_y - 5, avatar_x + avatar_size + 5, avatar_y + avatar_size + 5],
                                  outline=DORADO, width=5)
                     draw.ellipse([avatar_x - 2, avatar_y - 2, avatar_x + avatar_size + 2, avatar_y + avatar_size + 2],
@@ -443,7 +518,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.line([60, avatar_y + avatar_size + 90, W - 60, avatar_y + avatar_size + 90],
                   fill=GRIS_CLARO, width=2)
 
-        # ========== TABLA ==========
+        # ========== TABLA DE DATOS (con línea firma bajo cada valor) ==========
         y_start = avatar_y + avatar_size + 110
         row_height = 56
         col1_x = 80
@@ -465,8 +540,10 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
 
             draw.text((x, y), label, fill=GRIS, font=font_label)
             draw.text((x, y + 26), value, fill=NEGRO, font=font_value)
+            # línea tipo firma bajo el valor
+            draw.line([x, y + 50, x + 300, y + 50], fill=GRIS_CLARO, width=1)
 
-            if i < 3 or (i >= 4 and i < 6):
+            if i < 3 or (4 <= i < 6):
                 draw.line([x, y + 52, x + 320, y + 52], fill=(235, 238, 242), width=1)
 
         # ========== ESTADO ==========
@@ -483,6 +560,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
 
         # ========== GUARDAR ==========
         img_bytes = BytesIO()
+        img = img.convert('RGB')
         img.save(img_bytes, format='PNG', quality=98)
         img_bytes.seek(0)
         return discord.File(img_bytes, filename="licencia.png")
@@ -492,6 +570,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         import traceback
         traceback.print_exc()
         return None
+            
         # ==================== TAREAS PROGRAMADAS ====================
 @tasks.loop(hours=24)
 async def recordatorio_multas():
