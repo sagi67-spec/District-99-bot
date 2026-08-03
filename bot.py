@@ -331,9 +331,40 @@ def _estrella(draw, cx, cy, r_ext, color, r_int=None):
     draw.polygon(puntos, fill=color)
 
 
+def _firma(draw, x, y, w, color):
+    """Dibuja una firma estilizada (garabato tipo cursiva) como sello de autenticidad."""
+    pts = []
+    n = 26
+    for i in range(n + 1):
+        t = i / n
+        xx = x + w * t
+        yy = y - 11 * math.sin(t * math.pi * 2.3) - 4 * math.sin(t * math.pi * 5.7)
+        pts.append((xx, yy))
+    draw.line(pts, fill=color, width=2, joint="curve")
+
+
+def _texto_degradado(img, draw, xy, texto, font, color_arriba, color_abajo, anchor="mt"):
+    """Dibuja texto con un relleno degradado vertical (efecto metálico/dorado)."""
+    x, y = xy
+    bbox = draw.textbbox((x, y), texto, font=font, anchor=anchor)
+    pad = 6
+    w = max(1, bbox[2] - bbox[0] + pad)
+    h = max(1, bbox[3] - bbox[1] + pad)
+    mask = Image.new('L', (w, h), 0)
+    mdraw = ImageDraw.Draw(mask)
+    mdraw.text((x - bbox[0] + pad // 2, y - bbox[1] + pad // 2), texto, font=font, fill=255, anchor=anchor)
+    grad = Image.new('RGB', (w, h), color_arriba)
+    gdraw = ImageDraw.Draw(grad)
+    for i in range(h):
+        t = i / max(h - 1, 1)
+        col = tuple(int(color_arriba[c] + (color_abajo[c] - color_arriba[c]) * t) for c in range(3))
+        gdraw.line([(0, i), (w, i)], fill=col)
+    img.paste(grad, (bbox[0] - pad // 2, bbox[1] - pad // 2), mask)
+
+
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
-        W, H = 1100, 750
+        W, H = 1100, 830
         RADIO = 34          # radio de las esquinas redondeadas de la tarjeta
         MARGEN = 46          # espacio extra alrededor para la sombra flotante
 
@@ -412,6 +443,14 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.text((45, 16), micro_txt, fill=GRIS_CLARO, font=font_micro)
         draw.text((45, H - 18), micro_txt, fill=GRIS_CLARO, font=font_micro)
 
+        # Mismo microtexto pero vertical, en el borde derecho, para que la
+        # licencia quede "grabada" en los 4 lados como un billete de verdad.
+        vert_micro = Image.new('RGBA', (700, 16), (0, 0, 0, 0))
+        vmdraw = ImageDraw.Draw(vert_micro)
+        vmdraw.text((0, 2), micro_txt, fill=(*GRIS_CLARO, 255), font=font_micro)
+        vert_micro = vert_micro.rotate(90, expand=True)
+        img.paste(vert_micro, (W - 32, 40), vert_micro)
+
         # ========== FRANJA HOLOGRÁFICA IZQUIERDA ==========
         strip_x = 32
         strip_w = 26
@@ -452,21 +491,40 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.line([banda_x0, 120, W - 30, 120], fill=DORADO, width=4)
         draw.line([banda_x0, 124, W - 30, 124], fill=DORADO, width=1)
 
-        # ========== TÍTULO ==========
-        centro_banda = (banda_x0 + banda_x1) // 2
-        draw.text((centro_banda, 40), "LICENCIA DE CONDUCIR", fill=BLANCO, font=font_title, anchor="mt")
-        draw.text((centro_banda, 90), "DISTRICT 99 - GVRP", fill=DORADO_CLARO, font=font_sub, anchor="mt")
+        # ========== TÍTULO Y NÚMERO (separados con un divisor dorado) ==========
+        # Antes el título y el "#LIC-..." casi se tocaban. Ahora se reserva
+        # una columna fija a la derecha para el número, con una línea
+        # divisoria dorada entre ambos bloques — más limpio y "premium".
+        col_id_w = 235
+        divisor_x = banda_x1 - col_id_w
+        centro_titulo = (banda_x0 + divisor_x) // 2
 
-        # ========== NÚMERO ==========
+        _texto_degradado(img, draw, (centro_titulo, 38), "LICENCIA DE CONDUCIR", font_title,
+                         (255, 250, 235), (200, 165, 80), anchor="mt")
+        sub_txt = "DISTRICT 99 - GVRP"
+        sub_bbox = draw.textbbox((centro_titulo, 88), sub_txt, font=font_sub, anchor="mt")
+        draw.text((centro_titulo, 88), sub_txt, fill=DORADO_CLARO, font=font_sub, anchor="mt")
+        _estrella(draw, sub_bbox[0] - 16, (sub_bbox[1] + sub_bbox[3]) // 2, 5, DORADO_CLARO)
+        _estrella(draw, sub_bbox[2] + 16, (sub_bbox[1] + sub_bbox[3]) // 2, 5, DORADO_CLARO)
+
+        draw.line([divisor_x, 42, divisor_x, 108], fill=DORADO_CLARO, width=1)
+
+        centro_id = (divisor_x + banda_x1) // 2
         licencia_id = datos_licencia.get('licencia_id', 'LIC-0000')
-        draw.text((W - 50, 42), f"#{licencia_id}", fill=DORADO, font=font_lic, anchor="rt")
-        draw.text((W - 50, 76), "VALID", fill=(220, 225, 240), font=font_small, anchor="rt")
+        draw.text((centro_id, 48), f"#{licencia_id}", fill=DORADO, font=font_lic, anchor="mt")
 
-        # ========== ESCUDO ==========
+        # "chip" tipo insignia detrás de VALID, para un aire más premium
+        valid_w, valid_h = 64, 22
+        vx0 = centro_id - valid_w // 2
+        vy0 = 84
+        draw.rounded_rectangle([vx0, vy0, vx0 + valid_w, vy0 + valid_h], radius=10,
+                                outline=DORADO_CLARO, width=1)
+        draw.text((centro_id, vy0 + valid_h // 2), "VALID", fill=DORADO_CLARO, font=font_small, anchor="mm")
+                # ========== ESCUDO ==========
         escudo_x, escudo_y = banda_x0 + 8, 38
         escudo_size = 75
 
-        draw.ellipse([escudo_x + 3, escudo_y + 3, escudo_x + escudo_size + 3, escudo_y + escudo_size + 3], fill=(0, 0, 0, 20))
+        draw.ellipse([escudo_x + 3, escudo_y + 3, escudo_x + escudo_size + 3, escudo_y + escudo_size + 3], fill=(222, 224, 231))
         for i in range(4):
             t = i / 4
             col = tuple(int(AZUL_OSCURO[c] + (DORADO[c] - AZUL_OSCURO[c]) * t) for c in range(3))
@@ -484,13 +542,15 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.text((ecx, ecy + 1), "D99", fill=AZUL_OSCURO, font=font_title, anchor="mm")
 
         # ========== SELLO INSTITUCIONAL ==========
+        # Antes estaba pegado al campo DNI y se le encimaba. Ahora va en la
+        # esquina inferior derecha, en una zona libre de texto.
         sello_layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         sdraw = ImageDraw.Draw(sello_layer)
-        sel_cx, sel_cy, sel_r = 95, H - 100, 42
-        sdraw.ellipse([sel_cx - sel_r, sel_cy - sel_r, sel_cx + sel_r, sel_cy + sel_r], outline=(*AZUL, 90), width=2)
-        sdraw.ellipse([sel_cx - sel_r + 6, sel_cy - sel_r + 6, sel_cx + sel_r - 6, sel_cy + sel_r - 6], outline=(*AZUL, 70), width=1)
-        sdraw.text((sel_cx, sel_cy - 4), "D99", fill=(*AZUL, 110), font=font_small, anchor="mm")
-        sdraw.text((sel_cx, sel_cy + 14), "OFICIAL", fill=(*AZUL, 90), font=font_micro, anchor="mm")
+        sel_cx, sel_cy, sel_r = W - 72, H - 60, 32
+        sdraw.ellipse([sel_cx - sel_r, sel_cy - sel_r, sel_cx + sel_r, sel_cy + sel_r], outline=(*AZUL, 100), width=2)
+        sdraw.ellipse([sel_cx - sel_r + 5, sel_cy - sel_r + 5, sel_cx + sel_r - 5, sel_cy + sel_r - 5], outline=(*AZUL, 80), width=1)
+        sdraw.text((sel_cx, sel_cy - 4), "D99", fill=(*AZUL, 120), font=font_small, anchor="mm")
+        sdraw.text((sel_cx, sel_cy + 12), "OFICIAL", fill=(*AZUL, 100), font=font_micro, anchor="mm")
         img = Image.alpha_composite(img.convert('RGBA'), sello_layer).convert('RGB')
         draw = ImageDraw.Draw(img)
 
@@ -502,7 +562,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         avatar_x = (W - avatar_size) // 2
         avatar_y = 170
 
-        draw.ellipse([avatar_x + 5, avatar_y + 5, avatar_x + avatar_size + 5, avatar_y + avatar_size + 5], fill=(0, 0, 0, 20))
+        draw.ellipse([avatar_x + 5, avatar_y + 5, avatar_x + avatar_size + 5, avatar_y + avatar_size + 5], fill=(222, 224, 231))
 
         try:
             user_roblox = datos_licencia.get('user_roblox', '')
@@ -514,8 +574,16 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                     thumb_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={rid}&size=420x420&format=Png"
                     thumb_data = requests.get(thumb_url, timeout=5).json()
                     foto_url = thumb_data['data'][0]['imageUrl']
-                    foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content))
-                    foto_img = foto_img.resize((avatar_size, avatar_size))
+                    foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content)).convert('RGB')
+                    # Recorte central a cuadrado perfecto ANTES de redimensionar,
+                    # para que quede bien centrado dentro del círculo (antes se
+                    # estiraba/descuadraba si la imagen no era ya cuadrada).
+                    fw, fh = foto_img.size
+                    lado = min(fw, fh)
+                    left = (fw - lado) // 2
+                    top = (fh - lado) // 2
+                    foto_img = foto_img.crop((left, top, left + lado, top + lado))
+                    foto_img = foto_img.resize((avatar_size, avatar_size), Image.LANCZOS)
 
                     mask = Image.new('L', (avatar_size, avatar_size), 0)
                     mask_draw = ImageDraw.Draw(mask)
@@ -586,19 +654,42 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             draw.line([x, y + 60, x + col_ancho_linea, y + 60], fill=GRIS_CLARO, width=1)
             _estrella(draw, x + col_ancho_linea + 14, y + 60, 8, DORADO)
 
+        # Firma estilizada en el hueco vacío de la columna derecha (fila 4),
+        # como sello de autenticidad tipo "firma autorizada".
+        firma_x = col2_x
+        firma_y = y_start + 3 * row_height
+        draw.text((firma_x, firma_y), "FIRMA AUTORIZADA", fill=DORADO, font=font_label)
+        _firma(draw, firma_x, firma_y + 42, 160, AZUL_OSCURO)
+        draw.line([firma_x, firma_y + 60, firma_x + col_ancho_linea, firma_y + 60], fill=GRIS_CLARO, width=1)
+        _estrella(draw, firma_x + col_ancho_linea + 14, firma_y + 60, 8, DORADO)
+
         # ========== ESTADO ==========
+        # Alineado con la misma columna que el resto de los campos (col1_x),
+        # en vez de quedar centrado y descolgado.
         estado_y = H - 85
         draw.line([60, estado_y, W - 60, estado_y], fill=GRIS_CLARO, width=2)
 
-        draw.ellipse([W // 2 - 65, estado_y + 12, W // 2 - 41, estado_y + 36], fill=VERDE)
-        draw.text((W // 2 - 28, estado_y + 16), "ESTADO: ACTIVA",
+        draw.ellipse([col1_x, estado_y + 12, col1_x + 24, estado_y + 36], fill=VERDE)
+        draw.text((col1_x + 34, estado_y + 16), "ESTADO: ACTIVA",
                   fill=VERDE, font=font_estado, anchor="lt")
 
         # ========== PIE ==========
         draw.text((W // 2, H - 18), "DISTRICT 99 - GVRP © 2026",
                   fill=GRIS, font=font_small, anchor="mm")
 
-        img = img.convert('RGB')
+        # ========== BRILLO DIAGONAL (efecto holograma/metal pulido) ==========
+        band_w, band_h = 240, int(H * 1.7)
+        banda_brillo = Image.new('RGBA', (band_w, band_h), (0, 0, 0, 0))
+        bbdraw = ImageDraw.Draw(banda_brillo)
+        for i in range(band_w):
+            d = abs(i - band_w / 2) / (band_w / 2)
+            alpha = int(max(0, (1 - d) ** 2 * 28))
+            bbdraw.line([(i, 0), (i, band_h)], fill=(255, 255, 255, alpha))
+        banda_brillo = banda_brillo.rotate(-24, expand=True, resample=Image.BICUBIC)
+        bw, bh = banda_brillo.size
+        capa_brillo = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        capa_brillo.alpha_composite(banda_brillo, (int(W * 0.62 - bw / 2), int(H * 0.42 - bh / 2)))
+        img = Image.alpha_composite(img.convert('RGBA'), capa_brillo).convert('RGB')
 
         # ========== TARJETA FLOTANTE: esquinas redondeadas + sombra ==========
         # 1) Recortamos la tarjeta con esquinas redondeadas (máscara).
