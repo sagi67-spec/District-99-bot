@@ -321,104 +321,72 @@ class LicenciaConfig:
     # ==================== FUNCIÓN PARA GENERAR LICENCIA PREMIUM ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
-        W, H = 1000, 650
-        img = Image.new('RGB', (W, H), color=(12, 12, 18))
+        W, H = 1000, 680
+        img = Image.new('RGB', (W, H), color=(8, 8, 14))
         draw = ImageDraw.Draw(img)
 
         # ========== COLORES ==========
         BLANCO = (255, 255, 255)
-        GRIS = (180, 185, 195)
-        GRIS_CLARO = (220, 225, 235)
+        GRIS = (160, 165, 175)
+        GRIS_CLARO = (200, 205, 215)
         DORADO = (212, 175, 90)
         DORADO_CLARO = (235, 205, 140)
         VERDE = (60, 210, 100)
-        NAVY = (18, 28, 52)
-        NEGRO = (8, 8, 14)
+        AZUL = (30, 80, 180)
 
-        # ========== FUENTES (tamaños grandes) ==========
+        # ========== FUENTES ==========
         try:
-            font_title = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 38)
-            font_sub = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 18)
+            font_title = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 40)
+            font_sub = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 20)
             font_label = ImageFont.truetype("fonts/Montserrat-Medium.ttf", 16)
-            font_value = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 22)
-            font_small = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 12)
-            font_mrz = ImageFont.truetype("fonts/JetBrainsMono-Regular.ttf", 16)
-            font_watermark = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 120)
+            font_value = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 26)
+            font_small = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 13)
+            font_estado = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 30)
+            font_lic = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 22)
         except:
-            font_title = font_sub = font_label = font_value = font_small = font_mrz = font_watermark = ImageFont.load_default()
+            font_title = font_sub = font_label = font_value = font_small = font_estado = font_lic = ImageFont.load_default()
 
-        # ========== FONDO CON DEGRADADO ==========
+        # ========== FONDO CON DEGRADADO ELEGANTE ==========
         for i in range(H):
             factor = i / H
-            r = int(12 + 15 * factor)
-            g = int(12 + 15 * factor)
-            b = int(18 + 20 * factor)
+            r = int(8 + 12 * factor)
+            g = int(8 + 12 * factor)
+            b = int(14 + 18 * factor)
             draw.line([(0, i), (W, i)], fill=(r, g, b))
 
-        # ========== BORDE EXTERIOR ==========
-        draw.rectangle([12, 12, W - 12, H - 12], outline=DORADO, width=3)
-        draw.rectangle([18, 18, W - 18, H - 18], outline=(200, 200, 210), width=1)
+        # ========== BORDE CROMADO PREMIUM ==========
+        # Sombra exterior
+        for i in range(6):
+            offset = 10 - i
+            draw.rectangle([offset, offset, W - offset, H - offset],
+                          outline=(0, 0, 0, 25 - i*4), width=1)
 
-        # ========== ESQUINAS DECORATIVAS ==========
-        def dibujar_esquina(x, y, s=45):
-            draw.line([(x, y + s), (x, y), (x + s, y)], fill=DORADO, width=4)
-            draw.line([(x + 6, y + s - 6), (x + 6, y + 6), (x + s - 6, y + 6)], fill=(200, 200, 210), width=1)
+        # Borde principal plateado
+        draw.rectangle([8, 8, W - 8, H - 8], outline=(180, 185, 195), width=4)
+        draw.rectangle([14, 14, W - 14, H - 14], outline=DORADO, width=2)
+        draw.rectangle([20, 20, W - 20, H - 20], outline=(60, 60, 70), width=1)
 
-        dibujar_esquina(18, 18)
-        dibujar_esquina(W - 18, 18, -45)
-        dibujar_esquina(18, H - 18, 45)
-        dibujar_esquina(W - 18, H - 18, -45)
-
-        # ========== BANDA SUPERIOR ==========
-        draw.rectangle([30, 30, W - 30, 100], fill=NAVY)
-        draw.line([30, 100, W - 30, 100], fill=DORADO, width=2)
-
-        # ========== LOGO "99" ==========
-        draw.text((55, 40), "99", fill=DORADO, font=font_title)
-        draw.text((55, 82), "GVRP", fill=DORADO_CLARO, font=font_sub)
+        # ========== BANDA SUPERIOR NAVY ==========
+        draw.rectangle([28, 28, W - 28, 95], fill=(15, 25, 48))
+        draw.line([28, 95, W - 28, 95], fill=DORADO, width=3)
+        draw.line([28, 98, W - 28, 98], fill=DORADO_CLARO, width=1)
 
         # ========== TÍTULO ==========
         draw.text((W // 2, 42), "LICENCIA DE CONDUCIR", fill=BLANCO, font=font_title, anchor="mt")
-        draw.text((W // 2, 78), "DISTRICT 99 - GVRP", fill=DORADO_CLARO, font=font_sub, anchor="mt")
+        draw.text((W // 2, 76), "DISTRICT 99 - GVRP", fill=DORADO_CLARO, font=font_sub, anchor="mt")
 
         # ========== NÚMERO DE LICENCIA ==========
         licencia_id = datos_licencia.get('licencia_id', 'LIC-0000')
-        draw.text((W - 50, 40), f"#{licencia_id}", fill=DORADO, font=font_title, anchor="rt")
-        draw.text((W - 50, 78), "VALID", fill=DORADO_CLARO, font=font_sub, anchor="rt")
+        draw.text((W - 50, 40), f"#{licencia_id}", fill=DORADO, font=font_lic, anchor="rt")
+        draw.text((W - 50, 70), "VALID", fill=DORADO_CLARO, font=font_small, anchor="rt")
 
         # ========== LÍNEA SEPARADORA ==========
-        draw.line([40, 120, W - 40, 120], fill=(60, 60, 70), width=1)
+        draw.line([40, 112, W - 40, 112], fill=(40, 40, 50), width=1)
 
-        # ========== AVATAR DISCORD ==========
-        avatar_size = 160
-        avatar_x, avatar_y = 50, 145
-
-        try:
-            avatar_response = requests.get(usuario.display_avatar.url, timeout=5)
-            avatar_img = Image.open(BytesIO(avatar_response.content)).convert("RGBA")
-            avatar_img = avatar_img.resize((avatar_size, avatar_size))
-
-            mask = Image.new('L', (avatar_size, avatar_size), 0)
-            mask_draw = ImageDraw.Draw(mask)
-            mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
-
-            avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
-            avatar_circular.paste(avatar_img, (0, 0), mask)
-
-            img.paste(avatar_circular, (avatar_x, avatar_y), avatar_circular)
-            draw.ellipse([avatar_x - 4, avatar_y - 4, avatar_x + avatar_size + 4, avatar_y + avatar_size + 4],
-                         outline=DORADO, width=3)
-        except:
-            draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size],
-                         outline=DORADO, width=3)
-
-        draw.text((avatar_x + avatar_size // 2, avatar_y + avatar_size + 18), "DISCORD",
-                  fill=GRIS, font=font_small, anchor="mt")
-
-        # ========== AVATAR ROBLOX ==========
-        avatar_size2 = 75
-        avatar_x2 = avatar_x + avatar_size - 45
-        avatar_y2 = avatar_y + avatar_size - 45
+        # ========== AVATAR ROBLOX CENTRAL ==========
+        avatar_size = 130
+        avatar_x = (W - avatar_size) // 2
+        avatar_y = 140
 
         try:
             user_roblox = datos_licencia.get('user_roblox', '')
@@ -431,40 +399,43 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                     thumb_data = requests.get(thumb_url, timeout=5).json()
                     foto_url = thumb_data['data'][0]['imageUrl']
                     foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content))
-                    foto_img = foto_img.resize((avatar_size2, avatar_size2))
+                    foto_img = foto_img.resize((avatar_size, avatar_size))
 
-                    mask = Image.new('L', (avatar_size2, avatar_size2), 0)
+                    mask = Image.new('L', (avatar_size, avatar_size), 0)
                     mask_draw = ImageDraw.Draw(mask)
-                    mask_draw.ellipse((0, 0, avatar_size2, avatar_size2), fill=255)
+                    mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
 
-                    avatar_circular = Image.new('RGBA', (avatar_size2, avatar_size2))
+                    avatar_circular = Image.new('RGBA', (avatar_size, avatar_size))
                     avatar_circular.paste(foto_img, (0, 0), mask)
 
-                    img.paste(avatar_circular, (avatar_x2, avatar_y2), avatar_circular)
-                    draw.ellipse([avatar_x2 - 3, avatar_y2 - 3, avatar_x2 + avatar_size2 + 3, avatar_y2 + avatar_size2 + 3],
-                                 outline=DORADO, width=2)
+                    img.paste(avatar_circular, (avatar_x, avatar_y), avatar_circular)
+                    draw.ellipse([avatar_x - 5, avatar_y - 5, avatar_x + avatar_size + 5, avatar_y + avatar_size + 5],
+                                 outline=DORADO, width=4)
+                    draw.ellipse([avatar_x - 2, avatar_y - 2, avatar_x + avatar_size + 2, avatar_y + avatar_size + 2],
+                                 outline=(180, 185, 195), width=1)
         except:
-            draw.ellipse([avatar_x2, avatar_y2, avatar_x2 + avatar_size2, avatar_y2 + avatar_size2],
-                         outline=DORADO, width=2)
+            draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size],
+                         outline=DORADO, width=4)
 
-        # ========== NOMBRE ==========
+        # ========== NOMBRE DE USUARIO ==========
+        user_roblox = datos_licencia.get('user_roblox', '')
+        draw.text((W // 2, avatar_y + avatar_size + 18), f"@{user_roblox}",
+                  fill=DORADO_CLARO, font=font_sub, anchor="mt")
+
+        # ========== LÍNEA SEPARADORA ==========
+        draw.line([40, avatar_y + avatar_size + 55, W - 40, avatar_y + avatar_size + 55],
+                  fill=(40, 40, 50), width=1)
+
+        # ========== NOMBRE COMPLETO (destacado) ==========
         nombre_completo = f"{datos_licencia.get('nombre', '')} {datos_licencia.get('apellidos', '')}".upper()
-        nombre_x = avatar_x + avatar_size + 45
-        nombre_y = 155
-
-        draw.text((nombre_x, nombre_y), "NOMBRE COMPLETO", fill=GRIS, font=font_label)
-        draw.text((nombre_x, nombre_y + 28), nombre_completo, fill=BLANCO, font=font_title)
-
-        # ========== ESTADO ==========
-        estado_x = nombre_x + 350
-        draw.ellipse([estado_x + 5, nombre_y + 12, estado_x + 25, nombre_y + 32], fill=VERDE)
-        draw.text((estado_x + 35, nombre_y + 10), "ESTADO: ACTIVA", fill=VERDE, font=font_value)
+        draw.text((W // 2, avatar_y + avatar_size + 80), nombre_completo,
+                  fill=BLANCO, font=font_title, anchor="mt")
 
         # ========== TABLA DE DATOS (2 columnas) ==========
-        col1_x = nombre_x
-        col2_x = nombre_x + 260
-        y_start = 240
-        row_height = 48
+        y_start = avatar_y + avatar_size + 125
+        row_height = 50
+        col1_x = 70
+        col2_x = W // 2 + 50
 
         campos = [
             ("FECHA NACIMIENTO", datos_licencia.get('fecha_nacimiento', '')),
@@ -483,88 +454,19 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             draw.text((x, y), label, fill=GRIS, font=font_label)
             draw.text((x, y + 22), value, fill=BLANCO, font=font_value)
 
-            if i < 6 and i != 3:
-                draw.line([x, y + 42, x + 240, y + 42], fill=(40, 40, 48), width=1)
+            if i < 3 or (i >= 4 and i < 6):
+                draw.line([x, y + 45, x + 320, y + 45], fill=(30, 30, 40), width=1)
 
-        # ========== FOOTER ==========
-        footer_y = H - 80
+        # ========== ESTADO ==========
+        estado_y = H - 75
+        draw.line([40, estado_y, W - 40, estado_y], fill=(30, 30, 40), width=1)
 
-        # Línea decorativa
-        draw.line([40, footer_y, W - 40, footer_y], fill=(40, 40, 48), width=1)
-
-        # ========== MRZ ==========
-        nombre = datos_licencia.get('nombre', '').upper()[:15].ljust(15)
-        apellido = datos_licencia.get('apellidos', '').upper()[:15].ljust(15)
-        dni = datos_licencia.get('dni', '').zfill(8)
-
-        mrz_texto = f"D99<{apellido}<{nombre}<{dni}<<{licencia_id[-6:]}<<<<"
-        mrz_texto = mrz_texto[:44].ljust(44)
-
-        draw.text((50, footer_y + 12), mrz_texto, fill=GRIS, font=font_mrz)
-
-        # ========== CÓDIGO DE BARRAS ==========
-        bar_x = 50
-        bar_y = footer_y + 38
-        bar_w = 180
-        bar_h = 20
-
-        draw.rectangle([bar_x, bar_y, bar_x + bar_w, bar_y + bar_h],
-                       fill=BLANCO, outline=(200, 200, 200), width=1)
-
-        for i in range(0, bar_w, 3):
-            h = random.randint(8, bar_h)
-            draw.rectangle([bar_x + i, bar_y + (bar_h - h),
-                           bar_x + i + 1, bar_y + bar_h],
-                          fill=NEGRO)
-
-        # ========== SELLO ==========
-        sello_x = W - 140
-        sello_y = footer_y + 6
-
-        draw.ellipse([sello_x, sello_y, sello_x + 50, sello_y + 50],
-                     outline=DORADO, width=2, fill=NAVY)
-        draw.ellipse([sello_x + 5, sello_y + 5, sello_x + 45, sello_y + 45],
-                     outline=DORADO_CLARO, width=1)
-        draw.text((sello_x + 25, sello_y + 25), "✓",
-                  fill=DORADO, font=font_value, anchor="mm")
-        draw.text((sello_x + 25, sello_y + 44), "VALID",
-                  fill=DORADO_CLARO, font=font_small, anchor="mm")
-
-        # ========== QR ==========
-        qr_x = W - 220
-        qr_y = footer_y + 6
-        qr_size = 35
-
-        draw.rectangle([qr_x, qr_y, qr_x + qr_size, qr_y + qr_size],
-                       fill=BLANCO, outline=GRIS_CLARO, width=1)
-
-        for i in range(0, qr_size, 4):
-            for j in range(0, qr_size, 4):
-                if (i + j) % 6 == 0 or (i * j) % 11 == 0:
-                    draw.rectangle([qr_x + i, qr_y + j, qr_x + i + 2, qr_y + j + 2],
-                                   fill=NEGRO)
-
-        for cx, cy in [(qr_x + 2, qr_y + 2), (qr_x + qr_size - 7, qr_y + 2), (qr_x + 2, qr_y + qr_size - 7)]:
-            draw.rectangle([cx, cy, cx + 5, cy + 5], fill=NEGRO)
-
-        # ========== HOLOGRAMA ==========
-        holo_x = W - 75
-        holo_y = footer_y + 6
-        holo_size = 50
-
-        for i in range(holo_size):
-            for j in range(holo_size):
-                if (i + j) % 3 == 0:
-                    r = int(180 + 60 * math.sin(i / 8))
-                    g = int(200 + 55 * math.sin(j / 8 + 1))
-                    b = int(220 + 35 * math.sin((i + j) / 10 + 2))
-                    draw.point((holo_x + i, holo_y + j), fill=(r, g, b, 30))
-
-        draw.ellipse([holo_x - 2, holo_y - 2, holo_x + holo_size + 2, holo_y + holo_size + 2],
-                     outline=DORADO, width=1)
+        # Círculo verde
+        draw.ellipse([W // 2 - 55, estado_y + 10, W // 2 - 35, estado_y + 30], fill=VERDE)
+        draw.text((W // 2 - 22, estado_y + 12), "ESTADO: ACTIVA", fill=VERDE, font=font_estado, anchor="lt")
 
         # ========== PIE ==========
-        draw.text((W // 2, H - 12), "DISTRICT 99 - GVRP © 2026", fill=GRIS, font=font_small, anchor="mm")
+        draw.text((W // 2, H - 15), "DISTRICT 99 - GVRP © 2026", fill=GRIS, font=font_small, anchor="mm")
 
         # ========== GUARDAR ==========
         img_bytes = BytesIO()
