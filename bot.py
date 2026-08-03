@@ -608,7 +608,7 @@ draw.text((50, H - 50), texto_repetido, fill=(200, 200, 210, 60), font=font_smal
     img_bytes.seek(0)
     return discord.File(img_bytes, filename="licencia.png")
 
-    except Exception as e:
+except Exception as e:
     print(f"❌ Error al generar la licencia: {e}")
     import traceback
     traceback.print_exc()
