@@ -915,7 +915,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         capa_brillo = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         capa_brillo.alpha_composite(banda_brillo, (int(W * 0.62 - bw / 2), int(H * 0.42 - bh / 2)))
         img = Image.alpha_composite(img.convert('RGBA'), capa_brillo).convert('RGB')
-                draw = ImageDraw.Draw(img)
+        draw = ImageDraw.Draw(img)
         # ========== AURORA/BRILLO ESQUINA SUPERIOR DERECHA (MÁS NOTORIO) ==========
         aurora = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         adraw = ImageDraw.Draw(aurora)
