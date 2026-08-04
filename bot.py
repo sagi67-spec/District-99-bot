@@ -495,34 +495,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             font_estado = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 34)
             font_lic = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 26)
             font_marca = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 80)
-        except Exception as e:
-            print(f"⚠️ Error cargando fuentes: {e}")
-            font_title = font_sub = font_label = font_value = font_small = font_micro = font_estado = font_lic = font_marca = ImageFont.load_default()
-
-        # FONDO DEGRADADO
-        for i in range(H):
-            factor = i / H
-            r = int(245 - 15 * factor)
-            g = int(245 - 12 * factor)
-            b = int(250 - 10 * factor)
-            draw.line([(0, i), (W, i)], fill=(r, g, b))
-
-        # GUILLOCHÉ
-        guilloche = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        gdraw = ImageDraw.Draw(guilloche)
-        gcx, gcy = W * 0.5, H * 0.55
-        for radio in range(30, 650, 11):
-            alpha = max(4, int(12 - radio / 60))
-            gdraw.ellipse([gcx - radio, gcy - radio * 0.65, gcx + radio, gcy + radio * 0.65],
-                          outline=(*AZUL, alpha), width=1)
-        img = Image.alpha_composite(img.convert('RGBA'), guilloche).convert('RGB')
-
-        # MARCA DE AGUA "99"
-        tile_w, tile_h = 220, 140
-        tile = Image.new('RGBA', (tile_w, tile_h), (0, 0, 0, 0))
-        tdraw = ImageDraw.Draw(tile)
-        tdraw.text((tile_w // 2, tile_h // 2), "99", fill=(*AZUL, 14), font=font_marca, anchor="mm")
-        tile = tile.rotate(28, expand=True, resample=Image.BICUBIC)
+< truncated lines 185-212 >
         tw, th = tile.size
 
         marca_layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
@@ -706,7 +679,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
 
         # LÍNEA
         draw.line([40, 140, W - 40, 140], fill=GRIS_CLARO, width=2)
-                # ========== AVATAR ROBLOX ==========
+        # ========== AVATAR ROBLOX ==========
         avatar_size = 150
         avatar_x = (W - avatar_size) // 2
         avatar_y = 170
@@ -915,8 +888,7 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         capa_brillo = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         capa_brillo.alpha_composite(banda_brillo, (int(W * 0.62 - bw / 2), int(H * 0.42 - bh / 2)))
         img = Image.alpha_composite(img.convert('RGBA'), capa_brillo).convert('RGB')
-                draw = ImageDraw.Draw(img)
-
+        draw = ImageDraw.Draw(img)
         # ========== AURORA/BRILLO ESQUINA SUPERIOR DERECHA (MÁS NOTORIO) ==========
         aurora = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         adraw = ImageDraw.Draw(aurora)
