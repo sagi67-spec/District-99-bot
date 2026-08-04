@@ -497,7 +497,6 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             font_marca = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 80)
         except:
             font_title = font_sub = font_label = font_value = font_small = font_micro = font_estado = font_lic = font_marca = ImageFont.load_default()
-< truncated lines 185-212 >
         tw, th = tile.size
 
         marca_layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
