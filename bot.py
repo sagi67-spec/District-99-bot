@@ -1,6 +1,6 @@
 """
 Bot de Discord para servidor de rol (RP) — DISTRICT 99
-CÓDIGO COMPLETO - PARTE 1/6
+CÓDIGO COMPLETO - PARTE 1/8
 """
 
 import json
@@ -271,8 +271,7 @@ async def generar_dni(usuario: discord.Member, datos_dni: dict):
         import traceback
         traceback.print_exc()
         return None
-
-# ==================== CONFIGURACIÓN LICENCIA PREMIUM ====================
+        # ==================== CONFIGURACIÓN LICENCIA PREMIUM ====================
 class LicenciaConfig:
     WIDTH = 1400
     HEIGHT = 900
@@ -317,189 +316,38 @@ class LicenciaConfig:
         'footer_value': 18,
         'mrz': 20,
         'watermark': 200,
-            }
-    # ==================== FUNCIÓN PARA GENERAR LICENCIA PREMIUM ===================
-def _estrella(draw, cx, cy, r_ext, color, r_int=None):
-    """Dibuja una pequeña estrella de 5 puntas."""
-    if r_int is None:
-        r_int = r_ext * 0.42
-    puntos = []
-    for i in range(10):
-        ang = math.radians(-90 + i * 36)
-        radio = r_ext if i % 2 == 0 else r_int
-        puntos.append((cx + radio * math.cos(ang), cy + radio * math.sin(ang)))
-    draw.polygon(puntos, fill=color)
+    }
 
 
-def _firma(draw, x, y, w, color):
-    """Dibuja una firma estilizada."""
-    pts = []
-    n = 26
-    for i in range(n + 1):
-        t = i / n
-        xx = x + w * t
-        yy = y - 11 * math.sin(t * math.pi * 2.3) - 4 * math.sin(t * math.pi * 5.7)
-        pts.append((xx, yy))
-    draw.line(pts, fill=color, width=2, joint="curve")
-
-
-def _texto_degradado(img, draw, xy, texto, font, color_arriba, color_abajo, anchor="mt"):
-    """Dibuja texto con degradado vertical (metálico)."""
-    x, y = xy
-    bbox = draw.textbbox((x, y), texto, font=font, anchor=anchor)
-    pad = 6
-    w = max(1, bbox[2] - bbox[0] + pad)
-    h = max(1, bbox[3] - bbox[1] + pad)
-    mask = Image.new('L', (w, h), 0)
-    mdraw = ImageDraw.Draw(mask)
-    mdraw.text((x - bbox[0] + pad // 2, y - bbox[1] + pad // 2), texto, font=font, fill=255, anchor=anchor)
-    grad = Image.new('RGB', (w, h), color_arriba)
-    gdraw = ImageDraw.Draw(grad)
-    for i in range(h):
-        t = i / max(h - 1, 1)
-        col = tuple(int(color_arriba[c] + (color_abajo[c] - color_arriba[c]) * t) for c in range(3))
-        gdraw.line([(0, i), (w, i)], fill=col)
-    img.paste(grad, (bbox[0] - pad // 2, bbox[1] - pad // 2), mask)
-
-
-def _sticker_holograma(size):
-    """Genera sticker circular holográfico con anillos iridiscentes mejorados."""
-    im = Image.new('RGB', (size, size))
-    px = im.load()
-    for y in range(size):
-        for x in range(size):
-            wave1 = math.sin((x * 0.16) + (y * 0.13)) * 0.5 + 0.5
-            wave2 = math.sin((x * 0.09) - (y * 0.2) + 1.5) * 0.5 + 0.5
-            hue = wave1 * 0.55 + wave2 * 0.45
-            r = int(205 + 50 * math.sin(hue * 6.28))
-            g = int(205 + 50 * math.sin(hue * 6.28 + 2.1))
-            b = int(215 + 45 * math.sin(hue * 6.28 + 4.2))
-            px[x, y] = (max(140, min(255, r)), max(140, min(255, g)), max(150, min(255, b)))
-
-    mask = Image.new('L', (size, size), 0)
-    mdraw = ImageDraw.Draw(mask)
-    mdraw.ellipse((0, 0, size - 1, size - 1), fill=255)
-
-    sticker = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    sticker.paste(im, (0, 0), mask)
-
-    sdraw = ImageDraw.Draw(sticker)
-    sdraw.ellipse((0, 0, size - 1, size - 1), outline=(255, 255, 255, 200), width=2)
-    sdraw.ellipse((5, 5, size - 6, size - 6), outline=(255, 255, 255, 100), width=1)
-    
-    for i in range(3):
-        rad = size // 2 - 10 - i * 6
-        sdraw.ellipse((size//2 - rad, size//2 - rad, size//2 + rad, size//2 + rad),
-                      outline=(255, 255, 255, 60 - i * 20), width=1)
-    
-    _estrella(sdraw, size // 2, size // 2, size * 0.2, (255, 255, 255, 180))
-    return sticker
-
-
-def _textura_papel(w, h):
-    """Crea textura sutil de papel."""
-    tex = Image.new('L', (w, h), 128)
-    pix = tex.load()
-    for y in range(h):
-        for x in range(w):
-            pix[x, y] = max(0, min(255, 128 + random.randint(-6, 6)))
-    return tex.filter(ImageFilter.GaussianBlur(1.2))
-
-
-def _texto_embossed(draw, xy, texto, font, color, color_sombra, offset=3):
-    """Dibuja texto con efecto embossed/relieve más notorio."""
-    x, y = xy
-    draw.text((x + offset, y + offset), texto, fill=color_sombra, font=font, anchor="mt")
-    draw.text((x, y), texto, fill=color, font=font, anchor="mt")
-
-
-def _chip_seguridad(draw, x, y):
-    """Dibuja un chip de seguridad realista con 8 contactos de oro."""
-    chip_w, chip_h = 22, 28
-    
-    # Fondo gris mate
-    draw.rectangle([x, y, x + chip_w, y + chip_h], fill=(70, 72, 75))
-    
-    # Borde dorado grueso
-    draw.rectangle([x, y, x + chip_w, y + chip_h], outline=(210, 175, 90), width=2)
-    
-    # Sombra sutil debajo
-    draw.line([x, y + chip_h + 1, x + chip_w, y + chip_h + 1], fill=(200, 200, 200), width=1)
-    
-    # 8 contactos de oro (2 filas de 4)
-    contact_size = 2
-    spacing_x = 5
-    spacing_y = 6
-    start_x = x + 3
-    start_y = y + 3
-    
-    for row in range(2):
-        for col in range(4):
-            cx = start_x + col * spacing_x
-            cy = start_y + row * spacing_y
-            draw.rectangle([cx, cy, cx + contact_size, cy + contact_size], fill=(200, 170, 60))
-            # Pequeño reflejo en cada contacto
-            draw.line([cx, cy, cx + contact_size, cy], fill=(255, 240, 180), width=1)
-    
-    # Reflejo 3D en esquina superior derecha
-    draw.line([x + chip_w - 1, y, x + chip_w - 1, y + 4], fill=(255, 255, 255), width=1)
-
-
-def _hologram_shimmer(img_layer, W, H):
-    """Crea efecto de brillo holográfico iridiscente dinámico."""
-    shimmer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    sdraw = ImageDraw.Draw(shimmer)
-    
-    # Líneas diagonales con cambio de color
-    for i in range(0, W + H, 15):
-        for offset in range(3):
-            hue = ((i + offset * 5) % 360) / 360.0
-            r = int(200 + 55 * math.sin(hue * 6.28))
-            g = int(200 + 55 * math.sin(hue * 6.28 + 2.1))
-            b = int(220 + 50 * math.sin(hue * 6.28 + 4.2))
-            alpha = int(25 - offset * 8)
-            sdraw.line([(i - offset * 4, 0), (i + H - offset * 4, H)],
-                       fill=(*tuple([min(255, max(0, c)) for c in [r, g, b]]), alpha), width=1)
-    
-    return shimmer
-
-
+# ==================== FUNCIÓN PARA GENERAR LICENCIA PREMIUM ====================
 async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
     try:
-        W, H = 1100, 830
-        RADIO = 34
-        MARGEN = 46
-
+        W, H = 1100, 750
         img = Image.new('RGB', (W, H), color=(245, 245, 250))
         draw = ImageDraw.Draw(img)
 
-        # COLORES
+        # ========== COLORES ==========
         NEGRO = (10, 10, 15)
         GRIS = (100, 105, 115)
         GRIS_CLARO = (210, 215, 225)
         BLANCO = (255, 255, 255)
-        DORADO = (196, 155, 60)
-        DORADO_CLARO = (222, 190, 120)
+        DORADO = (200, 165, 90)
         AZUL = (20, 60, 140)
-        AZUL_OSCURO = (12, 35, 85)
         VERDE = (0, 180, 80)
 
-        # FUENTES
+        # ========== FUENTES ==========
         try:
-            font_title = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 46)
+            font_title = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 48)
             font_sub = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 24)
-            font_label = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 20)
-            font_value = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 28)
+            font_label = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 20)
+            font_value = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 30)
             font_small = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 16)
-            font_micro = ImageFont.truetype("fonts/Montserrat-Regular.ttf", 7)
             font_estado = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 34)
             font_lic = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 26)
-            font_marca = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 80)
-        except Exception as e:
-            print(f"⚠️ Error cargando fuentes: {e}")
-            font_title = font_sub = font_label = font_value = font_small = font_micro = font_estado = font_lic = font_marca = ImageFont.load_default()
+        except:
+            font_title = font_sub = font_label = font_value = font_small = font_estado = font_lic = ImageFont.load_default()
 
-        # FONDO DEGRADADO
+        # ========== FONDO ==========
         for i in range(H):
             factor = i / H
             r = int(245 - 15 * factor)
@@ -507,212 +355,50 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
             b = int(250 - 10 * factor)
             draw.line([(0, i), (W, i)], fill=(r, g, b))
 
-        # GUILLOCHÉ
-        guilloche = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        gdraw = ImageDraw.Draw(guilloche)
-        gcx, gcy = W * 0.5, H * 0.55
-        for radio in range(30, 650, 11):
-            alpha = max(4, int(12 - radio / 60))
-            gdraw.ellipse([gcx - radio, gcy - radio * 0.65, gcx + radio, gcy + radio * 0.65],
-                          outline=(*AZUL, alpha), width=1)
-        img = Image.alpha_composite(img.convert('RGBA'), guilloche).convert('RGB')
+        # ========== BORDE ==========
+        draw.rectangle([12, 12, W - 12, H - 12], outline=AZUL, width=6)
+        draw.rectangle([20, 20, W - 20, H - 20], outline=DORADO, width=3)
+        draw.rectangle([26, 26, W - 26, H - 26], outline=GRIS_CLARO, width=1)
 
-        # MARCA DE AGUA "99"
-        tile_w, tile_h = 220, 140
-        tile = Image.new('RGBA', (tile_w, tile_h), (0, 0, 0, 0))
-        tdraw = ImageDraw.Draw(tile)
-        tdraw.text((tile_w // 2, tile_h // 2), "99", fill=(*AZUL, 14), font=font_marca, anchor="mm")
-        tile = tile.rotate(28, expand=True, resample=Image.BICUBIC)
-        tw, th = tile.size
+        # ========== BANDA SUPERIOR ==========
+        draw.rectangle([30, 30, W - 30, 120], fill=AZUL)
+        draw.line([30, 120, W - 30, 120], fill=DORADO, width=4)
 
-        marca_layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        paso_x, paso_y = 190, 150
-        fila = 0
-        y = -th
-        while y < H + th:
-            offset_x = 0 if fila % 2 == 0 else paso_x // 2
-            x = -tw + offset_x
-            while x < W + tw:
-                marca_layer.alpha_composite(tile, (int(x), int(y)))
-                x += paso_x
-            y += paso_y
-            fila += 1
-        img = Image.alpha_composite(img.convert('RGBA'), marca_layer).convert('RGB')
-        draw = ImageDraw.Draw(img)
+        # ========== TÍTULO ==========
+        draw.text((W // 2, 45), "LICENCIA DE CONDUCIR", fill=BLANCO, font=font_title, anchor="mt")
+        draw.text((W // 2, 85), "DISTRICT 99 - GVRP", fill=(255, 255, 255, 200), font=font_sub, anchor="mt")
 
-        # TEXTURA DE PAPEL
-        tex = _textura_papel(W, H)
-        img.paste(img, (0, 0), tex)
-        draw = ImageDraw.Draw(img)
-
-        # MICROTEXTO BORDES
-        micro_txt = ("DISTRICT99 GVRP • DOCUMENTO OFICIAL • NO VÁLIDO SIN SELLO • " * 20)[:420]
-        draw.text((45, 16), micro_txt, fill=GRIS_CLARO, font=font_micro)
-        draw.text((45, H - 18), micro_txt, fill=GRIS_CLARO, font=font_micro)
-
-        vert_micro = Image.new('RGBA', (700, 16), (0, 0, 0, 0))
-        vmdraw = ImageDraw.Draw(vert_micro)
-        vmdraw.text((0, 2), micro_txt, fill=(*GRIS_CLARO, 255), font=font_micro)
-        vert_micro = vert_micro.rotate(90, expand=True)
-        img.paste(vert_micro, (W - 32, 40), vert_micro)
-
-        # FRANJA DE SEGURIDAD (VISIBLE Y LEGIBLE)
-        franja_sec = Image.new('RGBA', (8, H - 80), (0, 0, 0, 0))
-        fdraw = ImageDraw.Draw(franja_sec)
-        txt_seg = "DISTRICT99 OFICIAL SEGURIDAD DISTRICT99 OFICIAL " * 15
-        for i, char in enumerate(txt_seg[:100]):
-            fdraw.text((2, i * 7), char, fill=(*DORADO, 60), font=font_small, anchor="lm")
-        img.paste(franja_sec, (W // 2 - 4, 40), franja_sec)
-        draw = ImageDraw.Draw(img)
-
-        # FRANJA HOLOGRÁFICA IZQUIERDA
-        strip_x = 32
-        strip_w = 26
-        strip_h = H - 64
-        holo = Image.new('RGB', (strip_w, strip_h))
-        hpx = holo.load()
-        for y in range(strip_h):
-            for x in range(strip_w):
-                wave1 = math.sin((y * 0.05) + (x * 0.15)) * 0.5 + 0.5
-                wave2 = math.sin((y * 0.032) - (x * 0.09) + 2) * 0.5 + 0.5
-                hue = wave1 * 0.6 + wave2 * 0.4
-                r = int(210 + 40 * math.sin(hue * 6.28))
-                g = int(210 + 40 * math.sin(hue * 6.28 + 2.1))
-                b = int(220 + 32 * math.sin(hue * 6.28 + 4.2))
-                hpx[x, y] = (max(170, min(255, r)), max(170, min(255, g)), max(180, min(255, b)))
-        img.paste(holo, (strip_x, 32))
-        draw = ImageDraw.Draw(img)
-
-        # BORDES CON EFECTO BISELADO
-        draw.rounded_rectangle([12, 12, W - 12, H - 12], radius=RADIO - 6, outline=AZUL, width=6)
-        draw.rounded_rectangle([20, 20, W - 20, H - 20], radius=RADIO - 12, outline=DORADO, width=3)
-        draw.rounded_rectangle([26, 26, W - 26, H - 26], radius=RADIO - 16, outline=GRIS_CLARO, width=1)
-        
-        # Pequeño efecto bisel (línea más clara adentro del borde)
-        draw.line([28, 28, W - 28, 28], fill=(255, 255, 255), width=1)
-        draw.line([28, 28, 28, H - 28], fill=(255, 255, 255), width=1)
-
-        # LÍNEA DE CORTE PUNTEADA
-        dash_len = 6
-        for xx in range(32, W - 32, dash_len * 2):
-            draw.line([xx, 28, xx + dash_len, 28], fill=DORADO, width=1)
-            draw.line([xx, H - 28, xx + dash_len, H - 28], fill=DORADO, width=1)
-        for yy in range(32, H - 32, dash_len * 2):
-            draw.line([28, yy, 28, yy + dash_len], fill=DORADO, width=1)
-            draw.line([W - 28, yy, W - 28, yy + dash_len], fill=DORADO, width=1)
-
-        # PUNTOS DE ALINEACIÓN
-        punto_size = 8
-        punto_offset = 35
-        for px, py in [(punto_offset, punto_offset), (W - punto_offset, punto_offset),
-                       (punto_offset, H - punto_offset), (W - punto_offset, H - punto_offset)]:
-            draw.line([px - punto_size, py, px + punto_size, py], fill=DORADO, width=1)
-            draw.line([px, py - punto_size, px, py + punto_size], fill=DORADO, width=1)
-
-        # BORDE DECORATIVO INTERIOR (DEGRADADO SUAVE)
-        bdec_coords = [50, 50, W - 50, H - 50]
-        for i in range(3):
-            alpha = int(255 * (1 - i / 3))
-            col = tuple(int(c * (1 - i * 0.2)) for c in DORADO_CLARO)
-            draw.rectangle([bdec_coords[0] + i, bdec_coords[1] + i, bdec_coords[2] - i, bdec_coords[3] - i],
-                           outline=col, width=1)
-
-        # BANDA SUPERIOR
-        banda_x0 = strip_x + strip_w + 8
-        banda_x1 = W - 30
-        banda_w = banda_x1 - banda_x0
-        banda = Image.new('RGB', (banda_w, 90))
-        bdraw = ImageDraw.Draw(banda)
-        for i in range(90):
-            t = i / 90
-            r = int(AZUL_OSCURO[0] + (AZUL[0] - AZUL_OSCURO[0]) * t)
-            g = int(AZUL_OSCURO[1] + (AZUL[1] - AZUL_OSCURO[1]) * t)
-            b = int(AZUL_OSCURO[2] + (AZUL[2] - AZUL_OSCURO[2]) * t)
-            bdraw.line([(0, i), (banda_w, i)], fill=(r, g, b))
-        img.paste(banda, (banda_x0, 30))
-        draw = ImageDraw.Draw(img)
-        draw.line([banda_x0, 120, W - 30, 120], fill=DORADO, width=4)
-        draw.line([banda_x0, 124, W - 30, 124], fill=DORADO, width=1)
-
-        # TÍTULO Y NÚMERO
-        col_id_w = 235
-        divisor_x = banda_x1 - col_id_w
-        centro_titulo = (banda_x0 + divisor_x) // 2
-
-        _texto_degradado(img, draw, (centro_titulo, 38), "LICENCIA DE CONDUCIR", font_title,
-                         (255, 250, 235), (200, 165, 80), anchor="mt")
-        sub_txt = "DISTRICT 99 - GVRP"
-        sub_bbox = draw.textbbox((centro_titulo, 88), sub_txt, font=font_sub, anchor="mt")
-        draw.text((centro_titulo, 88), sub_txt, fill=DORADO_CLARO, font=font_sub, anchor="mt")
-        _estrella(draw, sub_bbox[0] - 16, (sub_bbox[1] + sub_bbox[3]) // 2, 5, DORADO_CLARO)
-        _estrella(draw, sub_bbox[2] + 16, (sub_bbox[1] + sub_bbox[3]) // 2, 5, DORADO_CLARO)
-
-        draw.line([divisor_x, 42, divisor_x, 108], fill=DORADO_CLARO, width=1)
-
-        centro_id = (divisor_x + banda_x1) // 2
+        # ========== NÚMERO ==========
         licencia_id = datos_licencia.get('licencia_id', 'LIC-0000')
-        draw.text((centro_id, 48), f"#{licencia_id}", fill=DORADO, font=font_lic, anchor="mt")
+        draw.text((W - 50, 42), f"#{licencia_id}", fill=DORADO, font=font_lic, anchor="rt")
+        draw.text((W - 50, 76), "VALID", fill=(255, 255, 255, 180), font=font_small, anchor="rt")
 
-        valid_w, valid_h = 64, 22
-        vx0 = centro_id - valid_w // 2
-        vy0 = 84
-        draw.rounded_rectangle([vx0, vy0, vx0 + valid_w, vy0 + valid_h], radius=10,
-                                outline=DORADO_CLARO, width=1)
-        draw.text((centro_id, vy0 + valid_h // 2), "VALID", fill=DORADO_CLARO, font=font_small, anchor="mm")
-
-        # CHIP DE SEGURIDAD MEJORADO
-        chip_x, chip_y = banda_x0 + 12, 48
-        _chip_seguridad(draw, chip_x, chip_y)
-
-        # ESCUDO
-        escudo_x, escudo_y = banda_x0 + 8, 38
+        # ========== ESCUDO ==========
+        escudo_x, escudo_y = 50, 38
         escudo_size = 75
 
         draw.ellipse([escudo_x + 3, escudo_y + 3, escudo_x + escudo_size + 3, escudo_y + escudo_size + 3],
-                     fill=(222, 224, 231))
-        for i in range(4):
-            t = i / 4
-            col = tuple(int(AZUL_OSCURO[c] + (DORADO[c] - AZUL_OSCURO[c]) * t) for c in range(3))
-            draw.ellipse([escudo_x - i, escudo_y - i, escudo_x + escudo_size + i, escudo_y + escudo_size + i],
-                         outline=col, width=2)
+                    fill=(0, 0, 0, 20))
+
         draw.ellipse([escudo_x, escudo_y, escudo_x + escudo_size, escudo_y + escudo_size],
-                     fill=DORADO, outline=BLANCO, width=3)
+                    fill=DORADO, outline=(255, 255, 255, 180), width=3)
+
         draw.ellipse([escudo_x + 6, escudo_y + 6, escudo_x + escudo_size - 6, escudo_y + escudo_size - 6],
-                     outline=BLANCO, width=1)
-        ecx, ecy = escudo_x + escudo_size // 2, escudo_y + escudo_size // 2
-        for a in range(0, 360, 20):
-            rad = math.radians(a)
-            x1 = ecx + (escudo_size // 2 - 4) * math.cos(rad)
-            y1 = ecy + (escudo_size // 2 - 4) * math.sin(rad)
-            x2 = ecx + (escudo_size // 2 - 10) * math.cos(rad)
-            y2 = ecy + (escudo_size // 2 - 10) * math.sin(rad)
-            draw.line([(x1, y1), (x2, y2)], fill=AZUL_OSCURO, width=1)
-        
-        # D99 más pequeño y proporcional
-        draw.text((ecx, ecy + 1), "D99", fill=AZUL_OSCURO, font=font_sub, anchor="mm")
+                    outline=BLANCO, width=1)
 
-        # SELLO INSTITUCIONAL
-        sello_layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        sdraw = ImageDraw.Draw(sello_layer)
-        sel_cx, sel_cy, sel_r = W - 72, H - 60, 32
-        sdraw.ellipse([sel_cx - sel_r, sel_cy - sel_r, sel_cx + sel_r, sel_cy + sel_r],
-                      outline=(*AZUL, 100), width=2)
-        sdraw.ellipse([sel_cx - sel_r + 5, sel_cy - sel_r + 5, sel_cx + sel_r - 5, sel_cy + sel_r - 5],
-                      outline=(*AZUL, 80), width=1)
-        sdraw.text((sel_cx, sel_cy - 4), "D99", fill=(*AZUL, 120), font=font_small, anchor="mm")
-        sdraw.text((sel_cx, sel_cy + 12), "OFICIAL", fill=(*AZUL, 100), font=font_micro, anchor="mm")
-        img = Image.alpha_composite(img.convert('RGBA'), sello_layer).convert('RGB')
-        draw = ImageDraw.Draw(img)
+        draw.text((escudo_x + escudo_size // 2, escudo_y + escudo_size // 2 + 2),
+                 "D99", fill=AZUL, font=font_title, anchor="mm")
 
-        # LÍNEA
+        # ========== LÍNEA ==========
         draw.line([40, 140, W - 40, 140], fill=GRIS_CLARO, width=2)
-                # ========== AVATAR ROBLOX ==========
+
+        # ========== AVATAR ROBLOX ==========
         avatar_size = 150
         avatar_x = (W - avatar_size) // 2
         avatar_y = 170
 
         draw.ellipse([avatar_x + 5, avatar_y + 5, avatar_x + avatar_size + 5, avatar_y + avatar_size + 5],
-                     fill=(222, 224, 231))
+                    fill=(0, 0, 0, 20))
 
         try:
             user_roblox = datos_licencia.get('user_roblox', '')
@@ -724,13 +410,8 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                     thumb_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={rid}&size=420x420&format=Png"
                     thumb_data = requests.get(thumb_url, timeout=5).json()
                     foto_url = thumb_data['data'][0]['imageUrl']
-                    foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content)).convert('RGB')
-                    fw, fh = foto_img.size
-                    lado = min(fw, fh)
-                    left = (fw - lado) // 2
-                    top = (fh - lado) // 2
-                    foto_img = foto_img.crop((left, top, left + lado, top + lado))
-                    foto_img = foto_img.resize((avatar_size, avatar_size), Image.LANCZOS)
+                    foto_img = Image.open(BytesIO(requests.get(foto_url, timeout=5).content))
+                    foto_img = foto_img.resize((avatar_size, avatar_size))
 
                     mask = Image.new('L', (avatar_size, avatar_size), 0)
                     mask_draw = ImageDraw.Draw(mask)
@@ -740,37 +421,11 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
                     avatar_circular.paste(foto_img, (0, 0), mask)
 
                     img.paste(avatar_circular, (avatar_x, avatar_y), avatar_circular)
-                    draw = ImageDraw.Draw(img)
                     draw.ellipse([avatar_x - 5, avatar_y - 5, avatar_x + avatar_size + 5, avatar_y + avatar_size + 5],
                                  outline=DORADO, width=5)
                     draw.ellipse([avatar_x - 2, avatar_y - 2, avatar_x + avatar_size + 2, avatar_y + avatar_size + 2],
                                  outline=AZUL, width=2)
-
-                    # FOTO FANTASMA (más visible, mejor contraste)
-                    ghost_size = 300
-                    ghost_gray = foto_img.resize((ghost_size, ghost_size), Image.LANCZOS).convert('L')
-                    # Aumentar contraste de la foto fantasma
-                    ghost_gray_array = ghost_gray.tobytes()
-                    ghost_gray = Image.frombytes('L', (ghost_size, ghost_size), ghost_gray_array)
-                    enhancer = Image.new('L', (ghost_size, ghost_size), 0)
-                    epx = enhancer.load()
-                    gpx = ghost_gray.load()
-                    for yy in range(ghost_size):
-                        for xx in range(ghost_size):
-                            val = gpx[xx, yy]
-                            # Aumentar contraste
-                            val = int((val - 128) * 1.4 + 128)
-                            epx[xx, yy] = max(0, min(255, val))
-                    ghost_gray = enhancer
-                    
-                    ghost_rgb = Image.merge('RGB', (ghost_gray, ghost_gray, ghost_gray))
-                    ghost_mask = Image.new('L', (ghost_size, ghost_size), 0)
-                    gmdraw = ImageDraw.Draw(ghost_mask)
-                    gmdraw.ellipse((20, 20, ghost_size - 20, ghost_size - 20), fill=35)
-                    ghost_mask = ghost_mask.filter(ImageFilter.GaussianBlur(20))
-                    img.paste(ghost_rgb, (W - ghost_size - 15, H - ghost_size - 115), ghost_mask)
-                    draw = ImageDraw.Draw(img)
-        except Exception:
+        except:
             draw.ellipse([avatar_x, avatar_y, avatar_x + avatar_size, avatar_y + avatar_size],
                          outline=DORADO, width=5)
 
@@ -779,198 +434,56 @@ async def generar_licencia(usuario: discord.Member, datos_licencia: dict):
         draw.text((W // 2, avatar_y + avatar_size + 20), f"@{user_roblox}",
                   fill=AZUL, font=font_sub, anchor="mt")
 
-        # ========== NOMBRE (RELIEVE MÁS NOTORIO) ==========
+        # ========== NOMBRE ==========
         nombre_completo = f"{datos_licencia.get('nombre', '')} {datos_licencia.get('apellidos', '')}".upper()
-        _texto_embossed(draw, (W // 2, avatar_y + avatar_size + 58), nombre_completo, font_title,
-                       NEGRO, (180, 180, 180), offset=4)
+        draw.text((W // 2, avatar_y + avatar_size + 58), nombre_completo,
+                  fill=NEGRO, font=font_title, anchor="mt")
 
         # ========== LÍNEA ==========
         draw.line([60, avatar_y + avatar_size + 90, W - 60, avatar_y + avatar_size + 90],
                   fill=GRIS_CLARO, width=2)
 
-        # ========== TABLA DE DATOS ==========
-        y_start = avatar_y + avatar_size + 108
-        row_height = 74
+        # ========== TABLA ==========
+        y_start = avatar_y + avatar_size + 110
+        row_height = 56
         col1_x = 80
         col2_x = W // 2 + 60
-        col_ancho_linea = 300
 
         campos = [
             ("FECHA NACIMIENTO", datos_licencia.get('fecha_nacimiento', '')),
             ("EDAD", f"{datos_licencia.get('edad', '')} AÑOS"),
             ("OFICIO", datos_licencia.get('oficio', '')),
             ("DNI", datos_licencia.get('dni', '')),
-            ("LICENCIA", datos_licencia.get('licencia_id', 'LIC-0000')),
+            ("LICENCIA", licencia_id),
             ("EXPEDICIÓN", datos_licencia.get('fecha_expedicion', '')),
             ("EXPIRACIÓN", datos_licencia.get('fecha_expiracion', '')),
         ]
 
-        filas_col1 = [c for i, c in enumerate(campos) if i < 4]
-        filas_col2 = [c for i, c in enumerate(campos) if i >= 4]
+        for i, (label, value) in enumerate(campos):
+            x = col1_x if i < 4 else col2_x
+            y = y_start + (i % 4) * row_height
 
-        for fila_i, (label, value) in enumerate(filas_col1):
-            x = col1_x
-            y = y_start + fila_i * row_height
-            
-            # Gradiente suave en fondo de fila
-            if fila_i % 2 == 0:
-                draw.rectangle([x - 10, y, x + col_ancho_linea + 20, y + row_height - 10],
-                               fill=(250, 250, 252))
-            
-            # Label con degradado dorado
-            _texto_degradado(img, draw, (x, y), label, font_label,
-                            (210, 175, 100), (180, 150, 60), anchor="lm")
-            
-            # Valor
-            draw.text((x, y + 26), value, fill=NEGRO, font=font_value, anchor="lm")
-            
-            # Sombra bajo valor (degradado suave)
-            draw.line([x, y + 56, x + col_ancho_linea, y + 56], fill=(230, 232, 235), width=1)
-            draw.line([x, y + 60, x + col_ancho_linea, y + 60], fill=GRIS_CLARO, width=1)
-            _estrella(draw, x + col_ancho_linea + 14, y + 60, 8, DORADO)
+            draw.text((x, y), label, fill=GRIS, font=font_label)
+            draw.text((x, y + 26), value, fill=NEGRO, font=font_value)
 
-        for fila_i, (label, value) in enumerate(filas_col2):
-            x = col2_x
-            y = y_start + fila_i * row_height
-            
-            if fila_i % 2 == 0:
-                draw.rectangle([x - 10, y, x + col_ancho_linea + 20, y + row_height - 10],
-                               fill=(250, 250, 252))
-            
-            _texto_degradado(img, draw, (x, y), label, font_label,
-                            (210, 175, 100), (180, 150, 60), anchor="lm")
-            draw.text((x, y + 26), value, fill=NEGRO, font=font_value, anchor="lm")
-            draw.line([x, y + 56, x + col_ancho_linea, y + 56], fill=(230, 232, 235), width=1)
-            draw.line([x, y + 60, x + col_ancho_linea, y + 60], fill=GRIS_CLARO, width=1)
-            _estrella(draw, x + col_ancho_linea + 14, y + 60, 8, DORADO)
+            if i < 3 or (i >= 4 and i < 6):
+                draw.line([x, y + 52, x + 320, y + 52], fill=(235, 238, 242), width=1)
 
-        # FIRMA AUTORIZADA
-        firma_x = col2_x
-        firma_y = y_start + 3 * row_height
-        draw.text((firma_x, firma_y), "FIRMA AUTORIZADA", fill=DORADO, font=font_label, anchor="lm")
-        _firma(draw, firma_x, firma_y + 42, 160, AZUL_OSCURO)
-        draw.line([firma_x, firma_y + 56, firma_x + col_ancho_linea, firma_y + 56], fill=(230, 232, 235), width=1)
-        draw.line([firma_x, firma_y + 60, firma_x + col_ancho_linea, firma_y + 60], fill=GRIS_CLARO, width=1)
-        _estrella(draw, firma_x + col_ancho_linea + 14, firma_y + 60, 8, DORADO)
-
-        # ========== ESTADO: ACTIVA (MEJORADO) ==========
+        # ========== ESTADO ==========
         estado_y = H - 85
         draw.line([60, estado_y, W - 60, estado_y], fill=GRIS_CLARO, width=2)
-        
-        # Línea adicional para separar bien el texto del estado
-        draw.line([60, estado_y + 50, W - 60, estado_y + 50], fill=(240, 240, 240), width=1)
 
-        draw.ellipse([col1_x, estado_y + 12, col1_x + 24, estado_y + 36], fill=VERDE)
-        draw.text((col1_x + 34, estado_y + 16), "ESTADO: ACTIVA",
+        draw.ellipse([W // 2 - 65, estado_y + 12, W // 2 - 41, estado_y + 36], fill=VERDE)
+        draw.text((W // 2 - 28, estado_y + 16), "ESTADO: ACTIVA",
                   fill=VERDE, font=font_estado, anchor="lt")
-        
-        # Check dorado pequeño junto a ACTIVA
-        check_x, check_y = col1_x + 420, estado_y + 16
-        draw.line([check_x, check_y + 6, check_x + 5, check_y + 11], fill=DORADO, width=2)
-        draw.line([check_x + 5, check_y + 11, check_x + 15, check_y + 1], fill=DORADO, width=2)
 
-        # ========== NÚMERO DE SERIE GRABADO ==========
-        import random
-        serie = f"SN: D99-{datos_licencia.get('licencia_id', 'LIC-0000')[-4:]}-{random.randint(1000, 9999)}"
-        draw.text((W - 200, H - 40), serie, fill=(150, 150, 150), font=font_micro, anchor="mm")
-
-        # ========== MARCA ANTI-COPIA (VISIBLE) ==========
-        anticopia_txt = "SOLO PARA RP"
-        anticopia_layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        acdraw = ImageDraw.Draw(anticopia_layer)
-        acdraw.text((W // 2, H // 2), anticopia_txt, fill=(*AZUL, 40),
-                   font=font_marca, anchor="mm")
-        anticopia_layer = anticopia_layer.rotate(-30, expand=True)
-        img = Image.alpha_composite(img.convert('RGBA'), anticopia_layer).convert('RGB')
-        draw = ImageDraw.Draw(img)
-
-        # ========== WATERMARK DEL NÚMERO DE LICENCIA ==========
-        lic_id = datos_licencia.get('licencia_id', 'LIC-0000')
-        wm_layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        wmdraw = ImageDraw.Draw(wm_layer)
-        wmdraw.text((W // 2, H // 2), lic_id, fill=(*AZUL, 8), font=font_marca, anchor="mm")
-        img = Image.alpha_composite(img.convert('RGBA'), wm_layer).convert('RGB')
-        draw = ImageDraw.Draw(img)
-
-        # ========== STICKER HOLOGRÁFICO MEJORADO ==========
-        sticker_size = 62
-        sticker = _sticker_holograma(sticker_size)
-        img.paste(sticker, (avatar_x + avatar_size - 44, avatar_y + avatar_size - 44), sticker)
-        draw = ImageDraw.Draw(img)
-
-        # ========== FIRMA DEL EMISOR ==========
-        draw.text((100, H - 38), "Director D99", fill=DORADO, font=font_small, anchor="lm")
-        _firma(draw, 100, H - 20, 80, DORADO)
-
-        # ========== BRILLO DIAGONAL (HOLOGRAMA MEJORADO) ==========
-        band_w, band_h = 240, int(H * 1.7)
-        banda_brillo = Image.new('RGBA', (band_w, band_h), (0, 0, 0, 0))
-        bbdraw = ImageDraw.Draw(banda_brillo)
-        for i in range(band_w):
-            d = abs(i - band_w / 2) / (band_w / 2)
-            alpha = int(max(0, (1 - d) ** 2 * 32))
-            bbdraw.line([(i, 0), (i, band_h)], fill=(255, 255, 255, alpha))
-        banda_brillo = banda_brillo.rotate(-24, expand=True, resample=Image.BICUBIC)
-        bw, bh = banda_brillo.size
-        capa_brillo = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        capa_brillo.alpha_composite(banda_brillo, (int(W * 0.62 - bw / 2), int(H * 0.42 - bh / 2)))
-        img = Image.alpha_composite(img.convert('RGBA'), capa_brillo).convert('RGB')
-        draw = ImageDraw.Draw(img)
-        # ========== AURORA/BRILLO ESQUINA SUPERIOR DERECHA (MÁS NOTORIO) ==========
-        aurora = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        adraw = ImageDraw.Draw(aurora)
-        aurora_size = 400
-        aurora_x, aurora_y = W - aurora_size // 2 - 20, aurora_size // 2 - 80
-        for r in range(aurora_size, 0, -15):
-            alpha = int(65 * (1 - (r / aurora_size) ** 1.5))
-            adraw.ellipse([aurora_x - r, aurora_y - r, aurora_x + r, aurora_y + r],
-                         fill=(*BLANCO, alpha))
-        img = Image.alpha_composite(img.convert('RGBA'), aurora).convert('RGB')
-        draw = ImageDraw.Draw(img)
-
-        # ========== HOLOGRAM SHIMMER (IRIDISCENTE DINÁMICO) ==========
-        shimmer = _hologram_shimmer(img, W, H)
-        img = Image.alpha_composite(img.convert('RGBA'), shimmer).convert('RGB')
-        draw = ImageDraw.Draw(img)
-
-        # ========== VIÑETA (OSCURECER ESQUINAS) ==========
-        vignette = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        vdraw = ImageDraw.Draw(vignette)
-        vig_rad = 480
-        vig_cx, vig_cy = W // 2, H // 2
-        for i in range(0, vig_rad, 35):
-            alpha = int(50 * (i / vig_rad) ** 0.8)
-            vdraw.ellipse([vig_cx - i, vig_cy - i, vig_cx + i, vig_cy + i],
-                         fill=(0, 0, 0, alpha))
-        img = Image.alpha_composite(img.convert('RGBA'), vignette).convert('RGB')
-
-        # ========== TARJETA FLOTANTE: ESQUINAS REDONDEADAS + SOMBRA ==========
-        mascara = Image.new('L', (W, H), 0)
-        mdraw = ImageDraw.Draw(mascara)
-        mdraw.rounded_rectangle([0, 0, W - 1, H - 1], radius=RADIO, fill=255)
-
-        tarjeta_rgba = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        tarjeta_rgba.paste(img, (0, 0), mascara)
-
-        final_w, final_h = W + MARGEN * 2, H + MARGEN * 2
-        final_img = Image.new('RGBA', (final_w, final_h), (0, 0, 0, 0))
-
-        sombra = Image.new('RGBA', (final_w, final_h), (0, 0, 0, 0))
-        sombra_forma = Image.new('L', (final_w, final_h), 0)
-        sdraw2 = ImageDraw.Draw(sombra_forma)
-        sdraw2.rounded_rectangle(
-            [MARGEN - 4, MARGEN + 10, MARGEN + W + 4, MARGEN + H + 18],
-            radius=RADIO, fill=200
-        )
-        sombra_forma = sombra_forma.filter(ImageFilter.GaussianBlur(18))
-        sombra.putalpha(sombra_forma)
-        final_img = Image.alpha_composite(final_img, sombra)
-
-        final_img.alpha_composite(tarjeta_rgba, (MARGEN, MARGEN))
+        # ========== PIE ==========
+        draw.text((W // 2, H - 18), "DISTRICT 99 - GVRP © 2026",
+                  fill=GRIS, font=font_small, anchor="mm")
 
         # ========== GUARDAR ==========
         img_bytes = BytesIO()
-        final_img.save(img_bytes, format='PNG')
+        img.save(img_bytes, format='PNG', quality=98)
         img_bytes.seek(0)
         return discord.File(img_bytes, filename="licencia.png")
 
@@ -1391,7 +904,8 @@ class PanelWSPView(discord.ui.View):
                 embed.add_field(name=f"👮 {policia['nombre']}", value=f"🕐 {policia['horas']}h {policia['minutos']}m activo", inline=False)
             embed.set_image(url=URL_IMG_WSP)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            # ==================== PANEL DE EMS ====================
+
+# ==================== PANEL DE EMS ====================
 class PanelEMSView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -1877,7 +1391,8 @@ async def cerrar_sesion(interaction: discord.Interaction):
     else:
         await interaction.response.send_message("❌ No encontré canal", ephemeral=True)
     await enviar_log(f"🔒 {interaction.user.mention} cerró sesión ({h}h {m}m)", discord.Color.red())
-    # ==================== EVALUAR STAFF ====================
+
+# ==================== EVALUAR STAFF ====================
 class EvalModal(discord.ui.Modal, title="⭐ Evaluar Staff"):
     que_hizo = discord.ui.TextInput(label="¿Qué hizo?", max_length=200)
     calificacion = discord.ui.TextInput(label="Calificación (1-10)", max_length=2)
